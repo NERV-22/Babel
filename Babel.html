@@ -606,6 +606,17 @@ body{padding:0}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 </style>
+<style>
+.cloud-inp{width:100%;box-sizing:border-box;padding:11px 13px;margin-bottom:9px;font-family:sans-serif;font-size:13.5px;border:1px solid var(--border);border-radius:10px;background:var(--bg1);color:var(--text);outline:none}
+.cloud-btn{flex:1;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:sans-serif;font-size:13.5px;font-weight:600;cursor:pointer}
+.cloud-btn.primary{background:var(--accent);color:#0a0a0a;border-color:transparent}
+.cloud-row{display:flex;gap:9px;margin-bottom:9px}
+.cloud-link{display:block;width:100%;margin-top:2px;padding:8px;background:none;border:none;color:var(--text-muted);font-family:sans-serif;font-size:12px;cursor:pointer;text-decoration:underline}
+.cloud-status{display:flex;align-items:center;gap:8px;font-family:sans-serif;font-size:12.5px;color:var(--text-muted);margin-bottom:11px}
+.cloud-dot{width:9px;height:9px;border-radius:50%;flex:none}
+.cloud-acct{font-family:sans-serif;font-size:13.5px;color:var(--text);margin-bottom:12px;display:flex;flex-direction:column;gap:3px}
+.cloud-last{font-size:11px;color:var(--text-muted)}
+</style>
 </head>
 <body>
 
@@ -679,6 +690,10 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
           <button class="set-row" onclick="toggleThemePanel()"><span>Theme &amp; colours</span><span class="set-chev">&rsaquo;</span></button>
         </div>
         <div class="set-group">
+          <div class="set-group-h">Account</div>
+          <div id="cloud-ui"></div>
+        </div>
+        <div class="set-group">
           <div class="set-group-h">Backup &amp; transfer</div>
             <div class="backup-section">
     <button class="backup-btn export" onclick="exportBackup()">⬇ Export backup</button>
@@ -696,12 +711,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
           <div class="set-note" style="margin-top:10px">Read this many minutes in a day and it counts toward your streak.</div>
         </div>
         <div class="set-group">
-          <div class="set-group-h">About</div>
-          <div class="set-note" style="border-style:solid;line-height:1.6">
-            <div style="font-family:Georgia,serif;letter-spacing:.3em;font-weight:700;color:var(--text);margin-bottom:8px">BABEL</div>
-            Babel is your personal library &mdash; every book you&rsquo;ve read or mean to, with summaries, ratings, page counts, dated reading notes, and a built-in timer. It lives entirely on your device and works fully offline. Read 15 minutes in a day and it counts toward your streak.
-          </div>
-          <button class="set-row" style="margin-top:10px" onclick="babelCheckUpdate()"><span>Update Babel</span><span class="set-chev">&#8635;</span></button>
+          <div class="set-group-h">Updates</div>
+          <button class="set-row" onclick="babelCheckUpdate()"><span>Update Babel</span><span class="set-chev">&#8635;</span></button>
+        </div>
+        <div class="set-group" id="signout-group" style="display:none">
+          <button class="set-row" onclick="BabelCloud.signOut()"><span>Sign out</span><span class="set-chev">&rsaquo;</span></button>
         </div>
       </div>
     </section>
@@ -3046,6 +3060,7 @@ storage.init().then(function(){
   loadActiveTimer();
   tmrInit();
   switchScreen("library");
+  if(window.BabelCloud){ try{ BabelCloud.init(); }catch(e){} }
 });
 </script>
 <script>
@@ -3089,5 +3104,256 @@ storage.init().then(function(){
 })();
 </script>
 <div id="global-tooltip"></div>
+<script>
+/* ===================== Babel Cloud Sync (Supabase, offline-first) =====================
+   Sync unit = a whole list (books + read set + theme). Last-write-wins per list by
+   updated_at. The app stays 100% functional with no account / offline; this layer is
+   purely additive and no-ops until configured + signed in + online. */
+window.BabelCloud = (function(){
+  var URL_K='rl_supa_url', KEY_K='rl_supa_key';
+  // Hardcoded backend — no setup needed.
+  var HARD_URL='https://elbysyvxtlrmdbiabfhl.supabase.co';
+  var HARD_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsYnlzeXZ4dGxybWRiaWFiZmhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4OTE3ODYsImV4cCI6MjA5NzQ2Nzc4Nn0.gkrEAx-Am7SVmJ2EGYarAmkgBY5I6miG9azHFBzFouA';
+  var SDK=null, client=null, cfg={url:HARD_URL,key:HARD_KEY}, user=null;
+  var dirty={}, pushTimer=null, pollTimer=null, status='off', lastSync=0, busy=false;
+
+  function load(){ cfg.url=HARD_URL; cfg.key=HARD_KEY; }
+  function configured(){ return !!(cfg.url && cfg.key); }
+  function setStatus(s){ status=s; renderCloudUI(); }
+
+  function listById(id){ return lists.find(function(l){return l.id===id;}); }
+  function blobFor(id){
+    if(id===activeId){ return {books:books, read:[].concat.apply([],[Array.from(readSet)])}; }
+    var b=[],r=[];
+    try{ b=JSON.parse(storage.getItem(listKey(id))||'[]'); }catch(e){}
+    try{ r=JSON.parse(storage.getItem(readKey(id))||'[]'); }catch(e){}
+    return {books:b, read:r};
+  }
+  function rowFor(id){
+    var l=listById(id); if(!l) return null;
+    var bl=blobFor(id);
+    return { id:id, user_id:user.id, name:l.name||'', theme:l.theme||null,
+             books:bl.books, read:bl.read,
+             updated_at:new Date(l.updatedAt||Date.now()).toISOString(), deleted:false };
+  }
+
+  function touch(id){
+    var l=listById(id); if(!l) return;
+    l.updatedAt=Date.now(); saveMeta();
+    if(user){ dirty[id]=true; schedulePush(); }
+  }
+  function schedulePush(){
+    if(pushTimer) clearTimeout(pushTimer);
+    pushTimer=setTimeout(function(){ pushDirty(); }, 1500);
+  }
+
+  async function ensureClient(){
+    if(client) return client;
+    if(!configured()) return null;
+    if(!navigator.onLine) throw new Error('offline');
+    if(!SDK) SDK = await import('https://esm.sh/@supabase/supabase-js@2');
+    client = SDK.createClient(cfg.url, cfg.key, {auth:{persistSession:true, autoRefreshToken:true, storageKey:'rl_supa_auth'}});
+    client.auth.onAuthStateChange(function(_e, sess){
+      user = sess ? sess.user : null;
+      if(user){ setStatus('idle'); } else { setStatus(configured()?'signedout':'off'); }
+    });
+    return client;
+  }
+
+  async function init(){
+    load();
+    wrapMutators();
+    if(!configured()){ setStatus('off'); return; }
+    try{
+      await ensureClient();
+      var res = await client.auth.getSession();
+      user = res && res.data && res.data.session ? res.data.session.user : null;
+      if(user){ setStatus('idle'); await pull(); }
+      else setStatus('signedout');
+    }catch(e){ setStatus(navigator.onLine?'error':'offline'); }
+    window.addEventListener('online', function(){ if(user){ pull(); pushDirty(); } });
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden && user && navigator.onLine) pull(); });
+    if(pollTimer) clearInterval(pollTimer);
+    pollTimer=setInterval(function(){ if(user && navigator.onLine && !document.hidden) pull(); }, 30000);
+  }
+
+  // ---- auth ----
+  async function signUp(email, pw){
+    try{ await ensureClient(); }catch(e){ showToast('Connect a backend first'); return; }
+    setStatus('working');
+    var r = await client.auth.signUp({email:email, password:pw});
+    if(r.error){ showToast(r.error.message); setStatus('signedout'); return; }
+    if(r.data && r.data.session){ user=r.data.session.user; setStatus('idle'); showToast('Account created'); await firstSync(); }
+    else { setStatus('signedout'); showToast('Check your email to confirm, then log in'); }
+  }
+  async function signIn(email, pw){
+    try{ await ensureClient(); }catch(e){ showToast('Connect a backend first'); return; }
+    setStatus('working');
+    var r = await client.auth.signInWithPassword({email:email, password:pw});
+    if(r.error){ showToast(r.error.message); setStatus('signedout'); return; }
+    user=r.data.session.user; setStatus('idle'); showToast('Signed in'); await firstSync();
+  }
+  async function signOut(){ if(client){ await client.auth.signOut(); } user=null; setStatus(configured()?'signedout':'off'); }
+
+  async function firstSync(){
+    // If the cloud already has data, pull it (adopting an existing account).
+    // Otherwise this device seeds the account via an explicit Back up.
+    try{
+      setStatus('working');
+      var r = await client.from('lists').select('id,deleted').limit(1);
+      var hasCloud = !r.error && r.data && r.data.some(function(x){return !x.deleted;});
+      if(hasCloud){ await pull(); showToast('Library pulled from cloud'); }
+      else { await backupAll(); showToast('This device backed up to cloud'); }
+      setStatus('idle');
+    }catch(e){ setStatus('error'); }
+  }
+
+  // ---- push ----
+  async function pushDirty(){
+    if(!user || busy) return;
+    var ids=Object.keys(dirty); if(!ids.length) return;
+    try{
+      await ensureClient();
+      busy=true; setStatus('working');
+      var rows=ids.map(rowFor).filter(Boolean);
+      if(rows.length){
+        var r = await client.from('lists').upsert(rows, {onConflict:'user_id,id'});
+        if(!r.error){ ids.forEach(function(id){ delete dirty[id]; }); lastSync=Date.now(); }
+      }
+      busy=false; setStatus('idle');
+    }catch(e){ busy=false; setStatus(navigator.onLine?'error':'offline'); }
+  }
+  async function backupAll(){
+    if(!user) return;
+    try{
+      await ensureClient();
+      busy=true; setStatus('working');
+      lists.forEach(function(l){ l.updatedAt=l.updatedAt||Date.now(); });
+      saveMeta();
+      var rows=lists.map(function(l){return rowFor(l.id);}).filter(Boolean);
+      var r = await client.from('lists').upsert(rows, {onConflict:'user_id,id'});
+      dirty={}; lastSync=Date.now(); busy=false; setStatus('idle');
+      if(r.error) showToast(r.error.message);
+    }catch(e){ busy=false; setStatus(navigator.onLine?'error':'offline'); }
+  }
+
+  // ---- pull / merge ----
+  function applyRow(row, touched){
+    var local=listById(row.id);
+    var cloudT=Date.parse(row.updated_at)||0;
+    var localT=local?(local.updatedAt||0):-1;
+    if(row.deleted){
+      if(local && cloudT>=localT){
+        storage.removeItem(listKey(row.id)); storage.removeItem(readKey(row.id));
+        lists=lists.filter(function(l){return l.id!==row.id;});
+        if(activeId===row.id && lists.length){ activeId=lists[0].id; loadListData(activeId); }
+        touched.changed=true;
+      }
+      return;
+    }
+    if(!local || cloudT>localT){
+      if(local){ local.name=row.name; local.theme=row.theme||local.theme; local.updatedAt=cloudT; }
+      else { lists.push({id:row.id, name:row.name, theme:row.theme||Object.assign({},DEFAULT_THEME), updatedAt:cloudT}); }
+      storage.setItem(listKey(row.id), JSON.stringify(row.books||[]));
+      storage.setItem(readKey(row.id), JSON.stringify(row.read||[]));
+      if(activeId===row.id) loadListData(activeId);
+      touched.changed=true;
+    }
+  }
+  async function pull(){
+    if(!user || busy) return;
+    try{
+      await ensureClient();
+      busy=true;
+      var r = await client.from('lists').select('id,name,theme,books,read,updated_at,deleted');
+      if(r.error){ busy=false; setStatus('error'); return; }
+      var touched={changed:false};
+      var cloudIds={};
+      (r.data||[]).forEach(function(row){ cloudIds[row.id]=row; applyRow(row, touched); });
+      // local lists newer than cloud (or missing in cloud) -> push
+      lists.forEach(function(l){
+        var cr=cloudIds[l.id];
+        if(!cr || (l.updatedAt||0) > (Date.parse(cr.updated_at)||0)){ if((l.updatedAt||0)>0){ dirty[l.id]=true; } }
+      });
+      lastSync=Date.now(); busy=false;
+      if(touched.changed){ saveMeta(); refreshUI(); }
+      setStatus('idle');
+      if(Object.keys(dirty).length) pushDirty();
+    }catch(e){ busy=false; setStatus(navigator.onLine?'error':'offline'); }
+  }
+
+  function refreshUI(){
+    try{
+      renderTopBar();
+      var ni=document.getElementById('list-name-input'); if(ni) ni.value=activeList().name;
+      updateStats(); renderFilterPills(); renderGenreDropdown && renderGenreDropdown(); renderGenrePickPills && renderGenrePickPills();
+      (currentTab==='list')?renderTable():renderGenreTab();
+      applyTheme(activeList().theme||DEFAULT_THEME);
+    }catch(e){}
+  }
+
+  // ---- wrap mutators so edits mark the list dirty + sync ----
+  var wrapped=false;
+  function wrapMutators(){
+    if(wrapped) return; wrapped=true;
+    var _scl=saveCurrentList; saveCurrentList=function(){ _scl.apply(this,arguments); if(activeId) touch(activeId); };
+    var _ren=renameCurrentList; renameCurrentList=function(){ var r=_ren.apply(this,arguments); if(activeId) touch(activeId); return r; };
+    var _pk=onPickerChange; onPickerChange=function(){ var r=_pk.apply(this,arguments); if(activeId) touch(activeId); return r; };
+    var _rt=resetTheme; resetTheme=function(){ var r=_rt.apply(this,arguments); if(activeId) touch(activeId); return r; };
+    var _ap=applyPreset; applyPreset=function(){ var r=_ap.apply(this,arguments); if(activeId) touch(activeId); return r; };
+    var _cl=createList; createList=function(){ var r=_cl.apply(this,arguments); if(activeId) touch(activeId); return r; };
+    var _dl=deleteList; deleteList=function(id){ var existed=!!listById(id); _dl.apply(this,arguments); var gone=existed && !listById(id); if(gone && user){ pushTombstone(id); } };
+  }
+  async function pushTombstone(id){
+    if(!user) return;
+    try{ await ensureClient(); await client.from('lists').upsert([{id:id,user_id:user.id,deleted:true,updated_at:new Date().toISOString()}],{onConflict:'user_id,id'}); }catch(e){}
+  }
+
+  // ---- config save ----
+  function saveConfig(url, key){
+    url=(url||'').trim().replace(/\/+$/,''); key=(key||'').trim();
+    storage.setItem(URL_K,url); storage.setItem(KEY_K,key); cfg.url=url; cfg.key=key;
+    client=null; user=null;
+    if(configured()){ ensureClient().then(function(){ setStatus('signedout'); }).catch(function(){ setStatus('error'); }); }
+    else setStatus('off');
+  }
+
+  return {
+    init:init, signUp:signUp, signIn:signIn, signOut:signOut,
+    backupAll:backupAll, pull:pull, syncNow:function(){ pushDirty(); pull(); },
+    saveConfig:saveConfig,
+    state:function(){ return {status:status, user:user, configured:configured(), cfg:cfg, lastSync:lastSync, dirty:Object.keys(dirty).length}; }
+  };
+})();
+
+function renderCloudUI(){
+  var el=document.getElementById('cloud-ui');
+  var so=document.getElementById('signout-group');
+  if(!el) return;
+  var s=BabelCloud.state();
+  function esc2(x){ return (x||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+  var statusText={off:'Not signed in', signedout:'Not signed in', idle:'Synced', working:'Syncing…', error:'Sync error', offline:'Offline — will sync later'}[s.status]||'';
+  var dot={off:'#c2a878', signedout:'#c2a878', idle:'#5ec27e', working:'#c2a878', error:'#e05c5c', offline:'#888'}[s.status]||'#777';
+  if(so) so.style.display = s.user ? '' : 'none';
+
+  if(!s.user){
+    el.innerHTML =
+      '<div class="set-note" style="margin-bottom:10px">Sign in to sync your library across your devices.</div>'
+      +'<div class="cloud-status"><span class="cloud-dot" style="background:'+dot+'"></span>'+statusText+'</div>'
+      +'<input class="cloud-inp" id="cl-email" type="email" placeholder="Email" autocomplete="username"/>'
+      +'<input class="cloud-inp" id="cl-pw" type="password" placeholder="Password (6+ characters)" autocomplete="current-password"/>'
+      +'<div class="cloud-row"><button class="cloud-btn primary" onclick="BabelCloud.signIn(document.getElementById(\'cl-email\').value, document.getElementById(\'cl-pw\').value)">Sign in</button>'
+      +'<button class="cloud-btn" onclick="BabelCloud.signUp(document.getElementById(\'cl-email\').value, document.getElementById(\'cl-pw\').value)">Sign up</button></div>';
+    return;
+  }
+  var last = s.lastSync ? new Date(s.lastSync).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}) : '—';
+  el.innerHTML =
+    '<div class="cloud-status"><span class="cloud-dot" style="background:'+dot+'"></span>'+statusText+(s.dirty?(' · '+s.dirty+' pending'):'')+'</div>'
+    +'<div class="cloud-acct">'+esc2(s.user.email)+'<span class="cloud-last">last sync '+last+'</span></div>'
+    +'<div class="cloud-row"><button class="cloud-btn primary" onclick="BabelCloud.syncNow()">Sync now</button>'
+    +'<button class="cloud-btn" onclick="if(confirm(\'Upload THIS device\\u2019s library to the cloud, overwriting the cloud copy of any matching lists?\'))BabelCloud.backupAll()">↑ Back up</button>'
+    +'<button class="cloud-btn" onclick="BabelCloud.pull()">↓ Pull</button></div>';
+}
+</script>
 </body>
 </html>

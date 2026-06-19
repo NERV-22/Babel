@@ -1,6 +1,6 @@
 /* Babel service worker — offline app shell.
    Bump CACHE on every release so clients pull the new files. */
-const CACHE = 'babel-v2';
+const CACHE = 'babel-v4';
 const ASSETS = [
   'Babel.html',
   'index.html',
@@ -34,6 +34,8 @@ self.addEventListener('message', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
+  // Only handle same-origin requests — let cross-origin (Supabase, CDN) pass straight through.
+  if (new URL(req.url).origin !== self.location.origin) return;
   const isNav = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
   if (isNav) {
     e.respondWith(
