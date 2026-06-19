@@ -1,0 +1,16 @@
+{
+  "name": "Babel — Reading Tracker",
+  "short_name": "Babel",
+  "description": "Your offline library of every book, page, and thought.",
+  "start_url": "Babel.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    { "src": "icons/babel-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/babel-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/babel-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
