@@ -590,6 +590,7 @@ body{padding:0}
 .rl-stat{background:var(--bg1);border:1px solid var(--border);border-radius:12px;padding:13px 6px;text-align:center}
 .rl-stat-n{font-family:Georgia,serif;font-size:22px;font-weight:700;color:var(--text);line-height:1}
 .rl-stat-l{font-family:sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-top:6px}
+.rl-stat-sub{display:block;font-family:sans-serif;font-size:9px;font-weight:600;color:var(--accent);margin-top:3px;letter-spacing:.04em;text-transform:none;opacity:.85}
 .rl-log-row{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--border);border-radius:11px;background:var(--bg1)}
 .rl-log-row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .rl-log-row-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
@@ -2560,13 +2561,21 @@ function renderRLModal(){
   var _ts0 = b.timerSessions || [];
   var _totSec=0, _totPages=0;
   _ts0.forEach(function(s){ _totSec += (s.durationSec||0); _totPages += Math.max(0,(s.endPage||0)-(s.startPage||0)); });
+  // Current progress in the book (highest endPage), capped at the book's total
+  // pages — this is what the PAGES stat shows. If lifetime pages-turned
+  // (_totPages) exceeds the book length, the user has re-read at least part;
+  // surface that as a small accent-colored subtext under the PAGES label.
+  var _curPage = currentPageFor(b);
+  var _bookPages = b.pages || 0;
+  var _progress = _bookPages > 0 ? Math.min(_curPage, _bookPages) : _curPage;
+  var _hasReread = _bookPages > 0 && _totPages > _bookPages;
   var display = document.getElementById("rl-stats");
   var _hrs=Math.floor(_totSec/3600), _mins=Math.round((_totSec%3600)/60);
   var _totTimeStr = _hrs>0 ? (_hrs+'h '+_mins+'m') : (_mins+'m');
   display.innerHTML =
       '<div class="rl-stat"><div class="rl-stat-n">'+_totTimeStr+'</div><div class="rl-stat-l">time read</div></div>'
     + '<div class="rl-stat"><div class="rl-stat-n">'+_ts0.length+'</div><div class="rl-stat-l">session'+(_ts0.length!==1?'s':'')+'</div></div>'
-    + '<div class="rl-stat"><div class="rl-stat-n">'+_totPages+'</div><div class="rl-stat-l">pages</div></div>';
+    + '<div class="rl-stat"><div class="rl-stat-n">'+_progress.toLocaleString()+'</div><div class="rl-stat-l">pages'+(_hasReread?'<span class="rl-stat-sub">'+_totPages.toLocaleString()+' turned</span>':'')+'</div></div>';
   // Session log list
   var list = document.getElementById("rl-log-list");
   var ts = b.timerSessions || [];
