@@ -419,7 +419,7 @@ body{padding:0}
 .bk-card.is-reading{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
 .bk-row1{display:flex;align-items:flex-start;gap:12px}
 .bk-id{flex:1;min-width:0}
-.bk-title{font-size:15.5px;font-weight:600;color:var(--text);line-height:1.3;display:flex;flex-wrap:wrap;gap:7px;align-items:baseline}
+.bk-title{font-size:15.5px;font-weight:600;color:var(--text);line-height:1.3;display:flex;flex-wrap:wrap;gap:7px;align-items:baseline;cursor:pointer}
 .bk-card.is-read .bk-title{color:var(--text-muted)}
 .bk-series{font-size:11.5px;font-family:sans-serif;color:var(--text-muted);margin-top:3px;letter-spacing:.2px}
 .bk-byline{font-size:12.5px;font-family:sans-serif;color:var(--text-muted);margin-top:4px}
@@ -1555,52 +1555,6 @@ function filteredBooks(){
   return list;
 }
 
-// ── Render table ──────────────────────────────────────────────────────────────
-function renderTable(){
-  var _gt=document.getElementById("global-tooltip");if(_gt)_gt.classList.remove("visible");
-  var list=filteredBooks(),tbody=document.getElementById("book-tbody");
-  if(!list.length){
-    tbody.innerHTML='<tr><td colspan="8" style="padding:32px;text-align:center;color:var(--text-muted);font-family:sans-serif;font-size:13px">'+(books.length?'No books match your filters.':'No books yet — add one below!')+'</td></tr>';
-    document.getElementById("showing-count").textContent="";return;
-  }
-  var rows="";
-  list.forEach(function(b){
-    var isRead=readSet.has(b.idx);
-    var sumText=b.summary?esc(b.summary):'<span class="summary-no-text">No summary added yet — open the ⋯ menu to add one.</span>';
-    var rowClass=(isRead?'is-read':'')+(b.isReading?' is-reading':'');
-    // Series can render two different ways:
-    //   - inline "(1)" tag, when only seriesOrder is set (legacy data)
-    //   - a subtitle line under the title, when seriesName is set
-    var hasSeriesName=!!b.seriesName;
-    var inlineSeriesTag=(b.seriesOrder&&!hasSeriesName)?'<span class="snum">('+esc(b.seriesOrder)+')</span>':'';
-    var seriesLine=hasSeriesName?'<span class="title-series">'+esc(seriesText(b))+'</span>':'';
-    // Show a small badge when the user has logged reading sessions.
-    var sessionCount=b.sessions&&b.sessions.length;
-    var sessionBadge=sessionCount?(sessionCount>1?'<span class="sbadge">'+sessionCount+' reads</span>':(b.sessions[0].end?'<span class="sbadge">'+esc(b.sessions[0].end)+'</span>':'')):'';
-    rows+='<tr class="'+rowClass+'" data-bidx="'+b.idx+'">'
-      +'<td><button class="chk'+(isRead?' checked':'')+'" onclick="toggleRead('+b.idx+')"></button></td>'
-      +'<td><div class="title-cell-wrap">'
-        +'<span class="title-text" onmouseenter="showTT('+b.idx+',this)" onmouseleave="hideTT('+b.idx+')">'
-          +esc(b.title)+inlineSeriesTag+(b.optional?'<span class="optional-tag">(optional)</span>':'')+sessionBadge
-        +'</span>'
-        +seriesLine
-        +'</div></td>'
-      +'<td class="author-cell">'+esc(b.author)+'</td>'
-      +'<td class="pages-cell">'+b.pages+'</td>'
-      +'<td>'+myStarsHTML(b.idx,b.myRating||0)+'</td>'
-      +'<td style="text-align:center"><button class="fav-btn'+(b.isFav?' on':'')+'" onclick="toggleFav('+b.idx+')" title="Favourite">&#9829;</button></td>'
-      +'<td>'+genreTagHTML(b.genre)+'</td>'
-      +'<td><div class="actions-cell">'
-        +'<button class="reading-btn'+(b.isReading?' on':'')+'" onclick="toggleReading('+b.idx+')" title="Currently reading">&#9654; Reading</button>'
-        +'<button class="icon-btn'+(activeTimer && activeTimer.bookIdx===b.idx && activeTimer.listId===activeId?' timer-active':'')+'" title="Reading log" onclick="openRL('+b.idx+')">'+ICONS.clock+'</button>'
-        +'<button class="icon-btn" title="Session log" onclick="openSM('+b.idx+')">'+ICONS.calendar+'</button>'
-        +'<button class="icon-btn menu-btn" title="More" onclick="openRowMenu(event,'+b.idx+')">&#8943;</button>'
-      +'</div></td></tr>';
-  });
-  tbody.innerHTML=rows;
-  document.getElementById("showing-count").textContent="Showing "+list.length+" of "+books.length+" book"+(books.length!==1?"s":"");
-}
-
 // ── Tooltip ───────────────────────────────────────────────────────────────────
 var _ttTimer=null;
 function showTT(idx,span){
@@ -1634,6 +1588,44 @@ function hideTT(idx){
   var t=document.getElementById("global-tooltip");if(!t)return;
   _ttTimer=setTimeout(function(){if(!t.matches(':hover'))t.classList.remove("visible");},120);
 }
+
+// Tap a book title (mobile card layout) to toggle a summary popup.
+// Reuses showTT for the actual render/positioning; this just handles
+// open/close state and tracks which book is currently displayed.
+function toggleTT(idx, el){
+  var t=document.getElementById("global-tooltip"); if(!t) return;
+  var visible = t.classList.contains("visible");
+  var sameTarget = (t._tappedIdx === idx);
+  if(visible && sameTarget){
+    t.classList.remove("visible");
+    t._tappedIdx = null;
+    return;
+  }
+  showTT(idx, el);
+  t._tappedIdx = idx;
+}
+// Tap anywhere outside the tooltip dismisses it. Attach the document
+// listener once — guard with a flag to survive any code paths that
+// might re-execute this section (e.g. dynamic reloads).
+(function(){
+  if(window._ttDismissAttached) return;
+  window._ttDismissAttached = true;
+  document.addEventListener("click", function(e){
+    var t=document.getElementById("global-tooltip"); if(!t) return;
+    if(!t.classList.contains("visible")) return;
+    // Don't dismiss when clicking the tooltip itself or a book title
+    // (the title's own onclick handler will toggle it instead). Walk up
+    // the tree to check; stop at body to avoid infinite loops.
+    var el = e.target;
+    while(el && el !== document.body){
+      if(el.id === "global-tooltip") return;
+      if(el.classList && el.classList.contains("bk-title")) return;
+      el = el.parentElement;
+    }
+    t.classList.remove("visible");
+    t._tappedIdx = null;
+  });
+})();
 
 // ── Toggle read ───────────────────────────────────────────────────────────────
 // ── Surgical row updates ──────────────────────────────────────────────────────
@@ -2913,7 +2905,7 @@ function renderTable(){
       +'<div class="bk-row1">'
         +'<button class="chk'+(isRead?' checked':'')+'" onclick="toggleRead('+b.idx+')" title="Mark read"></button>'
         +'<div class="bk-id">'
-          +'<div class="bk-title">'+esc(b.title)+inlineSeriesTag+(b.optional?'<span class="optional-tag">(optional)</span>':'')+sBadge+'</div>'
+          +'<div class="bk-title" onclick="toggleTT('+b.idx+',this)">'+esc(b.title)+inlineSeriesTag+(b.optional?'<span class="optional-tag">(optional)</span>':'')+sBadge+'</div>'
           +seriesLine
           +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+' &middot; '+b.pages+'p</div>'
         +'</div>'
