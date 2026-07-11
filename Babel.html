@@ -622,21 +622,29 @@ body{padding:0}
 .goal-unit{font-family:sans-serif;font-size:13px;color:var(--text-muted)}
 
 .rd-cal-title{font-family:sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin:6px 0 12px}
-.hm-wrap{margin-bottom:22px;overflow-x:auto}
-.hm-inner{display:inline-block;min-width:100%}
-.hm-months{display:flex;gap:3px;margin-bottom:5px}
-.hm-month{width:13px;flex:none;font-family:sans-serif;font-size:9px;color:var(--text-muted);white-space:nowrap}
-.hm-grid{display:flex;gap:3px}
-.hm-col{display:flex;flex-direction:column;gap:3px}
-.hm-cell{width:13px;height:13px;border-radius:3px;background:color-mix(in srgb,var(--text) 8%,transparent)}
-.hm-l0{background:color-mix(in srgb,var(--text) 8%,transparent)}
-.hm-l1{background:color-mix(in srgb,var(--accent) 30%,transparent)}
-.hm-l2{background:color-mix(in srgb,var(--accent) 52%,transparent)}
-.hm-l3{background:color-mix(in srgb,var(--accent) 74%,transparent)}
-.hm-l4{background:var(--accent)}
-.hm-future{opacity:0}
-.hm-legend{display:flex;align-items:center;gap:4px;margin-top:11px;font-family:sans-serif;font-size:10px;color:var(--text-muted)}
-.hm-legend .hm-cell{width:11px;height:11px}
+/* ── Reading calendar ────────────────────────────────────────────────────────
+   Real month calendar. Each day carries a progress ring toward the daily
+   goal; goal-met days get a filled accent disc. Replaces the old GitHub-
+   style heatmap. */
+.cal-wrap{margin-bottom:22px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-title{font-family:Georgia,serif;font-size:16px;font-weight:700;color:var(--text)}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{width:32px;height:32px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:15px;cursor:pointer;font-family:sans-serif;line-height:1}
+.cal-nav button:disabled{opacity:.3;cursor:default}
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.cal-dow span{text-align:center;font-family:sans-serif;font-size:10px;letter-spacing:.05em;color:var(--text-muted)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day{position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cal-day svg{position:absolute;inset:0;width:100%;height:100%}
+.cal-num{position:relative;font-family:sans-serif;font-size:12px;color:var(--text);z-index:1}
+.cal-day.zero .cal-num{color:var(--text-muted)}
+.cal-day.met .cal-num{color:var(--surface);font-weight:700}
+.cal-day.future .cal-num{color:var(--text-muted);opacity:.4}
+.cal-day.off{cursor:default}
+.cal-summary{margin-top:10px;font-family:sans-serif;font-size:12px;color:var(--text-muted);text-align:center}
+.cal-detail{margin-top:6px;font-family:sans-serif;font-size:12.5px;color:var(--text);text-align:center;min-height:17px}
+.cal-detail strong{color:var(--accent)}
 </style>
 <style>
 /* ===== Babel: timer tab + final clean ===== */
@@ -3079,7 +3087,7 @@ function renderReadingScreen(){
   var head='<div class="rd-streakcard"><div class="rd-streak-num">'+s.current+'</div>'
     +'<div class="rd-streak-lbl">day streak'+(s.best?' &middot; best '+s.best:'')+'</div>'
     +'<div class="rd-streak-sub">'+sub+'</div></div>';
-  head+='<div class="rd-cal-title">Reading activity</div>'+renderHeatmap();
+  head+='<div class="rd-cal-title">Reading activity</div>'+renderCalendar();
   if(!reading.length){
     body.innerHTML=head+'<div class="rd-empty">No books in progress.<br>Mark a book as <b>&#9654; reading</b> in your Library, or open its timer to start a session.</div>';
     return;
@@ -3111,29 +3119,102 @@ function renderGenreChart(){
   }).join('');
 }
 
-/* ---- reading: activity heatmap ---- */
-function renderHeatmap(){
-  var map=_gatherSecByDay(), goalSec=babelGoalMin*60;
-  var weeks=18, today=new Date(); today.setHours(0,0,0,0);
-  var end=new Date(today); end.setDate(end.getDate()+(6-end.getDay()));
-  var start=new Date(end); start.setDate(start.getDate()-(weeks*7-1));
-  var d=new Date(start), cols=[], months=[], lastMonth=-1;
-  var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  for(var w=0; w<weeks; w++){
-    var first=new Date(d), col='';
-    for(var r=0;r<7;r++){
-      var key=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
-      var sec=map[key]||0, future=d>today, lvl=0;
-      if(sec>0) lvl = sec>=goalSec?4 : sec>=goalSec*0.66?3 : sec>=goalSec*0.34?2 : 1;
-      col+='<div class="hm-cell hm-l'+lvl+(future?' hm-future':'')+'" title="'+key+' \u00b7 '+Math.floor(sec/60)+' min"></div>';
-      d.setDate(d.getDate()+1);
+/* ---- reading: activity calendar ---- */
+// Which month the calendar is showing. Null until first render (then = current month).
+var _calY=null, _calM=null;
+
+// Per-day stats {key:{sec,pages}} across all lists — same walk as
+// _gatherSecByDay but also sums pages, for the tap-detail line.
+function _gatherDayStats(){
+  var map={};
+  function addTS(arr){(arr||[]).forEach(function(s){
+    if(!s||!s.startTime)return;
+    var k=_dayKey(new Date(s.startTime));
+    if(!map[k])map[k]={sec:0,pages:0};
+    map[k].sec+=(s.durationSec||0);
+    map[k].pages+=Math.max(0,(s.endPage||0)-(s.startPage||0));
+  });}
+  books.forEach(function(b){addTS(b.timerSessions);});
+  lists.forEach(function(l){
+    if(l.id===activeId)return;
+    try{var raw=storage.getItem(listKey(l.id));if(!raw)return;JSON.parse(raw).forEach(function(b){addTS(b.timerSessions);});}catch(e){}
+  });
+  return map;
+}
+
+function renderCalendar(){
+  var today=new Date(); today.setHours(0,0,0,0);
+  if(_calY===null){_calY=today.getFullYear();_calM=today.getMonth();}
+  var map=_gatherDayStats(), goalSec=babelGoalMin*60;
+  var MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var first=new Date(_calY,_calM,1);
+  var daysInMonth=new Date(_calY,_calM+1,0).getDate();
+  var lead=first.getDay(); // 0=Sun — blanks before day 1
+  var atCurrent=(_calY===today.getFullYear() && _calM===today.getMonth());
+  var C=2*Math.PI*16; // ring circumference (r=16 in a 40x40 viewBox)
+
+  var cells='';
+  for(var i=0;i<lead;i++) cells+='<div class="cal-day off"></div>';
+  var metDays=0, monthSec=0;
+  for(var day=1;day<=daysInMonth;day++){
+    var d=new Date(_calY,_calM,day);
+    var key=_dayKey(d);
+    var st=map[key]||{sec:0,pages:0};
+    var isFuture=d>today, isToday=(d.getTime()===today.getTime());
+    var pct=goalSec>0?Math.min(st.sec/goalSec,1):0;
+    var cls, svg='';
+    if(isFuture){ cls='future'; }
+    else if(pct>=1){
+      cls='met'; metDays++;
+      svg='<circle cx="20" cy="20" r="16" fill="var(--accent)"/>';
     }
-    var lbl=(first.getMonth()!==lastMonth)?MON[first.getMonth()]:''; lastMonth=first.getMonth();
-    months.push('<div class="hm-month">'+lbl+'</div>');
-    cols.push('<div class="hm-col">'+col+'</div>');
+    else if(st.sec>0){
+      cls='part';
+      svg='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-dasharray="'+(pct*C).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 20 20)"/>';
+    }
+    else { cls='zero'; }
+    if(!isFuture) monthSec+=st.sec;
+    if(isToday && cls!=='met')
+      svg+='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--text-muted)" stroke-width="1" opacity="0.5"/>';
+    cells+='<div class="cal-day '+cls+'" onclick="calDayTap(\''+key+'\')"><svg viewBox="0 0 40 40">'+svg+'</svg><span class="cal-num">'+day+'</span></div>';
   }
-  return '<div class="hm-wrap"><div class="hm-inner"><div class="hm-months">'+months.join('')+'</div><div class="hm-grid">'+cols.join('')+'</div></div>'
-    +'<div class="hm-legend"><span>Less</span><span class="hm-cell hm-l0"></span><span class="hm-cell hm-l1"></span><span class="hm-cell hm-l2"></span><span class="hm-cell hm-l3"></span><span class="hm-cell hm-l4"></span><span>More</span></div></div>';
+
+  var h=Math.floor(monthSec/3600), m=Math.round((monthSec%3600)/60);
+  var timeStr=h>0?(h+'h '+m+'m'):(m+'m');
+  var summary=metDays+' goal day'+(metDays!==1?'s':'')+' \u00b7 '+timeStr+' this month';
+
+  return '<div class="cal-wrap">'
+    +'<div class="cal-head"><span class="cal-title">'+MON[_calM]+' '+_calY+'</span>'
+    +'<span class="cal-nav"><button onclick="calNav(-1)">&#8249;</button><button onclick="calNav(1)"'+(atCurrent?' disabled':'')+'>&#8250;</button></span></div>'
+    +'<div class="cal-dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>'
+    +'<div class="cal-grid">'+cells+'</div>'
+    +'<div class="cal-summary">'+summary+'</div>'
+    +'<div class="cal-detail" id="cal-detail"></div>'
+    +'</div>';
+}
+
+// Month navigation. Forward is clamped to the current month.
+function calNav(dir){
+  var today=new Date();
+  _calM+=dir;
+  if(_calM<0){_calM=11;_calY--;}
+  if(_calM>11){_calM=0;_calY++;}
+  if(_calY>today.getFullYear() || (_calY===today.getFullYear() && _calM>today.getMonth())){
+    _calY=today.getFullYear();_calM=today.getMonth();
+  }
+  renderReadingScreen();
+}
+
+// Tap a day — show its stats in the detail line under the calendar.
+function calDayTap(key){
+  var el=document.getElementById('cal-detail'); if(!el) return;
+  var st=_gatherDayStats()[key];
+  var p=key.split('-');
+  var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var label=MON[+p[1]-1]+' '+p[2];
+  if(!st || !st.sec){ el.innerHTML=label+' \u00b7 no reading'; return; }
+  var mins=Math.max(1,Math.round(st.sec/60));
+  el.innerHTML=label+' \u00b7 <strong>'+mins+' min</strong>'+(st.pages>0?' \u00b7 '+st.pages+' page'+(st.pages!==1?'s':''):'');
 }
 
 /* ---- daily goal ---- */
