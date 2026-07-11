@@ -652,6 +652,12 @@ body{padding:0}
 #rl-widget{display:none!important}
 #screen-timer{padding-top:6px}
 .tmr-book{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin:6px 0 4px;cursor:pointer}
+/* Carousel wrapper — ‹ › arrows flank the book card; swipe works on the card itself. */
+.tmr-carousel{display:flex;align-items:stretch;gap:6px;margin:6px 0 4px}
+.tmr-carousel .tmr-book{margin:0}
+.tmr-car-body{flex:1;min-width:0}
+.tmr-arrow{flex:none;width:34px;border:1px solid var(--border);border-radius:var(--radius,14px);background:var(--surface);color:var(--text-muted);font-size:22px;line-height:1;cursor:pointer;font-family:sans-serif;-webkit-tap-highlight-color:transparent}
+.tmr-arrow:active{color:var(--accent);border-color:var(--accent)}
 .tmr-book.locked{cursor:default}
 .tmr-book-main{flex:1;min-width:0}
 .tmr-book-title{font-family:Georgia,serif;font-size:17px;font-weight:700;color:var(--text)}
@@ -2899,6 +2905,35 @@ function tmrPickIdx(){
   return books.length?0:-1;
 }
 function tmrFmtPagesLine(b){ var cur=currentPageFor(b)||0,total=b.pages||0; return {cur:cur,total:total,pct:total?Math.round(cur/total*100):0}; }
+
+// ── Timer book carousel ──────────────────────────────────────────────────────
+// The pool of books the ‹ › arrows / swipe cycle through: if 2+ books are
+// marked Currently Reading, cycle those; otherwise cycle the whole list.
+// Always alphabetical by title so the order is predictable.
+function tmrCandidates(){
+  var reading=[],all=[];
+  for(var i=0;i<books.length;i++){ all.push(i); if(books[i].isReading) reading.push(i); }
+  var pool=(reading.length>=2)?reading:all;
+  pool.sort(function(a,b){ return (books[a].title||'').localeCompare(books[b].title||''); });
+  return pool;
+}
+function tmrNav(dir){
+  if(tmrMode!=='idle') return;              // never switch mid-session
+  var pool=tmrCandidates(); if(pool.length<2) return;
+  var pos=pool.indexOf(tmrPickIdx());       // -1 (not in pool) lands on pool[0] going forward
+  tmrSelIdx=pool[(pos+dir+pool.length)%pool.length];
+  renderTimerTab();
+}
+// Horizontal swipe on the card = prev/next. Vertical-ish drags are ignored
+// so page scrolling still works normally.
+var _tmrTX=null,_tmrTY=null;
+function tmrTS(e){ var t=e.touches[0]; _tmrTX=t.clientX; _tmrTY=t.clientY; }
+function tmrTE(e){
+  if(_tmrTX===null) return;
+  var t=e.changedTouches[0], dx=t.clientX-_tmrTX, dy=t.clientY-_tmrTY;
+  _tmrTX=null;
+  if(Math.abs(dx)>45 && Math.abs(dx)>Math.abs(dy)*1.5){ e.preventDefault(); tmrNav(dx<0?1:-1); }
+}
 function tmrPaint(){
   var sec=tmrElapsedDisplaySec();
   var t=document.getElementById('tmr-time'); if(t) t.textContent=formatHMS(sec);
@@ -2924,6 +2959,13 @@ function renderTimerTab(){
       +'</div>';
   } else {
     card='<div class="tmr-book empty" onclick="tmrOpenPicker()"><div class="tmr-book-main"><div class="tmr-book-title">Select a book</div><div class="tmr-book-by">Tap to choose</div></div></div>';
+  }
+  // Idle + 2+ candidates → wrap the card in the carousel: ‹ › buttons for
+  // click, swipe on the card body for touch. Hidden while a timer runs.
+  if(tmrMode==='idle' && b && !(activeTimer&&activeTimer.listId!==activeId) && tmrCandidates().length>1){
+    card='<div class="tmr-carousel"><button class="tmr-arrow" onclick="tmrNav(-1)" title="Previous book">&#8249;</button>'
+      +'<div class="tmr-car-body" ontouchstart="tmrTS(event)" ontouchend="tmrTE(event)">'+card+'</div>'
+      +'<button class="tmr-arrow" onclick="tmrNav(1)" title="Next book">&#8250;</button></div>';
   }
   var sec=tmrElapsedDisplaySec();
   var sub = tmrMode==='running'?'READING':tmrMode==='paused'?'PAUSED':tmrMode==='finishprompt'?'FINISHING':'TAP TO START';
