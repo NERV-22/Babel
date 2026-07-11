@@ -3263,6 +3263,7 @@ function calDayTap(key){
 function setGoal(min){
   babelGoalMin=min;
   try{ storage.setItem('rl_dailyGoalMin', String(min)); }catch(e){}
+  try{ if(window.BabelCloud && BabelCloud.touchSettings) BabelCloud.touchSettings(); }catch(e){}
   renderGoalSeg(); renderGoalBar(); renderStreak();
   var rs=document.getElementById('screen-reading'); if(rs && !rs.classList.contains('hidden')) renderReadingScreen();
   showToast('Daily goal: '+(min>=60?(min/60)+' hour'+(min>=120?'s':''):min+' min'));
@@ -3397,12 +3398,27 @@ window.BabelCloud = (function(){
     try{ r=JSON.parse(storage.getItem(readKey(id))||'[]'); }catch(e){}
     return {books:b, read:r};
   }
+  // App-level settings (daily goal) sync as a hidden pseudo-list row so no
+  // schema change is needed. It's filtered out of list handling everywhere.
+  var SETTINGS_ID='__settings';
+  function settingsUpdatedAt(){ return parseInt(storage.getItem('rl_settingsUpdatedAt'),10)||0; }
   function rowFor(id){
+    if(id===SETTINGS_ID){
+      return { id:SETTINGS_ID, user_id:user.id, name:'__settings',
+               theme:{goalMin:babelGoalMin}, books:[], read:[],
+               updated_at:new Date(settingsUpdatedAt()||Date.now()).toISOString(), deleted:false };
+    }
     var l=listById(id); if(!l) return null;
     var bl=blobFor(id);
     return { id:id, user_id:user.id, name:l.name||'', theme:l.theme||null,
              books:bl.books, read:bl.read,
              updated_at:new Date(l.updatedAt||Date.now()).toISOString(), deleted:false };
+  }
+  // Called by setGoal — stamps the local settings time (even signed out, so a
+  // later sign-in pushes it) and schedules a push when signed in.
+  function touchSettings(){
+    try{ storage.setItem('rl_settingsUpdatedAt', String(Date.now())); }catch(e){}
+    if(user){ dirty[SETTINGS_ID]=true; schedulePush(); }
   }
 
   function touch(id){
@@ -3499,6 +3515,7 @@ window.BabelCloud = (function(){
       lists.forEach(function(l){ l.updatedAt=l.updatedAt||Date.now(); });
       saveMeta();
       var rows=lists.map(function(l){return rowFor(l.id);}).filter(Boolean);
+      if(settingsUpdatedAt()>0) rows.push(rowFor(SETTINGS_ID));
       var r = await client.from('lists').upsert(rows, {onConflict:'user_id,id'});
       dirty={}; lastSync=Date.now(); busy=false; setStatus('idle');
       if(r.error) showToast(r.error.message);
@@ -3507,6 +3524,20 @@ window.BabelCloud = (function(){
 
   // ---- pull / merge ----
   function applyRow(row, touched){
+    // Settings pseudo-row: apply the goal if the cloud copy is newer, then
+    // bail — it must never appear as a list.
+    if(row.id===SETTINGS_ID){
+      var sT=Date.parse(row.updated_at)||0;
+      if(!row.deleted && row.theme && typeof row.theme.goalMin==='number' && sT>settingsUpdatedAt()){
+        babelGoalMin=row.theme.goalMin;
+        try{ storage.setItem('rl_dailyGoalMin',String(babelGoalMin)); storage.setItem('rl_settingsUpdatedAt',String(sT)); }catch(e){}
+        try{
+          renderGoalSeg(); renderGoalBar(); renderStreak();
+          var rs=document.getElementById('screen-reading'); if(rs && !rs.classList.contains('hidden')) renderReadingScreen();
+        }catch(e){}
+      }
+      return;
+    }
     var local=listById(row.id);
     var cloudT=Date.parse(row.updated_at)||0;
     var localT=local?(local.updatedAt||0):-1;
@@ -3543,6 +3574,9 @@ window.BabelCloud = (function(){
         var cr=cloudIds[l.id];
         if(!cr || (l.updatedAt||0) > (Date.parse(cr.updated_at)||0)){ if((l.updatedAt||0)>0){ dirty[l.id]=true; } }
       });
+      // same check for the settings pseudo-row
+      var sr=cloudIds[SETTINGS_ID];
+      if(settingsUpdatedAt()>0 && (!sr || settingsUpdatedAt()>(Date.parse(sr.updated_at)||0))){ dirty[SETTINGS_ID]=true; }
       lastSync=Date.now(); busy=false;
       if(touched.changed){ saveMeta(); refreshUI(); }
       setStatus('idle');
@@ -3589,7 +3623,7 @@ window.BabelCloud = (function(){
   return {
     init:init, signUp:signUp, signIn:signIn, signOut:signOut,
     backupAll:backupAll, pull:pull, syncNow:function(){ pushDirty(); pull(); },
-    saveConfig:saveConfig,
+    saveConfig:saveConfig, touchSettings:touchSettings,
     state:function(){ return {status:status, user:user, configured:configured(), cfg:cfg, lastSync:lastSync, dirty:Object.keys(dirty).length}; }
   };
 })();
