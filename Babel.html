@@ -645,6 +645,14 @@ body{padding:0}
 .cal-summary{margin-top:10px;font-family:sans-serif;font-size:12px;color:var(--text-muted);text-align:center}
 .cal-detail{margin-top:6px;font-family:sans-serif;font-size:12.5px;color:var(--text);text-align:center;min-height:17px}
 .cal-detail strong{color:var(--accent)}
+/* Goal-met days glow; intensity (--cal-glow) rises with overflow past the goal.
+   At 2x the goal the day "blazes" — a slow radiating pulse mixing accent + gold. */
+.cal-day.met svg{filter:drop-shadow(0 0 var(--cal-glow,2px) var(--accent))}
+.cal-day.met.blaze svg{animation:calBlaze 3.2s ease-in-out infinite}
+@keyframes calBlaze{
+  0%,100%{filter:drop-shadow(0 0 var(--cal-glow,7px) var(--accent)) drop-shadow(0 0 3px var(--star))}
+  50%{filter:drop-shadow(0 0 9px var(--accent)) drop-shadow(0 0 6px var(--star))}
+}
 </style>
 <style>
 /* ===== Babel: timer tab + final clean ===== */
@@ -3051,7 +3059,46 @@ function switchScreen(name){
   if(name==='timer') renderTimerTab();
   if(name==='library' && currentTab==='genre') renderGenreTab();
   try{ window.scrollTo(0,0); }catch(e){}
+  pushWidgetSnapshot();
 }
+
+// ── Native widget bridge ─────────────────────────────────────────────────────
+// When running inside the Capacitor shell, mirror a small JSON snapshot
+// (streak, theme colors, currently-reading list) into native Preferences so
+// Android home-screen widgets can render without waking the WebView.
+// No-op in plain browsers / the PWA. Debounced — fires at most ~once/second.
+var _wbT=null;
+function pushWidgetSnapshot(){
+  var P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences;
+  if(!P) return;
+  clearTimeout(_wbT);
+  _wbT=setTimeout(function(){
+    try{
+      var s=computeStreak();
+      var l=activeList(), t=(l&&l.theme)||{};
+      var reading=[];
+      for(var i=0;i<books.length;i++){
+        var b=books[i]; if(!b.isReading) continue;
+        var cur=currentPageFor(b)||0;
+        reading.push({title:b.title||'',author:b.author||'',cur:cur,total:b.pages||0,
+                      pct:b.pages?Math.round(cur/b.pages*100):0});
+      }
+      P.set({key:'babelWidget',value:JSON.stringify({
+        streak:{current:s.current||0,best:s.best||0,todayMet:!!s.todayMet},
+        theme:{accent:t.accent,bg1:t.bg1,bg2:t.bg2,surface:t.surface,text:t.text,star:t.star},
+        reading:reading, goalMin:babelGoalMin, updatedAt:Date.now()
+      })});
+    }catch(e){}
+  },800);
+}
+
+// Deep link: widgets open the app at a specific tab via ?tab=reading etc.
+window.addEventListener('load',function(){
+  try{
+    var tp=new URLSearchParams(location.search).get('tab');
+    if(tp && ['library','stats','timer','reading','settings'].indexOf(tp)>=0) switchScreen(tp);
+  }catch(e){}
+});
 function openAddSheet(){
   var o=document.getElementById('add-sheet'); if(!o) return;
   var f=document.getElementById('add-form'); if(f) f.classList.remove('hidden');
@@ -3204,11 +3251,18 @@ function renderCalendar(){
     var st=map[key]||{sec:0,pages:0};
     var isFuture=d>today, isToday=(d.getTime()===today.getTime());
     var pct=goalSec>0?Math.min(st.sec/goalSec,1):0;
-    var cls, svg='';
+    var cls, svg='', sty='';
     if(isFuture){ cls='future'; }
     else if(pct>=1){
       cls='met'; metDays++;
+      // Overflow past the goal fills a gold arc toward 2x goal (40 min on a
+      // 30-min goal = 33% gold ring). Glow intensity scales with overflow;
+      // at 2x+ the day earns a slow radiating pulse.
+      var over=Math.min((st.sec-goalSec)/goalSec,1);
       svg='<circle cx="20" cy="20" r="16" fill="var(--accent)"/>';
+      if(over>0.01) svg+='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--star)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="'+(over*C).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 20 20)"/>';
+      if(over>=1) cls+=' blaze';
+      sty=' style="--cal-glow:'+(2+over*5).toFixed(1)+'px"';
     }
     else if(st.sec>0){
       cls='part';
@@ -3218,7 +3272,7 @@ function renderCalendar(){
     if(!isFuture) monthSec+=st.sec;
     if(isToday && cls!=='met')
       svg+='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--text-muted)" stroke-width="1" opacity="0.5"/>';
-    cells+='<div class="cal-day '+cls+'" onclick="calDayTap(\''+key+'\')"><svg viewBox="0 0 40 40">'+svg+'</svg><span class="cal-num">'+day+'</span></div>';
+    cells+='<div class="cal-day '+cls+'"'+sty+' onclick="calDayTap(\''+key+'\')"><svg viewBox="0 0 40 40">'+svg+'</svg><span class="cal-num">'+day+'</span></div>';
   }
 
   var h=Math.floor(monthSec/3600), m=Math.round((monthSec%3600)/60);
