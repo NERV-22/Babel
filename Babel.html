@@ -665,6 +665,36 @@ body{padding:0}
 .lookup-t{font-size:13.5px;font-weight:600;color:var(--text)}
 .lookup-m{font-size:11.5px;color:var(--text-muted)}
 .lookup-note{font-family:sans-serif;font-size:12.5px;color:var(--text-muted);padding:6px 2px}
+
+/* ── Motion ─────────────────────────────────────────────────────────────────── */
+@keyframes chkPop{0%{transform:scale(.55)}55%{transform:scale(1.28)}100%{transform:scale(1)}}
+.chk-pop{animation:chkPop .38s cubic-bezier(.34,1.56,.64,1)}
+@keyframes readBurst{0%{box-shadow:0 0 0 0 var(--accent-shadow)}35%{box-shadow:0 0 26px 8px var(--accent-shadow)}100%{box-shadow:0 0 0 0 rgba(0,0,0,0)}}
+.bk-card.read-burst{animation:readBurst .9s ease-out}
+@keyframes fillGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.tmr-prog-fill{transform-origin:left;animation:fillGrow .55s ease-out}
+.progress-fill{transition:width .6s ease}
+@keyframes tmrBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.014)}}
+.tmr-circle-wrap.breathing{animation:tmrBreath 4.5s ease-in-out infinite}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.stagger .bk-card{animation:cardIn .34s ease-out backwards}
+.stagger .bk-card:nth-child(2){animation-delay:.03s}.stagger .bk-card:nth-child(3){animation-delay:.06s}
+.stagger .bk-card:nth-child(4){animation-delay:.09s}.stagger .bk-card:nth-child(5){animation-delay:.12s}
+.stagger .bk-card:nth-child(6){animation-delay:.15s}.stagger .bk-card:nth-child(7){animation-delay:.18s}
+.stagger .bk-card:nth-child(8){animation-delay:.21s}.stagger .bk-card:nth-child(9){animation-delay:.24s}
+.stagger .bk-card:nth-child(10){animation-delay:.27s}.stagger .bk-card:nth-child(n+11){animation-delay:.3s}
+/* Streak tiers */
+.babel-streak .bs-num{transition:text-shadow .3s}
+.streak-t1 .bs-num{text-shadow:0 0 6px var(--accent-shadow)}
+@keyframes stPulse{0%,100%{text-shadow:0 0 6px var(--accent-shadow)}50%{text-shadow:0 0 12px var(--accent)}}
+.streak-t2 .bs-num{animation:stPulse 3.4s ease-in-out infinite}
+@keyframes flameFlick{0%,100%{transform:scale(1) rotate(0)}30%{transform:scale(1.06) rotate(-2deg)}60%{transform:scale(.97) rotate(2deg)}}
+.streak-t2 .bs-flame,.streak-t3 .bs-flame,.streak-t4 .bs-flame{animation:flameFlick 1.1s ease-in-out infinite}
+.streak-t3 .bs-num{animation:stPulse 2.6s ease-in-out infinite}
+.streak-t3 .bs-flame{color:var(--accent)}
+@keyframes stBlaze{0%,100%{text-shadow:0 0 8px var(--accent),0 0 3px var(--star)}50%{text-shadow:0 0 16px var(--accent),0 0 8px var(--star)}}
+.streak-t4 .bs-num{animation:stBlaze 2.2s ease-in-out infinite}
+.streak-t4 .bs-flame{color:var(--star);animation:flameFlick .8s ease-in-out infinite}
 </style>
 <style>
 /* ===== Babel: timer tab + final clean ===== */
@@ -1354,6 +1384,7 @@ function loadAll(){
 
 // ── Switch active list ────────────────────────────────────────────────────────
 function switchList(id){
+  window._stagger=true;  // cascade cards in on list switch
   if(id===activeId)return;
   saveCurrentList();
   hideToast();deletedBook=null;deletedIdx=-1;
@@ -1808,6 +1839,15 @@ function toggleRead(idx){
   var wasReading = books[idx].isReading;
   if(readSet.has(idx)){readSet.delete(idx);}else{readSet.add(idx);books[idx].isReading=false;}
   saveCurrentList();updateStats();
+  // Animation: pop the checkbox; if the book was just marked READ, fire a
+  // one-time glow burst on its card. Deferred so it runs after any re-render.
+  var _nowRead=readSet.has(idx);
+  setTimeout(function(){
+    var card=document.querySelector('.bk-card[data-bidx="'+idx+'"]'); if(!card) return;
+    var c=card.querySelector('.chk')||card.querySelector('input[type=checkbox]');
+    if(c){c.classList.remove('chk-pop');void c.offsetWidth;c.classList.add('chk-pop');setTimeout(function(){c.classList.remove('chk-pop');},450);}
+    if(_nowRead){card.classList.add('read-burst');setTimeout(function(){card.classList.remove('read-burst');},950);}
+  },0);
   // If the book was also currently-reading, we just cleared that flag,
   // which changes its position in the sort (currently-reading floats top).
   // That requires a full re-render. Otherwise the row stays in place.
@@ -2921,7 +2961,7 @@ function downloadUpdate(){
 var _tmrTick=null, tmrSelIdx=-1, tmrMode='idle', _tmrFrozenSec=0;
 function tmrLapColors(){ var a=(getComputedStyle(document.documentElement).getPropertyValue('--accent')||'#c2a878').trim(); return [a,'#a78bfa','#5ec2a8','#e0789a','#f59e0b','#5b8def']; }
 function tmrLapColor(n){ var c=tmrLapColors(); return n<=0?c[0]:c[(n-1)%(c.length-1)+1]; }
-function tmrSyncMode(){ if(activeTimer){ tmrMode = activeTimer.pausedAt ? 'paused' : (activeTimer.finishing ? 'finishprompt' : 'running'); } else if(tmrMode!=='startprompt') tmrMode='idle'; }
+function tmrSyncMode(){ if(activeTimer){ tmrMode = activeTimer.finishing ? 'finishprompt' : (activeTimer.pausedAt ? 'paused' : 'running'); } else if(tmrMode!=='startprompt') tmrMode='idle'; }
 function tmrStartTick(){ tmrStopTick(); _tmrTick=setInterval(tmrPaint,1000); }
 function tmrStopTick(){ if(_tmrTick){ clearInterval(_tmrTick); _tmrTick=null; } }
 function tmrElapsedDisplaySec(){ return tmrMode==='finishprompt' ? _tmrFrozenSec : timerElapsedSec(); }
@@ -2997,7 +3037,7 @@ function renderTimerTab(){
   var sec=tmrElapsedDisplaySec();
   var sub = tmrMode==='running'?'READING':tmrMode==='paused'?'PAUSED':tmrMode==='finishprompt'?'FINISHING':'TAP TO START';
   var tapable=(tmrMode==='idle'||tmrMode==='running'||tmrMode==='paused');
-  var circle='<div class="tmr-circle-wrap"'+(tapable?' onclick="tmrCircleTap()"':'')+'>'
+  var circle='<div class="tmr-circle-wrap'+(tmrMode==='running'?' breathing':'')+'"'+(tapable?' onclick="tmrCircleTap()"':'')+'>'
     +'<svg class="tmr-ring" viewBox="0 0 260 260">'
       +'<circle class="tmr-track" cx="130" cy="130" r="116"/>'
       +'<circle id="tmr-base" cx="130" cy="130" r="116" fill="none" stroke="transparent" stroke-width="10"/>'
@@ -3156,6 +3196,7 @@ function switchScreen(name){
 // Android home-screen widgets can render without waking the WebView.
 // No-op in plain browsers / the PWA. Debounced — fires at most ~once/second.
 var _wbT=null;
+window._stagger=true;  // first library render cascades in
 function pushWidgetSnapshot(){
   var P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences;
   if(!P) return;
@@ -3296,6 +3337,7 @@ function renderTable(){
     +'</div>';
   }).join('');
   wrap.innerHTML=cards;
+  if(window._stagger){window._stagger=false;wrap.classList.add('stagger');setTimeout(function(){wrap.classList.remove('stagger');},900);}
   var scc=document.getElementById('showing-count'); if(scc) scc.textContent='Showing '+list.length+' of '+books.length+' book'+(books.length!==1?'s':'');
 }
 
@@ -3491,6 +3533,12 @@ function renderStreak(){
   var s=computeStreak();
   var st=document.getElementById('stat-streak'); if(st) st.textContent=s.current;
   var el=document.getElementById('babel-streak'); if(!el) return;
+  // Streak tiers — animation escalates as the streak grows: 3+ soft glow,
+  // 7+ pulsing number + flickering flame, 30+ accent flame + faster pulse,
+  // 100+ gold blaze.
+  var tier=s.current>=100?4:s.current>=30?3:s.current>=7?2:s.current>=3?1:0;
+  ['streak-t1','streak-t2','streak-t3','streak-t4'].forEach(function(c){el.classList.remove(c);});
+  if(tier) el.classList.add('streak-t'+tier);
   var flame='<svg class="bs-flame" viewBox="0 0 16 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 0c.4 3.2-1.6 4.6-3 6.2C3.4 8 2 9.6 2 12.4 2 16.6 5 19.6 8 19.6s6-3 6-7.2c0-2.4-1.1-4.2-2.4-5.6-.3 1-1 1.7-1.8 1.9C10.6 5.4 11 2.7 8 0Z"/></svg>';
   if(s.current===0&&s.best===0){ el.innerHTML=flame+'<span class="bs-lbl">Read 15 min to start a streak</span>'; return; }
   var mins=Math.floor(s.todaySec/60);
