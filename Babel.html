@@ -653,6 +653,18 @@ body{padding:0}
   0%,100%{filter:drop-shadow(0 0 var(--cal-glow,7px) var(--accent)) drop-shadow(0 0 3px var(--star))}
   50%{filter:drop-shadow(0 0 9px var(--accent)) drop-shadow(0 0 6px var(--star))}
 }
+
+/* ── Book lookup (Open Library) ─────────────────────────────────────────────── */
+.lookup-row{display:flex;gap:8px;margin-bottom:10px}
+.lookup-row input{flex:1;min-width:0;padding:10px 12px;font-size:14px;font-family:sans-serif;border:1px solid var(--border);border-radius:9px;background:var(--bg1);color:var(--text);outline:none}
+.lookup-btn{flex:none;padding:0 14px;border:1px solid var(--accent);border-radius:9px;background:transparent;color:var(--accent);font-family:sans-serif;font-size:13px;font-weight:600;cursor:pointer}
+.lookup-results{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;max-height:220px;overflow-y:auto}
+.lookup-results.hidden{display:none}
+.lookup-item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:9px 11px;border:1px solid var(--border);border-radius:9px;background:var(--bg1);cursor:pointer;font-family:sans-serif}
+.lookup-item:active{border-color:var(--accent)}
+.lookup-t{font-size:13.5px;font-weight:600;color:var(--text)}
+.lookup-m{font-size:11.5px;color:var(--text-muted)}
+.lookup-note{font-family:sans-serif;font-size:12.5px;color:var(--text-muted);padding:6px 2px}
 </style>
 <style>
 /* ===== Babel: timer tab + final clean ===== */
@@ -898,6 +910,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     </div>
     <div class="add-form hidden" id="add-form">
       <p class="form-title-text">New book</p>
+      <div class="lookup-row">
+        <input type="text" id="f-lookup" placeholder="Look up by title or ISBN" onkeydown="if(event.key==='Enter'){event.preventDefault();bookLookup();}"/>
+        <button type="button" class="lookup-btn" onclick="bookLookup()">Look up</button>
+      </div>
+      <div class="lookup-results hidden" id="lookup-results"></div>
       <div class="form-grid">
         <input class="span-full" type="text" id="f-title" placeholder="Title"/>
         <input class="span-full" type="text" id="f-author" placeholder="Author"/>
@@ -2340,6 +2357,7 @@ function applyTheme(t){
   document.body.classList.add("density-compact");
   // Grain — when gradient is "grain", add the body class that layers noise on top.
   document.body.classList.toggle("bg-grain",t.gradientDir==="grain");
+  if(typeof pushWidgetSnapshot==='function') pushWidgetSnapshot();  // covers app-open + theme changes
 }
 function syncPk(t){
   document.getElementById("tp-bg1").value=t.bg1;document.getElementById("tp-bg2").value=t.bg2;
@@ -2421,6 +2439,7 @@ function toggleReading(idx){
   if(books[idx].isReading)readSet.delete(idx);
   saveCurrentList();updateStats();
   currentTab==="list"?renderTable():renderGenreTab();
+  pushWidgetSnapshot();  // widgets track currently-reading — refresh on toggle
 }
 
 // ── Reading Log (timer) ───────────────────────────────────────────────────────
@@ -3022,15 +3041,15 @@ function tmrBegin(){
   var page=parseInt((document.getElementById('tmr-startpage')||{}).value,10); if(isNaN(page)||page<0) page=0;
   activeTimer={ listId:activeId, bookIdx:idx, bookTitle:b.title, bookAuthor:b.author, bookPages:b.pages, startTime:Date.now(), startPage:page, accumulatedSec:0, pausedAt:null, finishing:false };
   if(!b.isReading){ b.isReading=true; saveCurrentList(); if(currentTab==='list') renderTable(); }
-  saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick();
+  saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState();
 }
 function tmrPauseResume(){
   if(!activeTimer) return;
-  if(activeTimer.pausedAt){ activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((activeTimer.pausedAt-activeTimer.startTime)/1000)); activeTimer.startTime=Date.now(); activeTimer.pausedAt=null; saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); }
-  else { activeTimer.pausedAt=Date.now(); saveActiveTimer(); tmrStopTick(); tmrMode='paused'; renderTimerTab(); }
+  if(activeTimer.pausedAt){ activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((activeTimer.pausedAt-activeTimer.startTime)/1000)); activeTimer.startTime=Date.now(); activeTimer.pausedAt=null; saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState(); }
+  else { activeTimer.pausedAt=Date.now(); saveActiveTimer(); tmrStopTick(); tmrMode='paused'; renderTimerTab(); pushTimerState(); }
 }
-function tmrFinish(){ if(!activeTimer) return; _tmrFrozenSec=timerElapsedSec(); activeTimer.finishing=true; saveActiveTimer(); tmrStopTick(); tmrMode='finishprompt'; renderTimerTab(); var inp=document.getElementById('tmr-endpage'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
-function tmrKeepReading(){ if(!activeTimer) return; activeTimer.finishing=false; activeTimer.accumulatedSec=_tmrFrozenSec; activeTimer.startTime=Date.now(); activeTimer.pausedAt=null; saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); }
+function tmrFinish(){ if(!activeTimer) return; _tmrFrozenSec=timerElapsedSec(); activeTimer.finishing=true; saveActiveTimer(); tmrStopTick(); tmrMode='finishprompt'; renderTimerTab(); pushTimerState(); var inp=document.getElementById('tmr-endpage'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
+function tmrKeepReading(){ if(!activeTimer) return; activeTimer.finishing=false; activeTimer.accumulatedSec=_tmrFrozenSec; activeTimer.startTime=Date.now(); activeTimer.pausedAt=null; saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState(); }
 function tmrConfirmFinish(){
   if(!activeTimer) return;
   var endPage=parseInt((document.getElementById('tmr-endpage')||{}).value,10);
@@ -3040,12 +3059,81 @@ function tmrConfirmFinish(){
   var session={ startTime:startTime, endTime:startTime+sec*1000, durationSec:sec, startPage:startPage, endPage:endPage };
   if(activeTimer.listId===activeId){ var b=books[idx]; if(b){ b.timerSessions=b.timerSessions||[]; b.timerSessions.push(session); saveCurrentList(); } }
   else { try{ var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[]; if(arr[idx]){ arr[idx].timerSessions=arr[idx].timerSessions||[]; arr[idx].timerSessions.push(session); storage.setItem(listKey(activeTimer.listId), JSON.stringify(arr)); } }catch(e){} }
-  activeTimer=null; saveActiveTimer(); tmrStopTick(); _tmrFrozenSec=0; tmrMode='idle';
+  activeTimer=null; saveActiveTimer(); tmrStopTick(); _tmrFrozenSec=0; tmrMode='idle'; pushTimerState(); pushWidgetSnapshot();
   updateStats(); renderTimerTab(); if(currentTab==='list') renderTable();
   showToast('Logged '+formatHMS(sec)+' \u00b7 '+Math.max(0,endPage-startPage)+' pages');
 }
 function tmrStartFromReading(idx){ tmrSelIdx=idx; switchScreen('timer'); }
 function tmrInit(){ if(activeTimer){ tmrSelIdx=(activeTimer.listId===activeId)?activeTimer.bookIdx:-1; tmrSyncMode(); if(tmrMode==='running') tmrStartTick(); } }
+
+/* ── Native timer bridge (floating bubble) ──────────────────────────────────
+   Web is the single source of truth. Every timer transition mirrors state to
+   Preferences key `babelTimer` for the native bubble; on load and on return
+   to foreground we consume `babelTimerCmd` (pause/resume/stop pressed on the
+   bubble while the WebView slept), applied by timestamp math per the spec.
+   All of it no-ops outside the Capacitor shell. */
+function _tmrBookTitle(){
+  if(!activeTimer) return '';
+  try{
+    if(activeTimer.listId===activeId){ var b=books[activeTimer.bookIdx]; return b?(b.title||''):''; }
+    var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[];
+    return arr[activeTimer.bookIdx]?(arr[activeTimer.bookIdx].title||''):'';
+  }catch(e){ return ''; }
+}
+function pushTimerState(){
+  var P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences;
+  if(!P) return;
+  try{
+    if(!activeTimer){ P.set({key:'babelTimer',value:JSON.stringify({running:false})}); return; }
+    var paused=!!activeTimer.pausedAt||!!activeTimer.finishing;
+    var accumMs;
+    if(activeTimer.finishing) accumMs=Math.round(_tmrFrozenSec*1000);
+    else if(activeTimer.pausedAt) accumMs=Math.round(((activeTimer.accumulatedSec||0)+Math.max(0,(activeTimer.pausedAt-activeTimer.startTime)/1000))*1000);
+    else accumMs=Math.round((activeTimer.accumulatedSec||0)*1000);
+    P.set({key:'babelTimer',value:JSON.stringify({
+      running:true, paused:paused,
+      startedAt:activeTimer.startTime, accumMs:accumMs,
+      bookTitle:_tmrBookTitle()
+    })});
+  }catch(e){}
+}
+function tmrBridgeSync(){
+  var P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences;
+  if(!P) return;
+  P.get({key:'babelTimerCmd'}).then(function(r){
+    var acts=[]; try{ var c=r&&r.value?JSON.parse(r.value):null; acts=(c&&c.actions)||[]; }catch(e){}
+    if(!acts.length){ pushTimerState(); return; }
+    var stopAt=0;
+    acts.forEach(function(a){
+      if(!activeTimer||!a) return;
+      if(a.type==='pause'){ if(!activeTimer.pausedAt) activeTimer.pausedAt=a.at||Date.now(); }
+      else if(a.type==='resume'){ if(activeTimer.pausedAt){ activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((activeTimer.pausedAt-activeTimer.startTime)/1000)); activeTimer.startTime=a.at||Date.now(); activeTimer.pausedAt=null; } }
+      else if(a.type==='stop'){ stopAt=a.at||Date.now(); }
+    });
+    P.remove({key:'babelTimerCmd'});
+    if(activeTimer){
+      if(stopAt){
+        // Fold elapsed up to the bubble's Stop moment, then run the normal
+        // finish flow — elapsed freezes exactly at stopAt, prompt included.
+        if(!activeTimer.pausedAt){
+          activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((stopAt-activeTimer.startTime)/1000));
+          activeTimer.startTime=stopAt;
+        }
+        activeTimer.pausedAt=stopAt;
+        saveActiveTimer();
+        switchScreen('timer');
+        tmrFinish();
+        return; // tmrFinish's own hook rewrites babelTimer
+      }
+      saveActiveTimer();
+    }
+    tmrSyncMode(); renderTimerTab();
+    if(tmrMode==='running') tmrStartTick(); else tmrStopTick();
+    pushTimerState();
+  }).catch(function(){});
+}
+document.addEventListener('visibilitychange',function(){ if(!document.hidden) tmrBridgeSync(); });
+window.addEventListener('load',function(){ tmrBridgeSync(); });
 
 /* ===== Babel app shell logic ===== */
 function switchScreen(name){
@@ -3076,13 +3164,20 @@ function pushWidgetSnapshot(){
     try{
       var s=computeStreak();
       var l=activeList(), t=(l&&l.theme)||{};
+      // Currently-reading books across ALL lists — the widget shouldn't
+      // change contents just because a different list is open in the app.
       var reading=[];
-      for(var i=0;i<books.length;i++){
-        var b=books[i]; if(!b.isReading) continue;
+      function _scanReading(arr){(arr||[]).forEach(function(b){
+        if(!b||!b.isReading) return;
         var cur=currentPageFor(b)||0;
         reading.push({title:b.title||'',author:b.author||'',cur:cur,total:b.pages||0,
                       pct:b.pages?Math.round(cur/b.pages*100):0});
-      }
+      });}
+      _scanReading(books);
+      lists.forEach(function(l){
+        if(l.id===activeId) return;
+        try{var raw=storage.getItem(listKey(l.id)); if(raw) _scanReading(JSON.parse(raw));}catch(e){}
+      });
       P.set({key:'babelWidget',value:JSON.stringify({
         streak:{current:s.current||0,best:s.best||0,todayMet:!!s.todayMet},
         theme:{accent:t.accent,bg1:t.bg1,bg2:t.bg2,surface:t.surface,text:t.text,star:t.star},
@@ -3099,6 +3194,42 @@ window.addEventListener('load',function(){
     if(tp && ['library','stats','timer','reading','settings'].indexOf(tp)>=0) switchScreen(tp);
   }catch(e){}
 });
+// ── Book lookup (Open Library search API — free, no key) ─────────────────────
+// Search by title/author words or ISBN; tapping a result autofills the add
+// form (title, author, pages). Genre/series stay manual — API subject data is
+// too messy to trust. Page counts are the median across editions, so they can
+// differ from a specific copy; the user confirms before adding.
+var _lookupDocs=[];
+function bookLookup(){
+  var q=(document.getElementById('f-lookup').value||'').trim();
+  var box=document.getElementById('lookup-results');
+  if(!q){ box.innerHTML=''; box.classList.add('hidden'); return; }
+  var digits=q.replace(/[-\s]/g,'');
+  var qq=(/^\d{9}[\dXx]$/.test(digits)||/^\d{13}$/.test(digits))?('isbn:'+digits):q;
+  box.classList.remove('hidden');
+  box.innerHTML='<div class="lookup-note">Searching\u2026</div>';
+  fetch('https://openlibrary.org/search.json?limit=8&fields=title,author_name,first_publish_year,number_of_pages_median&q='+encodeURIComponent(qq))
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(d){
+      var docs=(d&&d.docs)||[];
+      if(!docs.length){ box.innerHTML='<div class="lookup-note">No matches \u2014 try fewer words, or the ISBN from the copyright page.</div>'; return; }
+      _lookupDocs=docs;
+      box.innerHTML=docs.map(function(doc,i){
+        var a=(doc.author_name&&doc.author_name[0])||'';
+        var meta=[a,doc.first_publish_year,doc.number_of_pages_median?doc.number_of_pages_median+' pages':null].filter(Boolean).join(' \u00b7 ');
+        return '<button type="button" class="lookup-item" onclick="lookupPick('+i+')"><span class="lookup-t">'+esc(doc.title||'')+'</span><span class="lookup-m">'+esc(meta)+'</span></button>';
+      }).join('');
+    })
+    .catch(function(){ box.innerHTML='<div class="lookup-note">Couldn\u2019t reach Open Library \u2014 check your connection.</div>'; });
+}
+function lookupPick(i){
+  var d=_lookupDocs[i]; if(!d) return;
+  document.getElementById('f-title').value=d.title||'';
+  document.getElementById('f-author').value=(d.author_name&&d.author_name[0])||'';
+  if(d.number_of_pages_median) document.getElementById('f-pages').value=d.number_of_pages_median;
+  var box=document.getElementById('lookup-results'); box.innerHTML=''; box.classList.add('hidden');
+}
+
 function openAddSheet(){
   var o=document.getElementById('add-sheet'); if(!o) return;
   var f=document.getElementById('add-form'); if(f) f.classList.remove('hidden');
