@@ -3221,7 +3221,7 @@ function pushWidgetSnapshot(){
       });
       P.set({key:'babelWidget',value:JSON.stringify({
         streak:{current:s.current||0,best:s.best||0,todayMet:!!s.todayMet},
-        theme:{accent:t.accent,bg1:t.bg1,bg2:t.bg2,surface:t.surface,text:t.text,star:t.star},
+        theme:{accent:t.accent,bg1:t.bg1,bg2:t.bg2,surface:t.surface,text:t.text,star:t.star,radius:(typeof t.radius==='number'?t.radius:14)},
         reading:reading, goalMin:babelGoalMin, updatedAt:Date.now()
       })});
     }catch(e){}
@@ -3249,10 +3249,23 @@ function bookLookup(){
   var qq=(/^\d{9}[\dXx]$/.test(digits)||/^\d{13}$/.test(digits))?('isbn:'+digits):q;
   box.classList.remove('hidden');
   box.innerHTML='<div class="lookup-note">Searching\u2026</div>';
-  fetch('https://openlibrary.org/search.json?limit=8&fields=title,author_name,first_publish_year,number_of_pages_median&q='+encodeURIComponent(qq))
+  fetch('https://openlibrary.org/search.json?limit=20&fields=key,title,author_name,first_publish_year,number_of_pages_median,edition_count&q='+encodeURIComponent(qq))
     .then(function(r){ if(!r.ok) throw 0; return r.json(); })
     .then(function(d){
       var docs=(d&&d.docs)||[];
+      // Open Library's own relevance ranking is weak: duplicate work records
+      // (often with Cyrillic titles/author names) and obscure same-title books
+      // rank beside the canonical work. Re-rank by edition count — the book
+      // with hundreds of editions is almost always the one being searched for
+      // — and, when the query is Latin-script, drop non-Latin-titled dupes.
+      var latinQ=!/[\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF]/.test(q);
+      docs=docs.filter(function(doc){
+        if(!doc||!doc.title) return false;
+        if(latinQ && /[\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF]/.test(doc.title)) return false;
+        return true;
+      });
+      docs.sort(function(a,b){ return (b.edition_count||0)-(a.edition_count||0); });
+      docs=docs.slice(0,8);
       if(!docs.length){ box.innerHTML='<div class="lookup-note">No matches \u2014 try fewer words, or the ISBN from the copyright page.</div>'; return; }
       _lookupDocs=docs;
       box.innerHTML=docs.map(function(doc,i){
@@ -3263,12 +3276,31 @@ function bookLookup(){
     })
     .catch(function(){ box.innerHTML='<div class="lookup-note">Couldn\u2019t reach Open Library \u2014 check your connection.</div>'; });
 }
+var _lookupFilledSummary=false;
 function lookupPick(i){
   var d=_lookupDocs[i]; if(!d) return;
   document.getElementById('f-title').value=d.title||'';
   document.getElementById('f-author').value=(d.author_name&&d.author_name[0])||'';
   if(d.number_of_pages_median) document.getElementById('f-pages').value=d.number_of_pages_median;
   var box=document.getElementById('lookup-results'); box.innerHTML=''; box.classList.add('hidden');
+  // Fetch the work record for a description and drop it into the summary.
+  // Only overwrites text that we filled ourselves — never the user's words.
+  if(d.key){
+    fetch('https://openlibrary.org'+d.key+'.json')
+      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .then(function(w){
+        var desc=w&&w.description;
+        if(desc&&typeof desc==='object') desc=desc.value;
+        if(!desc||typeof desc!=='string') return;
+        desc=desc.split(/\r?\n-{4,}/)[0].replace(/\s+/g,' ').trim();
+        if(desc.length>700){
+          var cut=desc.slice(0,700), dot=cut.lastIndexOf('. ');
+          desc=(dot>300?cut.slice(0,dot+1):cut+'\u2026');
+        }
+        var f=document.getElementById('f-summary');
+        if(f && (!f.value.trim()||_lookupFilledSummary)){ f.value=desc; _lookupFilledSummary=true; }
+      }).catch(function(){});
+  }
 }
 
 function openAddSheet(){
