@@ -1,6 +1,6 @@
 /* Babel service worker — offline app shell.
    Bump CACHE on every release so clients pull the new files. */
-const CACHE = 'babel-v21';
+const CACHE = 'babel-v22';
 const ASSETS = [
   'Babel.html',
   'index.html',
