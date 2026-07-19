@@ -695,6 +695,14 @@ body{padding:0}
 @keyframes stBlaze{0%,100%{text-shadow:0 0 8px var(--accent),0 0 3px var(--star)}50%{text-shadow:0 0 16px var(--accent),0 0 8px var(--star)}}
 .streak-t4 .bs-num{animation:stBlaze 2.2s ease-in-out infinite}
 .streak-t4 .bs-flame{color:var(--star);animation:flameFlick .8s ease-in-out infinite}
+/* ── Barcode scanner ────────────────────────────────────────────────────────── */
+.lookup-scan{padding:0 11px;display:flex;align-items:center}
+.scan-overlay{position:fixed;inset:0;background:#000;z-index:400;display:flex;align-items:center;justify-content:center}
+.scan-overlay.hidden{display:none}
+#scan-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.scan-frame{position:relative;width:78%;max-width:340px;aspect-ratio:1.6;border:2.5px solid var(--accent);border-radius:14px;box-shadow:0 0 0 2000px rgba(0,0,0,.45)}
+.scan-hint{position:absolute;bottom:110px;left:0;right:0;text-align:center;color:#fff;font-family:sans-serif;font-size:13.5px;text-shadow:0 1px 3px #000}
+.scan-cancel{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);padding:11px 26px;border:1px solid rgba(255,255,255,.4);border-radius:999px;background:rgba(0,0,0,.5);color:#fff;font-family:sans-serif;font-size:14px;cursor:pointer}
 </style>
 <style>
 /* ===== Babel: timer tab + final clean ===== */
@@ -901,6 +909,12 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div id="timer-pick-list"></div>
   </div>
 </div>
+<div class="scan-overlay hidden" id="scan-overlay">
+  <video id="scan-video" playsinline muted></video>
+  <div class="scan-frame"></div>
+  <div class="scan-hint">Point at the barcode on the back cover</div>
+  <button class="scan-cancel" onclick="closeScan()">Cancel</button>
+</div>
 <div class="sheet-overlay hidden" id="add-sheet" onclick="if(event.target===this)closeAddSheet()">
   <div class="sheet">
     <div class="sheet-grab" onclick="closeAddSheet()"></div>
@@ -943,6 +957,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <div class="lookup-row">
         <input type="text" id="f-lookup" placeholder="Look up by title or ISBN" onkeydown="if(event.key==='Enter'){event.preventDefault();bookLookup();}"/>
         <button type="button" class="lookup-btn" onclick="bookLookup()">Look up</button>
+        <button type="button" class="lookup-btn lookup-scan" onclick="scanISBN()" title="Scan ISBN barcode"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 5h2v14H2zM5 5h1v14H5zM8 5h2v14H8zM12 5h1v14h-1zM15 5h3v14h-3zM20 5h2v14h-2z"/></svg></button>
       </div>
       <div class="lookup-results hidden" id="lookup-results"></div>
       <div class="form-grid">
@@ -3276,6 +3291,59 @@ function bookLookup(){
     })
     .catch(function(){ box.innerHTML='<div class="lookup-note">Couldn\u2019t reach Open Library \u2014 check your connection.</div>'; });
 }
+// ── ISBN barcode scanner ─────────────────────────────────────────────────────
+// Uses the built-in BarcodeDetector (Chrome/WebView on Android). Detects
+// EAN-13 codes with the 978/979 book prefix, feeds the digits straight into
+// the lookup. On platforms without the API (desktop Windows, Firefox) it
+// degrades to a "type the ISBN" note.
+var _scanStream=null,_scanTimer=null,_scanDet=null;
+function scanISBN(){
+  var box=document.getElementById('lookup-results');
+  if(!('BarcodeDetector' in window)){
+    box.classList.remove('hidden');
+    box.innerHTML='<div class="lookup-note">Barcode scanning isn\u2019t supported in this browser \u2014 type the ISBN from the back cover instead.</div>';
+    return;
+  }
+  document.getElementById('scan-overlay').classList.remove('hidden');
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(function(st){
+    _scanStream=st;
+    var v=document.getElementById('scan-video'); v.srcObject=st; v.play();
+    try{_scanDet=new BarcodeDetector({formats:['ean_13']});}catch(e){try{_scanDet=new BarcodeDetector();}catch(e2){_scanDet=null;}}
+    if(!_scanDet){ closeScan(); box.classList.remove('hidden'); box.innerHTML='<div class="lookup-note">Scanner failed to start \u2014 type the ISBN instead.</div>'; return; }
+    _scanTick();
+  }).catch(function(){
+    closeScan();
+    box.classList.remove('hidden');
+    box.innerHTML='<div class="lookup-note">Camera unavailable or permission denied.</div>';
+  });
+}
+function _scanTick(){
+  var v=document.getElementById('scan-video');
+  if(!_scanDet||!_scanStream){ return; }
+  if(!v||v.readyState<2){ _scanTimer=setTimeout(_scanTick,250); return; }
+  _scanDet.detect(v).then(function(codes){
+    var hit=null;
+    (codes||[]).forEach(function(c){
+      var d=(c.rawValue||'').replace(/\D/g,'');
+      if(d.length===13&&(d.slice(0,3)==='978'||d.slice(0,3)==='979')) hit=d;
+    });
+    if(hit){
+      try{ if(navigator.vibrate) navigator.vibrate(60); }catch(e){}
+      closeScan();
+      document.getElementById('f-lookup').value=hit;
+      bookLookup();
+      return;
+    }
+    _scanTimer=setTimeout(_scanTick,250);
+  }).catch(function(){ _scanTimer=setTimeout(_scanTick,350); });
+}
+function closeScan(){
+  clearTimeout(_scanTimer); _scanTimer=null; _scanDet=null;
+  if(_scanStream){ try{_scanStream.getTracks().forEach(function(t){t.stop();});}catch(e){} _scanStream=null; }
+  var v=document.getElementById('scan-video'); if(v) v.srcObject=null;
+  var ov=document.getElementById('scan-overlay'); if(ov) ov.classList.add('hidden');
+}
+
 var _lookupFilledSummary=false;
 function lookupPick(i){
   var d=_lookupDocs[i]; if(!d) return;
@@ -3312,6 +3380,7 @@ function openAddSheet(){
   try{ renderPasteButton(); }catch(e){}
 }
 function closeAddSheet(){
+  if(typeof closeScan==='function') closeScan();
   var o=document.getElementById('add-sheet'); if(o) o.classList.add('hidden');
   var f=document.getElementById('add-form'); if(f) f.classList.add('hidden');
   document.body.style.overflow='';
