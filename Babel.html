@@ -610,6 +610,30 @@ body{padding:0}
 .stat-mini-v{font-family:sans-serif;font-size:13px;color:var(--text);margin-top:6px}
 
 .genre-chart{margin-top:6px}
+/* ── Deep stats ─────────────────────────────────────────────────────────────── */
+#deep-stats{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.ds-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius,14px);padding:14px 15px}
+.ds-h{font-family:sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px}
+.ds-year{display:flex;align-items:center;gap:14px}
+.ds-year svg{width:74px;height:74px;flex:none}
+.ds-year-n{font-family:Georgia,serif;font-size:24px;font-weight:700;color:var(--text)}
+.ds-year-l{font-family:sans-serif;font-size:12px;color:var(--text-muted);margin-top:2px}
+.ds-cols{display:flex;align-items:flex-end;gap:4px;height:92px}
+.ds-cols24{gap:2px}
+.ds-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+.ds-colbar{width:100%;background:var(--accent);border-radius:3px 3px 0 0;min-height:2px}
+.ds-cols24 .ds-colbar{opacity:.45}
+.ds-cols24 .ds-col.peak .ds-colbar{opacity:1;box-shadow:0 0 8px var(--accent-shadow)}
+.ds-coll{font-family:sans-serif;font-size:8.5px;color:var(--text-muted);margin-top:4px;white-space:nowrap}
+.ds-row{display:flex;align-items:center;gap:9px;margin:6px 0}
+.ds-rl{font-family:sans-serif;font-size:11.5px;color:var(--text-muted);width:52px;flex:none}
+.ds-rl-w{width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.ds-rt{flex:1;height:9px;background:color-mix(in srgb,var(--text) 8%,transparent);border-radius:5px;overflow:hidden}
+.ds-rf{height:100%;background:var(--accent);border-radius:5px}
+.ds-rf-star{background:var(--star)}
+.ds-rn{font-family:sans-serif;font-size:11.5px;color:var(--text);min-width:26px;text-align:right;flex:none}
+.ds-rn-w{min-width:84px}
+.ds-note{font-family:sans-serif;font-size:12px;color:var(--text-muted);margin-top:8px;text-align:center}
 .chart-title{font-family:sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin:0 0 13px}
 .gc-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .gc-name{flex:0 0 34%;font-family:sans-serif;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -654,17 +678,6 @@ body{padding:0}
   50%{filter:drop-shadow(0 0 9px var(--accent)) drop-shadow(0 0 6px var(--star))}
 }
 
-/* ── Book lookup (Open Library) ─────────────────────────────────────────────── */
-.lookup-row{display:flex;gap:8px;margin-bottom:10px}
-.lookup-row input{flex:1;min-width:0;padding:10px 12px;font-size:14px;font-family:sans-serif;border:1px solid var(--border);border-radius:9px;background:var(--bg1);color:var(--text);outline:none}
-.lookup-btn{flex:none;padding:0 14px;border:1px solid var(--accent);border-radius:9px;background:transparent;color:var(--accent);font-family:sans-serif;font-size:13px;font-weight:600;cursor:pointer}
-.lookup-results{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;max-height:220px;overflow-y:auto}
-.lookup-results.hidden{display:none}
-.lookup-item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:9px 11px;border:1px solid var(--border);border-radius:9px;background:var(--bg1);cursor:pointer;font-family:sans-serif}
-.lookup-item:active{border-color:var(--accent)}
-.lookup-t{font-size:13.5px;font-weight:600;color:var(--text)}
-.lookup-m{font-size:11.5px;color:var(--text-muted)}
-.lookup-note{font-family:sans-serif;font-size:12.5px;color:var(--text-muted);padding:6px 2px}
 
 /* ── Motion ─────────────────────────────────────────────────────────────────── */
 @keyframes chkPop{0%{transform:scale(.55)}55%{transform:scale(1.28)}100%{transform:scale(1)}}
@@ -695,14 +708,7 @@ body{padding:0}
 @keyframes stBlaze{0%,100%{text-shadow:0 0 8px var(--accent),0 0 3px var(--star)}50%{text-shadow:0 0 16px var(--accent),0 0 8px var(--star)}}
 .streak-t4 .bs-num{animation:stBlaze 2.2s ease-in-out infinite}
 .streak-t4 .bs-flame{color:var(--star);animation:flameFlick .8s ease-in-out infinite}
-/* ── Barcode scanner ────────────────────────────────────────────────────────── */
-.lookup-scan{padding:0 11px;display:flex;align-items:center}
-.scan-overlay{position:fixed;inset:0;background:#000;z-index:400;display:flex;align-items:center;justify-content:center}
-.scan-overlay.hidden{display:none}
-#scan-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.scan-frame{position:relative;width:78%;max-width:340px;aspect-ratio:1.6;border:2.5px solid var(--accent);border-radius:14px;box-shadow:0 0 0 2000px rgba(0,0,0,.45)}
-.scan-hint{position:absolute;bottom:110px;left:0;right:0;text-align:center;color:#fff;font-family:sans-serif;font-size:13.5px;text-shadow:0 1px 3px #000}
-.scan-cancel{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);padding:11px 26px;border:1px solid rgba(255,255,255,.4);border-radius:999px;background:rgba(0,0,0,.5);color:#fff;font-family:sans-serif;font-size:14px;cursor:pointer}
+
 </style>
 <style>
 /* ===== Babel: timer tab + final clean ===== */
@@ -844,6 +850,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div class="storage-detail" id="goal-detail">0 / 10 min today</div>
   </div>
   <div id="genre-chart" class="genre-chart"></div>
+  <div id="deep-stats"></div>
 
     </section>
     <section class="screen hidden" id="screen-timer" data-screen-label="Timer">
@@ -883,6 +890,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
           <div class="set-note" style="margin-top:10px">Read this many minutes in a day and it counts toward your streak.</div>
         </div>
         <div class="set-group">
+          <div class="set-group-h">Yearly book goal</div>
+          <div class="goal-input-row">
+            <input type="number" id="ygoal-input" min="1" max="999" value="12" onchange="setYearlyGoalFromInput()"/>
+            <span class="goal-unit">books / year</span>
+          </div>
+          <div class="set-note" style="margin-top:10px">Books you mark as read count toward the year you finished them.</div>
+        </div>
+        <div class="set-group">
           <div class="set-group-h">Updates</div>
           <button class="set-row" onclick="babelCheckUpdate()"><span>Update Babel</span><span class="set-chev">&#8635;</span></button>
         </div>
@@ -908,12 +923,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <input type="text" id="timer-pick-search" class="tp-search" placeholder="Search title, author, genre&hellip;" oninput="tmrRenderPickList()"/>
     <div id="timer-pick-list"></div>
   </div>
-</div>
-<div class="scan-overlay hidden" id="scan-overlay">
-  <video id="scan-video" playsinline muted></video>
-  <div class="scan-frame"></div>
-  <div class="scan-hint">Point at the barcode on the back cover</div>
-  <button class="scan-cancel" onclick="closeScan()">Cancel</button>
 </div>
 <div class="sheet-overlay hidden" id="add-sheet" onclick="if(event.target===this)closeAddSheet()">
   <div class="sheet">
@@ -954,13 +963,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     </div>
     <div class="add-form hidden" id="add-form">
       <p class="form-title-text">New book</p>
-      <div class="lookup-row">
-        <input type="text" id="f-lookup" placeholder="Look up by title or ISBN" onkeydown="if(event.key==='Enter'){event.preventDefault();bookLookup();}"/>
-        <button type="button" class="lookup-btn" onclick="bookLookup()">Look up</button>
-        <button type="button" class="lookup-btn lookup-scan" onclick="scanISBN()" title="Scan ISBN barcode"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 5h2v14H2zM5 5h1v14H5zM8 5h2v14H8zM12 5h1v14h-1zM15 5h3v14h-3zM20 5h2v14h-2z"/></svg></button>
-      </div>
-      <div class="lookup-results hidden" id="lookup-results"></div>
-      <div class="form-grid">
+            <div class="form-grid">
         <input class="span-full" type="text" id="f-title" placeholder="Title"/>
         <input class="span-full" type="text" id="f-author" placeholder="Author"/>
         <input type="number" id="f-pages" placeholder="Page count" min="1"/>
@@ -1572,6 +1575,7 @@ function updateStats(){
   document.getElementById("progress-fill").style.width=pct+"%";
   updateStorageBar();
   updateReadTimeStats();
+  renderDeepStats();
   renderStreak();
   renderGoalBar();
   renderGoalSeg();
@@ -1852,7 +1856,7 @@ function patchRowRating(idx){
 
 function toggleRead(idx){
   var wasReading = books[idx].isReading;
-  if(readSet.has(idx)){readSet.delete(idx);}else{readSet.add(idx);books[idx].isReading=false;}
+  if(readSet.has(idx)){readSet.delete(idx);delete books[idx].finishedAt;}else{readSet.add(idx);books[idx].isReading=false;if(!books[idx].finishedAt)books[idx].finishedAt=Date.now();}
   saveCurrentList();updateStats();
   // Animation: pop the checkbox; if the book was just marked READ, fire a
   // one-time glow burst on its card. Deferred so it runs after any re-render.
@@ -3250,155 +3254,6 @@ window.addEventListener('load',function(){
     if(tp && ['library','stats','timer','reading','settings'].indexOf(tp)>=0) switchScreen(tp);
   }catch(e){}
 });
-// ── Book lookup (Open Library search API — free, no key) ─────────────────────
-// Search by title/author words or ISBN; tapping a result autofills the add
-// form (title, author, pages). Genre/series stay manual — API subject data is
-// too messy to trust. Page counts are the median across editions, so they can
-// differ from a specific copy; the user confirms before adding.
-var _lookupDocs=[];
-function renderLookupDocs(docs, box){
-  _lookupDocs=docs;
-  box.innerHTML=docs.map(function(doc,i){
-    var a=(doc.author_name&&doc.author_name[0])||'';
-    var meta=[a,doc.first_publish_year,doc.number_of_pages_median?doc.number_of_pages_median+' pages':null].filter(Boolean).join(' \u00b7 ');
-    return '<button type="button" class="lookup-item" onclick="lookupPick('+i+')"><span class="lookup-t">'+esc(doc.title||'')+'</span><span class="lookup-m">'+esc(meta)+'</span></button>';
-  }).join('');
-}
-function bookLookup(){
-  var q=(document.getElementById('f-lookup').value||'').trim();
-  var box=document.getElementById('lookup-results');
-  if(!q){ box.innerHTML=''; box.classList.add('hidden'); return; }
-  box.classList.remove('hidden');
-  box.innerHTML='<div class="lookup-note">Searching\u2026</div>';
-  var digits=q.replace(/[-\s]/g,'');
-  if(/^\d{9}[\dXx]$/.test(digits)||/^\d{13}$/.test(digits)) lookupByISBN(digits.toUpperCase(), box);
-  else lookupSearch(q, box);
-}
-// ISBN (typed or scanned) identifies a specific EDITION — so fetch the
-// edition record: the exact printed title and THIS copy's page count. A
-// scanned Fagles Odyssey should say "The Odyssey \u00b7 541 pages", not the
-// work record's Greek title with a median across every abridgment.
-function lookupByISBN(isbn, box){
-  fetch('https://openlibrary.org/isbn/'+isbn+'.json')
-    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
-    .then(function(ed){
-      var y=((ed.publish_date||'').match(/\d{4}/)||[])[0];
-      var doc={ key:(ed.works&&ed.works[0]&&ed.works[0].key)||null,
-                title:(ed.title||'')+(ed.subtitle?': '+ed.subtitle:''),
-                author_name:[], first_publish_year:y?+y:null,
-                number_of_pages_median:ed.number_of_pages||null };
-      var aKey=ed.authors&&ed.authors[0]&&ed.authors[0].key;
-      function done(){ renderLookupDocs([doc], box); }
-      if(aKey){
-        fetch('https://openlibrary.org'+aKey+'.json')
-          .then(function(r){ return r.json(); })
-          .then(function(a){ if(a&&a.name) doc.author_name=[a.name]; done(); })
-          .catch(done);
-      } else done();
-    })
-    .catch(function(){ lookupSearch('isbn:'+isbn, box); });
-}
-function lookupSearch(q, box){
-  fetch('https://openlibrary.org/search.json?limit=20&fields=key,title,author_name,first_publish_year,number_of_pages_median,edition_count&q='+encodeURIComponent(q))
-    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
-    .then(function(d){
-      var docs=(d&&d.docs)||[];
-      // Re-rank by edition count (popularity proxy); for Latin-script queries
-      // drop Cyrillic/Greek/CJK-titled duplicate work records.
-      var NONLATIN=/[\u0370-\u03FF\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF]/;
-      var latinQ=!NONLATIN.test(q);
-      docs=docs.filter(function(doc){
-        if(!doc||!doc.title) return false;
-        if(latinQ && NONLATIN.test(doc.title)) return false;
-        return true;
-      });
-      docs.sort(function(a,b){ return (b.edition_count||0)-(a.edition_count||0); });
-      docs=docs.slice(0,8);
-      if(!docs.length){ box.innerHTML='<div class="lookup-note">No matches \u2014 try fewer words, or the ISBN from the copyright page.</div>'; return; }
-      renderLookupDocs(docs, box);
-    })
-    .catch(function(){ box.innerHTML='<div class="lookup-note">Couldn\u2019t reach Open Library \u2014 check your connection.</div>'; });
-}
-// ── ISBN barcode scanner ─────────────────────────────────────────────────────
-// Uses the built-in BarcodeDetector (Chrome/WebView on Android). Detects
-// EAN-13 codes with the 978/979 book prefix, feeds the digits straight into
-// the lookup. On platforms without the API (desktop Windows, Firefox) it
-// degrades to a "type the ISBN" note.
-var _scanStream=null,_scanTimer=null,_scanDet=null;
-function scanISBN(){
-  var box=document.getElementById('lookup-results');
-  if(!('BarcodeDetector' in window)){
-    box.classList.remove('hidden');
-    box.innerHTML='<div class="lookup-note">Barcode scanning isn\u2019t supported in this browser \u2014 type the ISBN from the back cover instead.</div>';
-    return;
-  }
-  document.getElementById('scan-overlay').classList.remove('hidden');
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(function(st){
-    _scanStream=st;
-    var v=document.getElementById('scan-video'); v.srcObject=st; v.play();
-    try{_scanDet=new BarcodeDetector({formats:['ean_13']});}catch(e){try{_scanDet=new BarcodeDetector();}catch(e2){_scanDet=null;}}
-    if(!_scanDet){ closeScan(); box.classList.remove('hidden'); box.innerHTML='<div class="lookup-note">Scanner failed to start \u2014 type the ISBN instead.</div>'; return; }
-    _scanTick();
-  }).catch(function(){
-    closeScan();
-    box.classList.remove('hidden');
-    box.innerHTML='<div class="lookup-note">Camera unavailable or permission denied.</div>';
-  });
-}
-function _scanTick(){
-  var v=document.getElementById('scan-video');
-  if(!_scanDet||!_scanStream){ return; }
-  if(!v||v.readyState<2){ _scanTimer=setTimeout(_scanTick,250); return; }
-  _scanDet.detect(v).then(function(codes){
-    var hit=null;
-    (codes||[]).forEach(function(c){
-      var d=(c.rawValue||'').replace(/\D/g,'');
-      if(d.length===13&&(d.slice(0,3)==='978'||d.slice(0,3)==='979')) hit=d;
-    });
-    if(hit){
-      try{ if(navigator.vibrate) navigator.vibrate(60); }catch(e){}
-      closeScan();
-      document.getElementById('f-lookup').value=hit;
-      bookLookup();
-      return;
-    }
-    _scanTimer=setTimeout(_scanTick,250);
-  }).catch(function(){ _scanTimer=setTimeout(_scanTick,350); });
-}
-function closeScan(){
-  clearTimeout(_scanTimer); _scanTimer=null; _scanDet=null;
-  if(_scanStream){ try{_scanStream.getTracks().forEach(function(t){t.stop();});}catch(e){} _scanStream=null; }
-  var v=document.getElementById('scan-video'); if(v) v.srcObject=null;
-  var ov=document.getElementById('scan-overlay'); if(ov) ov.classList.add('hidden');
-}
-
-var _lookupFilledSummary=false;
-function lookupPick(i){
-  var d=_lookupDocs[i]; if(!d) return;
-  document.getElementById('f-title').value=d.title||'';
-  document.getElementById('f-author').value=(d.author_name&&d.author_name[0])||'';
-  if(d.number_of_pages_median) document.getElementById('f-pages').value=d.number_of_pages_median;
-  var box=document.getElementById('lookup-results'); box.innerHTML=''; box.classList.add('hidden');
-  // Fetch the work record for a description and drop it into the summary.
-  // Only overwrites text that we filled ourselves — never the user's words.
-  if(d.key){
-    fetch('https://openlibrary.org'+d.key+'.json')
-      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
-      .then(function(w){
-        var desc=w&&w.description;
-        if(desc&&typeof desc==='object') desc=desc.value;
-        if(!desc||typeof desc!=='string') return;
-        desc=desc.split(/\r?\n-{4,}/)[0].replace(/\s+/g,' ').trim();
-        if(desc.length>700){
-          var cut=desc.slice(0,700), dot=cut.lastIndexOf('. ');
-          desc=(dot>300?cut.slice(0,dot+1):cut+'\u2026');
-        }
-        var f=document.getElementById('f-summary');
-        if(f && (!f.value.trim()||_lookupFilledSummary)){ f.value=desc; _lookupFilledSummary=true; }
-      }).catch(function(){});
-  }
-}
-
 function openAddSheet(){
   var o=document.getElementById('add-sheet'); if(!o) return;
   var f=document.getElementById('add-form'); if(f) f.classList.remove('hidden');
@@ -3408,7 +3263,6 @@ function openAddSheet(){
   try{ renderPasteButton(); }catch(e){}
 }
 function closeAddSheet(){
-  if(typeof closeScan==='function') closeScan();
   var o=document.getElementById('add-sheet'); if(o) o.classList.add('hidden');
   var f=document.getElementById('add-form'); if(f) f.classList.add('hidden');
   document.body.style.overflow='';
@@ -3498,6 +3352,96 @@ function setReadFilter(v){ var sel=document.getElementById('read-select'); if(se
 function renderStatusPills(){ var sp=document.getElementById('status-pills'); if(!sp) return; var sel=document.getElementById('read-select'); var cur=sel?sel.value:''; Array.prototype.forEach.call(sp.querySelectorAll('button'), function(b){ b.classList.toggle('active', b.getAttribute('data-rf')===cur); }); }
 
 /* ---- stats: genre chart ---- */
+// ── Deep stats ───────────────────────────────────────────────────────────────
+// Time-based charts use timer sessions from ALL lists (reading is reading,
+// matching the calendar/streak scope); library-composition charts (authors,
+// ratings) use the active list, matching the counters above them.
+function _allTimerSessions(){
+  var out=[];
+  function grab(arr){(arr||[]).forEach(function(x){ if(x&&x.startTime&&x.durationSec) out.push(x); });}
+  books.forEach(function(b){ grab(b.timerSessions); });
+  lists.forEach(function(l){
+    if(l.id===activeId) return;
+    try{ var raw=storage.getItem(listKey(l.id)); if(raw) JSON.parse(raw).forEach(function(b){ grab(b.timerSessions); }); }catch(e){}
+  });
+  return out;
+}
+// Year a book was finished: explicit stamp first, else latest session-log
+// date, else unknown (counts in totals but not the yearly ring).
+function _finishYear(b){
+  if(b.finishedAt) return new Date(b.finishedAt).getFullYear();
+  var yr=null;
+  (b.sessions||[]).forEach(function(x){ var m=(x.end||'').match(/^(\d{4})/); if(m){ var y=+m[1]; if(!yr||y>yr) yr=y; } });
+  return yr;
+}
+function _dsTime(sec){ var hh=Math.floor(sec/3600), mm=Math.round((sec%3600)/60); return hh>0?(hh+'h '+mm+'m'):(mm+'m'); }
+function renderDeepStats(){
+  var el=document.getElementById('deep-stats'); if(!el) return;
+  var scr=document.getElementById('screen-stats'); if(!scr||scr.classList.contains('hidden')) return;
+  var ts=_allTimerSessions(), now=new Date(), thisYear=now.getFullYear(), h='';
+
+  // Yearly goal ring
+  var finished=0;
+  books.forEach(function(b,i){ if(readSet.has(i) && _finishYear(b)===thisYear) finished++; });
+  var pct=babelYearlyGoal>0?Math.min(finished/babelYearlyGoal,1):0, C=2*Math.PI*34;
+  h+='<div class="ds-card ds-year"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--border)" stroke-width="7"/><circle cx="40" cy="40" r="34" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+(pct*C).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 40 40)"/></svg>'
+    +'<div><div class="ds-year-n">'+finished+' / '+babelYearlyGoal+'</div><div class="ds-year-l">books in '+thisYear+'</div></div></div>';
+
+  // Pages per month (last 12)
+  var MONS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], months=[];
+  for(var i=11;i>=0;i--){ var d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({y:d.getFullYear(),m:d.getMonth(),l:MONS[d.getMonth()],p:0}); }
+  ts.forEach(function(x){ var d2=new Date(x.startTime);
+    for(var j=0;j<months.length;j++){ if(d2.getFullYear()===months[j].y&&d2.getMonth()===months[j].m){ months[j].p+=Math.max(0,(x.endPage||0)-(x.startPage||0)); break; } }
+  });
+  var maxP=1; months.forEach(function(m){ if(m.p>maxP) maxP=m.p; });
+  h+='<div class="ds-card"><div class="ds-h">Pages per month</div><div class="ds-cols">'
+    +months.map(function(m){ return '<div class="ds-col"><div class="ds-colbar" style="height:'+Math.max(2,Math.round(m.p/maxP*100))+'%"></div><div class="ds-coll">'+m.l[0]+'</div></div>'; }).join('')
+    +'</div></div>';
+
+  // Session lengths
+  var BK=[['<10m',0,600],['10-20',600,1200],['20-30',1200,1800],['30-45',1800,2700],['45-60',2700,3600],['60m+',3600,1e12]];
+  var maxB=1, bc=BK.map(function(b){ var n=0; ts.forEach(function(x){ if(x.durationSec>=b[1]&&x.durationSec<b[2]) n++; }); if(n>maxB) maxB=n; return {l:b[0],n:n}; });
+  h+='<div class="ds-card"><div class="ds-h">Session lengths</div>'+bc.map(function(b){
+    return '<div class="ds-row"><span class="ds-rl">'+b.l+'</span><div class="ds-rt"><div class="ds-rf" style="width:'+Math.round(b.n/maxB*100)+'%"></div></div><span class="ds-rn">'+b.n+'</span></div>';
+  }).join('')+'</div>';
+
+  // Reading by hour
+  var hrs=[]; for(var k=0;k<24;k++) hrs.push(0);
+  ts.forEach(function(x){ hrs[new Date(x.startTime).getHours()]+=x.durationSec; });
+  var best=0, maxH=1;
+  for(var k2=0;k2<24;k2++){ if(hrs[k2]>hrs[best]) best=k2; if(hrs[k2]>maxH) maxH=hrs[k2]; }
+  function hL(hr){ var v=hr%12; if(v===0) v=12; return v+(hr<12?'AM':'PM'); }
+  h+='<div class="ds-card"><div class="ds-h">Reading by hour</div><div class="ds-cols ds-cols24">'
+    +hrs.map(function(v,idx){ return '<div class="ds-col'+(idx===best&&v>0?' peak':'')+'"><div class="ds-colbar" style="height:'+Math.max(2,Math.round(v/maxH*100))+'%"></div><div class="ds-coll">'+(idx%6===0?hL(idx):'')+'</div></div>'; }).join('')
+    +'</div>'+(hrs[best]>0?'<div class="ds-note">Peak: '+hL(best)+' \u00b7 '+_dsTime(hrs[best])+' total</div>':'<div class="ds-note">No timed sessions yet</div>')+'</div>';
+
+  // Author leaderboard (active list)
+  var auth={};
+  books.forEach(function(b){ var a=(b.author||'').trim(); if(!a) return; if(!auth[a]) auth[a]={n:0,sec:0}; auth[a].n++; (b.timerSessions||[]).forEach(function(x){ auth[a].sec+=(x.durationSec||0); }); });
+  var arr=[]; for(var key in auth) arr.push({a:key,n:auth[key].n,sec:auth[key].sec});
+  arr.sort(function(x,y){ return (y.sec-x.sec)||(y.n-x.n); });
+  arr=arr.slice(0,5);
+  if(arr.length){
+    var maxA=1; arr.forEach(function(x){ if(x.sec>maxA) maxA=x.sec; });
+    h+='<div class="ds-card"><div class="ds-h">Top authors</div>'+arr.map(function(x){
+      return '<div class="ds-row"><span class="ds-rl ds-rl-w">'+esc(x.a)+'</span><div class="ds-rt"><div class="ds-rf" style="width:'+Math.round(x.sec/maxA*100)+'%"></div></div><span class="ds-rn ds-rn-w">'+(x.sec?_dsTime(x.sec)+' \u00b7 ':'')+x.n+' bk</span></div>';
+    }).join('')+'</div>';
+  }
+
+  // Rating histogram (active list)
+  var rc=[0,0,0,0,0,0], rated=0;
+  books.forEach(function(b){ if(b.myRating){ var r=Math.round(b.myRating); if(r>=1&&r<=5){ rc[r]++; rated++; } } });
+  if(rated){
+    var maxR=1; for(var r2=1;r2<=5;r2++) if(rc[r2]>maxR) maxR=rc[r2];
+    h+='<div class="ds-card"><div class="ds-h">Your ratings</div>';
+    for(var r3=5;r3>=1;r3--){
+      h+='<div class="ds-row"><span class="ds-rl">'+r3+'\u2605</span><div class="ds-rt"><div class="ds-rf ds-rf-star" style="width:'+Math.round(rc[r3]/maxR*100)+'%"></div></div><span class="ds-rn">'+rc[r3]+'</span></div>';
+    }
+    h+='</div>';
+  }
+
+  el.innerHTML=h;
+}
 function renderGenreChart(){
   var el=document.getElementById('genre-chart'); if(!el) return;
   var counts={}; for(var i=0;i<books.length;i++){ var g=books[i].genre||'Other'; counts[g]=(counts[g]||0)+1; }
@@ -3616,6 +3560,16 @@ function calDayTap(key){
 }
 
 /* ---- daily goal ---- */
+var babelYearlyGoal=12;
+function setYearlyGoal(n){
+  n=parseInt(n,10); if(isNaN(n)||n<1) n=1; if(n>999) n=999;
+  babelYearlyGoal=n;
+  try{ storage.setItem('rl_yearlyGoal', String(n)); }catch(e){}
+  try{ if(window.BabelCloud && BabelCloud.touchSettings) BabelCloud.touchSettings(); }catch(e){}
+  var yi=document.getElementById('ygoal-input'); if(yi) yi.value=n;
+  renderDeepStats();
+}
+function setYearlyGoalFromInput(){ setYearlyGoal(document.getElementById('ygoal-input').value); }
 function setGoal(min){
   babelGoalMin=min;
   try{ storage.setItem('rl_dailyGoalMin', String(min)); }catch(e){}
@@ -3681,6 +3635,8 @@ storage.init().then(function(){
   loadP();
   loadAll();
   babelGoalMin = parseInt(storage.getItem('rl_dailyGoalMin'),10) || 10;
+  babelYearlyGoal = parseInt(storage.getItem('rl_yearlyGoal'),10) || 12;
+  var _ygi=document.getElementById('ygoal-input'); if(_ygi) _ygi.value=babelYearlyGoal;
   renderTopBar();
   document.getElementById("list-name-input").value=activeList().name;
   updateStats();renderFilterPills();renderGenreDropdown();renderGenrePickPills();renderTable();
@@ -3767,7 +3723,7 @@ window.BabelCloud = (function(){
   function rowFor(id){
     if(id===SETTINGS_ID){
       return { id:SETTINGS_ID, user_id:user.id, name:'__settings',
-               theme:{goalMin:babelGoalMin}, books:[], read:[],
+               theme:{goalMin:babelGoalMin,yearlyGoal:babelYearlyGoal}, books:[], read:[],
                updated_at:new Date(settingsUpdatedAt()||Date.now()).toISOString(), deleted:false };
     }
     var l=listById(id); if(!l) return null;
@@ -3893,6 +3849,11 @@ window.BabelCloud = (function(){
       if(!row.deleted && row.theme && typeof row.theme.goalMin==='number' && sT>settingsUpdatedAt()){
         babelGoalMin=row.theme.goalMin;
         try{ storage.setItem('rl_dailyGoalMin',String(babelGoalMin)); storage.setItem('rl_settingsUpdatedAt',String(sT)); }catch(e){}
+        if(typeof row.theme.yearlyGoal==='number'){
+          babelYearlyGoal=row.theme.yearlyGoal;
+          try{ storage.setItem('rl_yearlyGoal',String(babelYearlyGoal)); }catch(e){}
+          var _yi=document.getElementById('ygoal-input'); if(_yi) _yi.value=babelYearlyGoal;
+        }
         try{
           renderGoalSeg(); renderGoalBar(); renderStreak();
           var rs=document.getElementById('screen-reading'); if(rs && !rs.classList.contains('hidden')) renderReadingScreen();
