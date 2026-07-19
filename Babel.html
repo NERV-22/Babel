@@ -3256,38 +3256,66 @@ window.addEventListener('load',function(){
 // too messy to trust. Page counts are the median across editions, so they can
 // differ from a specific copy; the user confirms before adding.
 var _lookupDocs=[];
+function renderLookupDocs(docs, box){
+  _lookupDocs=docs;
+  box.innerHTML=docs.map(function(doc,i){
+    var a=(doc.author_name&&doc.author_name[0])||'';
+    var meta=[a,doc.first_publish_year,doc.number_of_pages_median?doc.number_of_pages_median+' pages':null].filter(Boolean).join(' \u00b7 ');
+    return '<button type="button" class="lookup-item" onclick="lookupPick('+i+')"><span class="lookup-t">'+esc(doc.title||'')+'</span><span class="lookup-m">'+esc(meta)+'</span></button>';
+  }).join('');
+}
 function bookLookup(){
   var q=(document.getElementById('f-lookup').value||'').trim();
   var box=document.getElementById('lookup-results');
   if(!q){ box.innerHTML=''; box.classList.add('hidden'); return; }
-  var digits=q.replace(/[-\s]/g,'');
-  var qq=(/^\d{9}[\dXx]$/.test(digits)||/^\d{13}$/.test(digits))?('isbn:'+digits):q;
   box.classList.remove('hidden');
   box.innerHTML='<div class="lookup-note">Searching\u2026</div>';
-  fetch('https://openlibrary.org/search.json?limit=20&fields=key,title,author_name,first_publish_year,number_of_pages_median,edition_count&q='+encodeURIComponent(qq))
+  var digits=q.replace(/[-\s]/g,'');
+  if(/^\d{9}[\dXx]$/.test(digits)||/^\d{13}$/.test(digits)) lookupByISBN(digits.toUpperCase(), box);
+  else lookupSearch(q, box);
+}
+// ISBN (typed or scanned) identifies a specific EDITION — so fetch the
+// edition record: the exact printed title and THIS copy's page count. A
+// scanned Fagles Odyssey should say "The Odyssey \u00b7 541 pages", not the
+// work record's Greek title with a median across every abridgment.
+function lookupByISBN(isbn, box){
+  fetch('https://openlibrary.org/isbn/'+isbn+'.json')
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(ed){
+      var y=((ed.publish_date||'').match(/\d{4}/)||[])[0];
+      var doc={ key:(ed.works&&ed.works[0]&&ed.works[0].key)||null,
+                title:(ed.title||'')+(ed.subtitle?': '+ed.subtitle:''),
+                author_name:[], first_publish_year:y?+y:null,
+                number_of_pages_median:ed.number_of_pages||null };
+      var aKey=ed.authors&&ed.authors[0]&&ed.authors[0].key;
+      function done(){ renderLookupDocs([doc], box); }
+      if(aKey){
+        fetch('https://openlibrary.org'+aKey+'.json')
+          .then(function(r){ return r.json(); })
+          .then(function(a){ if(a&&a.name) doc.author_name=[a.name]; done(); })
+          .catch(done);
+      } else done();
+    })
+    .catch(function(){ lookupSearch('isbn:'+isbn, box); });
+}
+function lookupSearch(q, box){
+  fetch('https://openlibrary.org/search.json?limit=20&fields=key,title,author_name,first_publish_year,number_of_pages_median,edition_count&q='+encodeURIComponent(q))
     .then(function(r){ if(!r.ok) throw 0; return r.json(); })
     .then(function(d){
       var docs=(d&&d.docs)||[];
-      // Open Library's own relevance ranking is weak: duplicate work records
-      // (often with Cyrillic titles/author names) and obscure same-title books
-      // rank beside the canonical work. Re-rank by edition count — the book
-      // with hundreds of editions is almost always the one being searched for
-      // — and, when the query is Latin-script, drop non-Latin-titled dupes.
-      var latinQ=!/[\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF]/.test(q);
+      // Re-rank by edition count (popularity proxy); for Latin-script queries
+      // drop Cyrillic/Greek/CJK-titled duplicate work records.
+      var NONLATIN=/[\u0370-\u03FF\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF]/;
+      var latinQ=!NONLATIN.test(q);
       docs=docs.filter(function(doc){
         if(!doc||!doc.title) return false;
-        if(latinQ && /[\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF]/.test(doc.title)) return false;
+        if(latinQ && NONLATIN.test(doc.title)) return false;
         return true;
       });
       docs.sort(function(a,b){ return (b.edition_count||0)-(a.edition_count||0); });
       docs=docs.slice(0,8);
       if(!docs.length){ box.innerHTML='<div class="lookup-note">No matches \u2014 try fewer words, or the ISBN from the copyright page.</div>'; return; }
-      _lookupDocs=docs;
-      box.innerHTML=docs.map(function(doc,i){
-        var a=(doc.author_name&&doc.author_name[0])||'';
-        var meta=[a,doc.first_publish_year,doc.number_of_pages_median?doc.number_of_pages_median+' pages':null].filter(Boolean).join(' \u00b7 ');
-        return '<button type="button" class="lookup-item" onclick="lookupPick('+i+')"><span class="lookup-t">'+esc(doc.title||'')+'</span><span class="lookup-m">'+esc(meta)+'</span></button>';
-      }).join('');
+      renderLookupDocs(docs, box);
     })
     .catch(function(){ box.innerHTML='<div class="lookup-note">Couldn\u2019t reach Open Library \u2014 check your connection.</div>'; });
 }
