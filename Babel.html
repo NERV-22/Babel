@@ -3229,19 +3229,31 @@ function pushWidgetSnapshot(){
       var reading=[];
       function _scanReading(arr){(arr||[]).forEach(function(b){
         if(!b||!b.isReading) return;
-        var cur=currentPageFor(b)||0;
+        var cur=currentPageFor(b)||0, last=0;
+        (b.timerSessions||[]).forEach(function(x){ if(x&&x.startTime>last) last=x.startTime; });
         reading.push({title:b.title||'',author:b.author||'',cur:cur,total:b.pages||0,
-                      pct:b.pages?Math.round(cur/b.pages*100):0});
+                      pct:b.pages?Math.round(cur/b.pages*100):0,last:last});
       });}
       _scanReading(books);
       lists.forEach(function(l){
         if(l.id===activeId) return;
         try{var raw=storage.getItem(listKey(l.id)); if(raw) _scanReading(JSON.parse(raw));}catch(e){}
       });
+      // Most recently read first — the 2x2 widget shows reading[0], which
+      // should be the book actually being read, not list-order luck.
+      reading.sort(function(a,b){ return (b.last||0)-(a.last||0); });
+      // Today / this-week stats so widgets can show a reading dashboard.
+      var dmap=_gatherDayStats(), mid=new Date(); mid.setHours(0,0,0,0);
+      var tSt=dmap[_dayKey(new Date())]||{sec:0,pages:0};
+      var wSec=0,wPages=0;
+      for(var wd=0;wd<7;wd++){ var wSt=dmap[_dayKey(new Date(mid.getTime()-wd*86400000))]; if(wSt){wSec+=wSt.sec;wPages+=wSt.pages;} }
       P.set({key:'babelWidget',value:JSON.stringify({
         streak:{current:s.current||0,best:s.best||0,todayMet:!!s.todayMet},
         theme:{accent:t.accent,bg1:t.bg1,bg2:t.bg2,surface:t.surface,text:t.text,star:t.star,radius:(typeof t.radius==='number'?t.radius:14)},
-        reading:reading, goalMin:babelGoalMin, updatedAt:Date.now()
+        reading:reading, goalMin:babelGoalMin,
+        today:{sec:tSt.sec,pages:tSt.pages,met:tSt.sec>=babelGoalMin*60},
+        week:{sec:wSec,pages:wPages},
+        updatedAt:Date.now()
       })});
     }catch(e){}
   },800);
