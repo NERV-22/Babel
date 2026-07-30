@@ -4131,7 +4131,9 @@ function bookLookup(){
     var map={}, order=[];
     recs.forEach(function(r){
       var _sn=(_lkNorm(r.author).split(' ').pop()||'').slice(0,4);
-      var k=_lkNorm(r.title)+'|'+_sn;
+      // Base title only: Google often appends a subtitle where Open Library
+      // doesn't, and failing to merge them loses Google's description.
+      var k=_lkNorm((r.title||'').split(':')[0])+'|'+_sn;
       var e=map[k];
       if(!e){ map[k]=r; order.push(k); return; }
       e.both=true;
@@ -4168,16 +4170,37 @@ function _lkGenre(cats){
   }
   return '';
 }
+// Write a description into the summary field, stripped of markup and
+// trimmed to a sane length. Never overwrites text already there.
+function _lkFillSummary(txt){
+  var sum=document.getElementById('f-summary');
+  if(!sum || sum.value.trim() || !txt) return;
+  var d=String(txt).replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
+  if(d.length>700){ var cut=d.slice(0,700), dot=cut.lastIndexOf('. '); d=(dot>300?cut.slice(0,dot+1):cut+'\u2026'); }
+  sum.value=d;
+}
 function lookupPick(i){
   var r=_lookupDocs[i]; if(!r) return;
   document.getElementById('f-title').value=r.title||'';
   document.getElementById('f-author').value=r.author||'';
   if(r.pages) document.getElementById('f-pages').value=r.pages;
   var sum=document.getElementById('f-summary');
-  if(sum && !sum.value.trim() && r.desc){
-    var d=r.desc.replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
-    if(d.length>700){ var cut=d.slice(0,700), dot=cut.lastIndexOf('. '); d=(dot>300?cut.slice(0,dot+1):cut+'\u2026'); }
-    sum.value=d;
+  if(sum && !sum.value.trim()){
+    if(r.desc) _lkFillSummary(r.desc);
+    else {
+      // This record came from a source with no description field — ask Google
+      // Books directly for this exact title/author before giving up.
+      var qq='intitle:'+(r.title||'').split(':')[0]+(r.author?' inauthor:'+r.author:'');
+      fetch('https://www.googleapis.com/books/v1/volumes?maxResults=3&q='+encodeURIComponent(qq))
+        .then(function(x){ return x.ok?x.json():null; })
+        .then(function(d2){
+          var hit='';
+          ((d2&&d2.items)||[]).forEach(function(it){
+            if(!hit && it.volumeInfo && it.volumeInfo.description) hit=it.volumeInfo.description;
+          });
+          if(hit) _lkFillSummary(hit);
+        }).catch(function(){});
+    }
   }
   var g=_lkGenre(r.cats);
   if(g){ try{ selectFormGenre(g); }catch(e){} }
