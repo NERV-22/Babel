@@ -1507,6 +1507,32 @@ function fanOutSession(bookId, session, skipListId){
     }catch(e){}
   });
 }
+// Read-throughs, ratings and finish dates belong to the BOOK, not the list —
+// push them to every other copy so a review written in one list shows up in
+// the others. (Timer sessions travel via fanOutSession.)
+function fanOutBookMeta(idx){
+  var b=books[idx]; if(!b||!b.bookId) return;
+  var sess=JSON.parse(JSON.stringify(b.sessions||[]));
+  var rating=b.myRating||0, fin=b.finishedAt||null;
+  lists.forEach(function(l){
+    if(l.id===activeId) return;
+    try{
+      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+      var arr=JSON.parse(raw), hit=false;
+      arr.forEach(function(x){
+        if(x.bookId!==b.bookId) return;
+        x.sessions=JSON.parse(JSON.stringify(sess));
+        x.myRating=rating;
+        if(fin) x.finishedAt=fin;
+        hit=true;
+      });
+      if(hit){
+        storage.setItem(listKey(l.id), JSON.stringify(arr));
+        try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(l.id); }catch(e){}
+      }
+    }catch(e){}
+  });
+}
 function listKey(id){return "rl_books_"+id;}
 function readKey(id){return "rl_read_"+id;}
 
@@ -3145,7 +3171,7 @@ function setReadRating(i,val){
   if(ss[i].rating===val) val=0;   // tap the same value again to clear
   ss[i].rating=val;
   syncHeadlineRating(smIdx);
-  saveCurrentList(); renderSM(); renderTable(); updateStats();
+  saveCurrentList(); fanOutBookMeta(smIdx); renderSM(); renderTable(); updateStats();
 }
 // The book page: identity, progress, then every read-through newest-first,
 // each with its own dates, rating and written thoughts.
@@ -3188,19 +3214,19 @@ function addSession(){
   if(!books[smIdx].sessions)books[smIdx].sessions=[];
   var _d=new Date(), _iso=_d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');
   books[smIdx].sessions.push({start:_iso,end:"",note:"",rating:0});
-  saveCurrentList();renderSM();renderTable();
+  saveCurrentList();fanOutBookMeta(smIdx);renderSM();renderTable();
 }
 function delS(i){
   if(smIdx<0)return;
   books[smIdx].sessions.splice(i,1);
   syncHeadlineRating(smIdx);
-  saveCurrentList();renderSM();renderTable();updateStats();
+  saveCurrentList();fanOutBookMeta(smIdx);renderSM();renderTable();updateStats();
 }
 function updS(i,field,val){
   if(smIdx<0)return;
   books[smIdx].sessions[i][field]=val;
   if(field==='end'){ syncHeadlineRating(smIdx); renderSM(); }
-  saveCurrentList();renderTable();updateStats();
+  saveCurrentList();fanOutBookMeta(smIdx);renderTable();updateStats();
 }
 
 
