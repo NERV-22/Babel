@@ -610,6 +610,34 @@ body{padding:0}
 .stat-mini-v{font-family:sans-serif;font-size:13px;color:var(--text);margin-top:6px}
 
 .genre-chart{margin-top:6px}
+.fav-btn svg,.reading-btn svg,.menu-btn svg{width:16px;height:16px;display:block}
+.reading-btn svg{width:13px;height:13px}
+.fav-btn.on svg{fill:currentColor}
+.bs-today svg,.rd-streak-sub svg{width:11px;height:11px;vertical-align:-1px}
+.mini-star{width:9px;height:9px;margin-left:2px;vertical-align:-1px}
+.h-row-e svg{width:13px;height:13px;vertical-align:-2px}
+.h-note svg{width:15px;height:15px;flex:none}
+.ds-rl svg{width:9px;height:9px;margin-left:2px;vertical-align:-1px}
+.rd-freeze{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius,14px);padding:12px 14px;margin-bottom:14px}
+.rd-fz-l{flex:1;min-width:0;display:flex;align-items:baseline;gap:7px}
+.rd-fz-n{font-family:Georgia,serif;font-size:20px;font-weight:700;color:var(--accent)}
+.rd-fz-t{font-family:sans-serif;font-size:12px;color:var(--text-muted)}
+.rd-fz-b{flex:none;display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--accent);border-radius:999px;background:transparent;color:var(--accent);font-family:sans-serif;font-size:12.5px;cursor:pointer}
+.rd-fz-b svg{width:14px;height:14px}
+.rd-fz-b:disabled{opacity:.38;cursor:default;border-color:var(--border);color:var(--text-muted)}
+.cal-day.frozen .cal-num{color:var(--accent)}
+.cal-fz{margin-left:8px;padding:3px 10px;border:1px solid var(--accent);border-radius:999px;background:transparent;color:var(--accent);font-family:sans-serif;font-size:11px;cursor:pointer}
+#fab-dice{transform:translateY(-60px)}
+.dice-modes{display:flex;gap:7px;margin-bottom:14px}
+.dice-m{flex:1;padding:9px 0;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-muted);font-family:sans-serif;font-size:12.5px;cursor:pointer}
+.dice-m.active{border-color:var(--accent);color:var(--text);background:var(--surface)}
+.dice-result{min-height:86px;display:flex;align-items:center;justify-content:center}
+.dice-book{width:100%;background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius,14px);padding:15px;cursor:pointer;text-align:center}
+.dice-t{font-family:Georgia,serif;font-size:17px;font-weight:700;color:var(--text)}
+.dice-a{font-family:sans-serif;font-size:12.5px;color:var(--text-muted);margin-top:4px}
+.dice-g{font-family:sans-serif;font-size:11px;color:var(--accent);margin-top:6px}
+.dice-empty{font-family:sans-serif;font-size:12.5px;color:var(--text-muted)}
+
 /* ── Hearth ─────────────────────────────────────────────────────────────────── */
 .h-top{display:flex;align-items:center;gap:10px;margin:2px 0 14px}
 .h-subtabs{display:flex;gap:6px;flex:1;min-width:0}
@@ -875,14 +903,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <button data-rf="unread" onclick="setReadFilter('unread')">Unread</button>
       <button data-rf="reading" onclick="setReadFilter('reading')">Reading</button>
       <button data-rf="read" onclick="setReadFilter('read')">Read</button>
-      <button data-rf="fav" onclick="setReadFilter('fav')" title="Favourites">&#9829;</button>
+      <button data-rf="fav" onclick="setReadFilter('fav')" title="Favourites"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" style="width:15px;height:15px"><path d="M12 20.3s-7.2-4.7-7.2-9.7a3.9 3.9 0 0 1 7.2-2.1 3.9 3.9 0 0 1 7.2 2.1c0 5-7.2 9.7-7.2 9.7Z"/></svg></button>
     </div>
     <div class="pills" id="filter-pills"></div>
     <div class="filter-row">
       <input type="text" id="search-input" placeholder="Search title, author, series&hellip;" oninput="applyFiltersDebounced()"/>
       <select id="genre-select" onchange="syncPillFromSelect()" style="display:none"><option value="">All genres</option></select>
       <select id="read-select" onchange="applyFilters()" style="display:none">
-        <option value="">All</option><option value="unread">Unread</option><option value="reading">&#9654; Reading</option><option value="read">Read</option><option value="fav">Favourites</option>
+        <option value="">All</option><option value="unread">Unread</option><option value="reading">Reading</option><option value="read">Read</option><option value="fav">Favourites</option>
       </select>
     </div>
     <div id="book-list"></div>
@@ -979,6 +1007,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       </div>
     </section>
   </main>
+  <button class="fab" id="fab-dice" onclick="openDice()" aria-label="Pick a random book"></button>
   <button class="fab" id="fab-add" onclick="openAddSheet()" aria-label="Add a book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
   <nav class="tabbar">
     <button class="tab active" data-screen="library" onclick="switchScreen('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H20v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H20"/></svg><span>Library</span></button>
@@ -999,6 +1028,21 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     </div>
     <div class="shop-note" id="shop-note"></div>
     <div class="modal-btns" style="margin-top:12px"><button class="modal-cancel" onclick="closeShop()">Done</button></div>
+  </div>
+</div>
+<div class="sheet-overlay hidden" id="dice-sheet" onclick="if(event.target===this)closeDice()">
+  <div class="sheet">
+    <div class="shop-head"><span class="shop-t">Pick a book for me</span></div>
+    <div class="dice-modes">
+      <button class="dice-m active" data-dm="all" onclick="diceMode('all')">All</button>
+      <button class="dice-m" data-dm="unread" onclick="diceMode('unread')">Unread</button>
+      <button class="dice-m" data-dm="read" onclick="diceMode('read')">Read</button>
+    </div>
+    <div id="dice-result" class="dice-result"></div>
+    <div class="modal-btns" style="margin-top:12px">
+      <button class="modal-cancel" onclick="closeDice()">Close</button>
+      <button class="modal-save" onclick="rollDice()">Reroll</button>
+    </div>
   </div>
 </div>
 <div class="sheet-overlay hidden" id="timer-pick" onclick="if(event.target===this)tmrClosePicker()">
@@ -1359,7 +1403,7 @@ function renderStreak(){
     return;
   }
   var mins=Math.floor(s.todaySec/60);
-  var today=s.todayMet?'<span class="bs-today met">Today &#10003;</span>':'<span class="bs-today">'+mins+'/15 min today</span>';
+  var today=s.todayMet?'<span class="bs-today met">Today '+ICONS.check+'</span>':'<span class="bs-today">'+mins+'/15 min today</span>';
   el.innerHTML=flame
     +'<span class="bs-num">'+s.current+'</span>'
     +'<span class="bs-lbl">day streak</span>'
@@ -1405,6 +1449,13 @@ var activeTimer=null, rlOpenIdx=-1, _timerTickInterval=null;
 // currentColor to inherit the parent button's text color. Keeps row icons,
 // menu icons, and modal-header icons visually consistent.
 var ICONS = {
+  heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M12 20.3s-7.2-4.7-7.2-9.7a3.9 3.9 0 0 1 7.2-2.1 3.9 3.9 0 0 1 7.2 2.1c0 5-7.2 9.7-7.2 9.7Z"/></svg>',
+  dots:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg>',
+  snow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 2.5v19M3.8 7.2l16.4 9.6M20.2 7.2 3.8 16.8"/><path d="M9.4 4.6 12 6.9l2.6-2.3M9.4 19.4 12 17.1l2.6 2.3"/><path d="M5.2 10.6 4.4 7.2l3.4-.6M18.8 13.4l.8 3.4-3.4.6M18.8 10.6l.8-3.4-3.4-.6M5.2 13.4l-.8 3.4 3.4.6"/></svg>',
+  dice:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/></svg>',
+  star:'<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="8,1.5 10,6 15,6.5 11.2,10 12.5,15 8,12.2 3.5,15 4.8,10 1,6.5 6,6"/></svg>',
+
   pencil: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 13.5 L4 10.5 L11 3.5 L12.5 5 L5.5 12 L2.5 13.5 Z"/><path d="M10 4.5 L11.5 6"/></svg>',
   copy: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3.5" y="2.5" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><rect x="5.5" y="4.5" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4" fill="var(--surface)"/></svg>',
   trash: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M3 4.5 H13"/><path d="M5 4.5 V3 a1 1 0 0 1 1-1 H10 a1 1 0 0 1 1 1 V4.5"/><path d="M4 4.5 L4.7 13.2 a1 1 0 0 0 1 .8 H10.3 a1 1 0 0 0 1-.8 L12 4.5"/><path d="M6.5 7 V11.5 M9.5 7 V11.5"/></svg>',
@@ -3486,6 +3537,7 @@ function switchScreen(name){
   });
   document.querySelectorAll('.tabbar .tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-screen')===name); });
   var fab=document.getElementById('fab-add'); if(fab) fab.style.display=(name==='library')?'flex':'none';
+  var fabd=document.getElementById('fab-dice'); if(fabd) fabd.style.display=(name==='library')?'flex':'none';
   if(name==='stats') updateStats();
   if(name==='reading') renderReadingScreen();
   if(name==='hearth'){ renderHearth(); }
@@ -3605,15 +3657,15 @@ function renderTable(){
           +seriesLine
           +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+' &middot; '+b.pages+'p</div>'
         +'</div>'
-        +'<button class="fav-btn'+(b.isFav?' on':'')+'" onclick="toggleFav('+b.idx+')" title="Favourite">&#9829;</button>'
+        +'<button class="fav-btn'+(b.isFav?' on':'')+'" onclick="toggleFav('+b.idx+')" title="Favourite">'+ICONS.heart+'</button>'
       +'</div>'
       +sum
       +'<div class="bk-row2">'
         +'<span class="bk-left">'+starsDisplayHTML(b.myRating||0,b.idx)+'</span>'
         +'<span class="bk-actions">'
-          +'<button class="reading-btn'+(b.isReading?' on':'')+'" onclick="toggleReading('+b.idx+')" title="Currently reading">&#9654;</button>'
+          +'<button class="reading-btn'+(b.isReading?' on':'')+'" onclick="toggleReading('+b.idx+')" title="Currently reading">'+ICONS.play+'</button>'
           +'<button class="icon-btn" title="Reading time log" onclick="openRL('+b.idx+')">'+ICONS.clock+'</button>'
-          +'<button class="icon-btn menu-btn" title="More" onclick="openRowMenu(event,'+b.idx+')">&#8943;</button>'
+          +'<button class="icon-btn menu-btn" title="More" onclick="openRowMenu(event,'+b.idx+')">'+ICONS.dots+'</button>'
         +'</span>'
       +'</div>'
     +'</div>';
@@ -3631,9 +3683,14 @@ function renderReadingScreen(){
   var head='<div class="rd-streakcard"><div class="rd-streak-num">'+s.current+'</div>'
     +'<div class="rd-streak-lbl">day streak'+(s.best?' &middot; best '+s.best:'')+'</div>'
     +'<div class="rd-streak-sub">'+sub+'</div></div>';
+  var _fz=babelHearth.freezes||0, _fzToday=!!babelHearth.frozen[_dayKey(new Date())];
+  head+='<div class="rd-freeze"><div class="rd-fz-l"><span class="rd-fz-n">'+_fz+'</span>'
+    +'<span class="rd-fz-t">freeze'+(_fz!==1?'s':'')+' banked</span></div>'
+    +'<button class="rd-fz-b" onclick="freezeToday()"'+((!_fz||_fzToday||s.todayMet)?' disabled':'')+'>'
+    +ICONS.snow+(_fzToday?'Today frozen':'Freeze today')+'</button></div>';
   head+='<div class="rd-cal-title">Reading activity</div>'+renderCalendar();
   if(!reading.length){
-    body.innerHTML=head+'<div class="rd-empty">No books in progress.<br>Mark a book as <b>&#9654; reading</b> in your Library, or open its timer to start a session.</div>';
+    body.innerHTML=head+'<div class="rd-empty">No books in progress.<br>Mark a book as <b>reading</b> in your Library, or open its timer to start a session.</div>';
     return;
   }
   var cards=reading.map(function(b){
@@ -3828,9 +3885,9 @@ function _hNum(n){ return n>=1000?Math.round(n).toLocaleString():(Math.round(n*1
 function renderHearth(){
   var el=document.getElementById('h-body'); if(!el) return;
   var h='<div class="h-bal"><span class="h-emb">'+babelHearth.embers+'</span><span class="h-embl">embers</span>'
-      +'<span class="h-frz">'+babelHearth.freezes+'/5 freezes</span></div>';
+      +'<span class="h-frz">'+babelHearth.freezes+' freeze'+(babelHearth.freezes!==1?'s':'')+'</span></div>';
   if(babelHearth.freezeNote){
-    h+='<div class="h-note">\u2744\ufe0f Freeze used \u2014 your streak was saved.'
+    h+='<div class="h-note">'+ICONS.snow+' Freeze used \u2014 your streak was saved.'
       +'<button class="h-note-x" onclick="babelHearth.freezeNote=0;saveHearth();renderHearth();">\u00d7</button></div>';
   }
   if(_hSub==='daily'){
@@ -3883,7 +3940,7 @@ function renderHearth(){
     h+=one.map(function(o){
       var got=babelHearth.unlocked[o[0]];
       return '<div class="h-row'+(got?' claimed':'')+'"><div class="h-row-t"><span class="h-row-n">'+o[1]+'</span>'
-        +'<span class="h-row-e">'+(got?'\u2713':'+3')+'</span></div><div class="h-prog">'+o[2]+'</div></div>';
+        +'<span class="h-row-e">'+(got?ICONS.check:'+3')+'</span></div><div class="h-prog">'+o[2]+'</div></div>';
     }).join('');
   }
   el.innerHTML=h;
@@ -3892,18 +3949,52 @@ function openShop(){ renderShop(); document.getElementById('shop-sheet').classLi
 function closeShop(){ document.getElementById('shop-sheet').classList.add('hidden'); }
 function renderShop(){
   document.getElementById('shop-bal').textContent=babelHearth.embers+' embers';
-  document.getElementById('shop-frz').textContent=babelHearth.freezes+' of 5 held';
-  var btn=document.getElementById('shop-buy'), note=document.getElementById('shop-note'), why='';
-  if(babelHearth.freezes>=5) why='You are holding the maximum of 5 freezes.';
-  else if(babelHearth.lastFreezeWeek===_hWeek()) why='You have already bought a freeze this week.';
-  else if(babelHearth.embers<50) why='Need '+(50-babelHearth.embers)+' more embers.';
+  document.getElementById('shop-frz').textContent=babelHearth.freezes+' banked';
+  var btn=document.getElementById('shop-buy'), note=document.getElementById('shop-note');
+  var why = babelHearth.embers<50 ? ('Need '+(50-babelHearth.embers)+' more embers.') : '';
   btn.disabled=!!why; btn.classList.toggle('off',!!why);
-  note.textContent=why||'One freeze per week.';
+  note.textContent=why||'Buy as many as you like \u2014 they bank up.';
 }
 function buyFreeze(){
-  if(babelHearth.freezes>=5||babelHearth.lastFreezeWeek===_hWeek()||babelHearth.embers<50) return;
-  babelHearth.embers-=50; babelHearth.freezes++; babelHearth.lastFreezeWeek=_hWeek();
+  if(babelHearth.embers<50) return;
+  babelHearth.embers-=50; babelHearth.freezes++;
   saveHearth(); renderShop(); renderHearth();
+}
+
+
+// ── Manual freezes + random book pick ────────────────────────────────────────
+function freezeDay(key){
+  if(!babelHearth.freezes||babelHearth.frozen[key]) return;
+  babelHearth.frozen[key]=1; babelHearth.freezes--;
+  saveHearth();
+  try{ renderReadingScreen(); renderStreak(); renderHearth(); }catch(e){}
+}
+function freezeToday(){ freezeDay(_dayKey(new Date())); }
+var _diceMode='all';
+function openDice(){ document.getElementById('dice-sheet').classList.remove('hidden'); rollDice(); }
+function closeDice(){ document.getElementById('dice-sheet').classList.add('hidden'); }
+function diceMode(m){
+  _diceMode=m;
+  var bs=document.querySelectorAll('.dice-m');
+  for(var i=0;i<bs.length;i++) bs[i].classList.toggle('active',bs[i].getAttribute('data-dm')===m);
+  rollDice();
+}
+function rollDice(){
+  var pool=[];
+  for(var i=0;i<books.length;i++){
+    var isR=readSet.has(i);
+    if(_diceMode==='unread'&&isR) continue;
+    if(_diceMode==='read'&&!isR) continue;
+    pool.push(i);
+  }
+  var el=document.getElementById('dice-result'); if(!el) return;
+  if(!pool.length){ el.innerHTML='<div class="dice-empty">Nothing in this list matches.</div>'; return; }
+  var i2=pool[Math.floor(Math.random()*pool.length)], b=books[i2];
+  el.innerHTML='<div class="dice-book" onclick="closeDice();openSM('+i2+')">'
+    +'<div class="dice-t">'+esc(b.title)+'</div>'
+    +'<div class="dice-a">'+esc(b.author||'')+(b.pages?' \u00b7 '+b.pages+'p':'')+'</div>'
+    +(b.genre?'<div class="dice-g">'+esc(b.genre)+'</div>':'')
+  +'</div>';
 }
 
 // ── Deep stats ───────────────────────────────────────────────────────────────
@@ -3989,7 +4080,7 @@ function renderDeepStats(){
     var maxR=1; for(var r2=1;r2<=5;r2++) if(rc[r2]>maxR) maxR=rc[r2];
     h+='<div class="ds-card"><div class="ds-h">Your ratings</div>';
     for(var r3=5;r3>=1;r3--){
-      h+='<div class="ds-row"><span class="ds-rl">'+r3+'\u2605</span><div class="ds-rt"><div class="ds-rf ds-rf-star" style="width:'+Math.round(rc[r3]/maxR*100)+'%"></div></div><span class="ds-rn">'+rc[r3]+'</span></div>';
+      h+='<div class="ds-row"><span class="ds-rl">'+r3+ICONS.star+'</span><div class="ds-rt"><div class="ds-rf ds-rf-star" style="width:'+Math.round(rc[r3]/maxR*100)+'%"></div></div><span class="ds-rn">'+rc[r3]+'</span></div>';
     }
     h+='</div>';
   }
@@ -4068,6 +4159,10 @@ function renderCalendar(){
       cls='part';
       svg='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-dasharray="'+(pct*C).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 20 20)"/>';
     }
+    else if(babelHearth.frozen&&babelHearth.frozen[key]){
+      cls='frozen';
+      svg='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="3 3"/>';
+    }
     else { cls='zero'; }
     if(!isFuture) monthSec+=st.sec;
     if(isToday && cls!=='met')
@@ -4108,7 +4203,13 @@ function calDayTap(key){
   var p=key.split('-');
   var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var label=MON[+p[1]-1]+' '+p[2];
-  if(!st || !st.sec){ el.innerHTML=label+' \u00b7 no reading'; return; }
+  if(!st || !st.sec){
+    var froz=babelHearth.frozen&&babelHearth.frozen[key];
+    var past=key!==_dayKey(new Date());
+    el.innerHTML=label+(froz?' \u00b7 frozen'
+      : ' \u00b7 no reading'+((past&&babelHearth.freezes>0)?'<button class="cal-fz" onclick="freezeDay(\''+key+'\')">Freeze</button>':''));
+    return;
+  }
   var mins=Math.max(1,Math.round(st.sec/60));
   el.innerHTML=label+' \u00b7 <strong>'+mins+' min</strong>'+(st.pages>0?' \u00b7 '+st.pages+' page'+(st.pages!==1?'s':''):'');
 }
@@ -4145,7 +4246,7 @@ function renderGoalBar(){
   var pct=goalSec>0?Math.min(100, Math.round(s.todaySec/goalSec*100)):0;
   var f=document.getElementById('goal-fill'); if(f) f.style.width=pct+'%';
   var p=document.getElementById('goal-pct'); if(p) p.textContent=pct+'%';
-  var d=document.getElementById('goal-detail'); if(d) d.textContent=mins+' / '+babelGoalMin+' min today'+(s.todayMet?' \u2713':'');
+  var d=document.getElementById('goal-detail'); if(d) d.textContent=mins+' / '+babelGoalMin+' min today'+(s.todayMet?' '+ICONS.check:'');
 }
 
 /* ---- card-aware row patchers (override the old table-row versions) ---- */
@@ -4179,7 +4280,7 @@ function renderStreak(){
   var flame='<svg class="bs-flame" viewBox="0 0 16 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 0c.4 3.2-1.6 4.6-3 6.2C3.4 8 2 9.6 2 12.4 2 16.6 5 19.6 8 19.6s6-3 6-7.2c0-2.4-1.1-4.2-2.4-5.6-.3 1-1 1.7-1.8 1.9C10.6 5.4 11 2.7 8 0Z"/></svg>';
   if(s.current===0&&s.best===0){ el.innerHTML=flame+'<span class="bs-lbl">Read 15 min to start a streak</span>'; return; }
   var mins=Math.floor(s.todaySec/60);
-  var today=s.todayMet?'<span class="bs-today met">Today &#10003;</span>':'<span class="bs-today">'+mins+'/15 min today</span>';
+  var today=s.todayMet?'<span class="bs-today met">Today '+ICONS.check+'</span>':'<span class="bs-today">'+mins+'/15 min today</span>';
   el.innerHTML=flame+'<span class="bs-num">'+s.current+'</span><span class="bs-lbl">day streak</span>'
     +(s.best?'<span class="bs-sep"></span><span class="bs-best">Best '+s.best+'</span>':'')
     +'<span class="bs-sep"></span>'+today;
@@ -4191,6 +4292,7 @@ storage.init().then(function(){
   babelGoalMin = parseInt(storage.getItem('rl_dailyGoalMin'),10) || 10;
   babelYearlyGoal = parseInt(storage.getItem('rl_yearlyGoal'),10) || 12;
   setTimeout(function(){ try{ hearthInit(); }catch(e){} },0);
+  try{ document.getElementById('fab-dice').innerHTML=ICONS.dice; }catch(e){}
   var _ygi=document.getElementById('ygoal-input'); if(_ygi) _ygi.value=babelYearlyGoal;
   renderTopBar();
   document.getElementById("list-name-input").value=activeList().name;
