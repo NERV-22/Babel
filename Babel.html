@@ -4063,6 +4063,11 @@ function rollDice(){
 // title+author, corroborated entries score higher, and the whole set is
 // re-ranked against what the user actually typed — Open Library's own ordering
 // buries canonical works behind same-title obscurities.
+// Google Books key. Public by necessity (this file is served as-is), so it
+// is restricted at Google's end to the nerv-22.github.io referrer and to the
+// Books API only. Keyless requests get a hard quota of ZERO per day — every
+// request without this returns 429, which is why lookups had no descriptions.
+var GBOOKS_KEY='AIzaSyACoA8z-dh9J6HE0gmvp7rbaccdXQKjaOg';
 var _lookupDocs=[];
 function _lkNorm(x){ return (x||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
 var _LK_NONLATIN=/[\u0370-\u03FF\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF\u0590-\u05FF\u0600-\u06FF]/;
@@ -4131,11 +4136,21 @@ function bookLookup(){
   var isbn=(/^\d{9}[\dXx]$/.test(digits)||/^\d{13}$/.test(digits))?digits:'';
   var gq = isbn ? ('isbn:'+isbn) : q;
   var oq = isbn ? ('isbn:'+isbn) : q;
-  var G='https://www.googleapis.com/books/v1/volumes?maxResults='+(isbn?5:20)+'&q='+encodeURIComponent(gq);
+  var G='https://www.googleapis.com/books/v1/volumes?maxResults='+(isbn?5:20)+'&q='+encodeURIComponent(gq)+'&key='+GBOOKS_KEY;
   var O='https://openlibrary.org/search.json?limit='+(isbn?5:20)
       +'&fields=key,title,author_name,first_publish_year,number_of_pages_median,edition_count,publisher&q='+encodeURIComponent(oq);
-  function grab(u){ return fetch(u).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }); }
-  Promise.all([grab(G),grab(O)]).then(function(res){
+  var _gErr='';
+  function grab(u,tag){
+    return fetch(u).then(function(r){
+      if(!r.ok){ if(tag==='g') _gErr=String(r.status); return null; }
+      return r.json();
+    }).catch(function(){ if(tag==='g') _gErr='net'; return null; });
+  }
+  Promise.all([grab(G,'g'),grab(O,'o')]).then(function(res){
+    if(_gErr) _lkStatus(_gErr==='429'?'Google Books quota reached \u2014 results from Open Library only'
+                        :_gErr==='403'?'Google Books key rejected \u2014 check referrer restrictions'
+                        :'Google Books unreachable ('+_gErr+') \u2014 Open Library only');
+    else _lkStatus('');
     var recs=_lkFromGoogle(res[0]).concat(_lkFromOL(res[1]));
     if(!recs.length){
       box.innerHTML='<div class="lookup-note">No matches \u2014 try fewer words, the author\u2019s name, or the ISBN from the copyright page.</div>';
@@ -4225,8 +4240,17 @@ function _lkDetails(r){
   var base=_lkNorm((r.title||'').split(':')[0]);
   var aStem=(_lkNorm(r.author||'').split(' ').pop()||'').slice(0,4);
   var q=(r.title||'').split(':')[0].trim()+(r.author?' '+r.author:'');
-  var u='https://www.googleapis.com/books/v1/volumes?maxResults=20&q='+encodeURIComponent(q);
-  fetch(u).then(function(x){ return x.ok?x.json():null; }).then(function(d){
+  var u='https://www.googleapis.com/books/v1/volumes?maxResults=20&q='+encodeURIComponent(q)+'&key='+GBOOKS_KEY;
+  fetch(u).then(function(x){
+    if(!x.ok){
+      _lkStatus(x.status===429?'Google Books quota reached \u2014 try again tomorrow'
+               :x.status===403?'Google Books key rejected \u2014 check referrer restrictions'
+               :'Google Books error '+x.status);
+      return null;
+    }
+    return x.json();
+  }).then(function(d){
+    if(!d) return;
     var items=(d&&d.items)||[];
     // Only volumes that really are this book: title base must match and, if
     // we know the author, their surname stem must appear.
