@@ -4219,29 +4219,43 @@ function lookupPick(i){
 }
 function _lkDetails(r){
   _lkStatus('Fetching details\u2026');
-  // Don't trust a single volume: Google's top match is often a foreign or
-  // obscure edition with no description or categories (the French Piranesi,
-  // for instance). Scan several English editions and take the first that
-  // actually carries each field.
-  var t=(r.title||'').split(':')[0].trim();
-  var q='intitle:"'+t+'"'+(r.author?' inauthor:"'+r.author+'"':'');
-  var u='https://www.googleapis.com/books/v1/volumes?maxResults=12&langRestrict=en&q='+encodeURIComponent(q);
+  // Plain query only. Field operators (intitle:/inauthor:) combined with
+  // langRestrict match nothing surprisingly often — that returned zero
+  // results for Piranesi. Filter to the right book client-side instead.
+  var base=_lkNorm((r.title||'').split(':')[0]);
+  var aStem=(_lkNorm(r.author||'').split(' ').pop()||'').slice(0,4);
+  var q=(r.title||'').split(':')[0].trim()+(r.author?' '+r.author:'');
+  var u='https://www.googleapis.com/books/v1/volumes?maxResults=20&q='+encodeURIComponent(q);
   fetch(u).then(function(x){ return x.ok?x.json():null; }).then(function(d){
-    var items=(d&&d.items)||[], desc='', cats=null, pages=0;
-    items.forEach(function(it){
-      var v=it.volumeInfo||{};
-      if(!desc && v.description && v.description.length>40) desc=v.description;
-      if(!cats && v.categories && v.categories.length) cats=v.categories;
-      if(!pages && v.pageCount) pages=v.pageCount;
-    });
+    var items=(d&&d.items)||[];
+    // Only volumes that really are this book: title base must match and, if
+    // we know the author, their surname stem must appear.
+    function harvest(enOnly){
+      var desc='',cats=null,pages=0;
+      items.forEach(function(it){
+        var v=it.volumeInfo||{};
+        if(_lkNorm((v.title||'').split(':')[0])!==base) return;
+        if(aStem){
+          var va=_lkNorm((v.authors||[]).join(' '));
+          if(va.indexOf(aStem)<0) return;
+        }
+        if(enOnly && v.language && v.language!=='en') return;
+        if(!desc && v.description && v.description.length>40) desc=v.description;
+        if(!cats && v.categories && v.categories.length) cats=v.categories;
+        if(!pages && v.pageCount) pages=v.pageCount;
+      });
+      return {desc:desc,cats:cats,pages:pages};
+    }
+    var g=harvest(true);                                   // English editions first
+    if(!g.desc && !g.cats) g=harvest(false);               // then any language
     var got=[];
-    if(desc){ _lkFillSummary(desc); got.push('summary'); }
-    if(cats){ var g=_lkGenre(cats); if(g){ try{ selectFormGenre(g); got.push('genre'); }catch(e){} } }
+    if(g.desc){ _lkFillSummary(g.desc); got.push('summary'); }
+    if(g.cats){ var gg=_lkGenre(g.cats); if(gg){ try{ selectFormGenre(gg); got.push('genre'); }catch(e){} } }
     var pf=document.getElementById('f-pages');
-    if(pf && !pf.value && pages){ pf.value=pages; got.push('pages'); }
+    if(pf && !pf.value && g.pages){ pf.value=g.pages; got.push('pages'); }
     if(got.length) _lkStatus('Filled '+got.join(', ')+' from Google Books');
-    else if(!items.length) _lkStatus('No extra details found for this book');
-    else _lkStatus('This edition has no description or category listed');
+    else if(!items.length) _lkStatus('Google Books returned nothing for this title');
+    else _lkStatus('Found '+items.length+' editions, none with a description');
   }).catch(function(){ _lkStatus('Couldn\u2019t reach Google Books \u2014 fill in manually'); });
 }
 // Small line under the lookup row so autofill never fails silently.
