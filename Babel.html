@@ -622,6 +622,9 @@ body{padding:0}
 .lookup-t{font-size:13.5px;font-weight:600;color:var(--text)}
 .lookup-m{font-size:11.5px;color:var(--text-muted)}
 .lookup-note{font-family:sans-serif;font-size:12.5px;color:var(--text-muted);padding:6px 2px}
+.manual-toggle{display:block;width:100%;padding:10px;margin-top:2px;border:1px dashed var(--border);border-radius:9px;background:transparent;color:var(--text-muted);font-family:sans-serif;font-size:12.5px;cursor:pointer}
+.manual-toggle:active{border-color:var(--accent);color:var(--accent)}
+#add-manual.hidden{display:none}
 .scan-overlay{position:fixed;inset:0;background:#000;z-index:400;display:flex;align-items:center;justify-content:center}
 .scan-overlay.hidden{display:none}
 #scan-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -1123,6 +1126,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <button type="button" class="lookup-btn lookup-scan" onclick="scanISBN()" title="Scan ISBN barcode"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 5h2v14H2zM5 5h1v14H5zM8 5h2v14H8zM12 5h1v14h-1zM15 5h3v14h-3zM20 5h2v14h-2z"/></svg></button>
       </div>
       <div class="lookup-results hidden" id="lookup-results"></div>
+      <button type="button" class="manual-toggle" id="manual-toggle" onclick="showManual()">Enter details manually</button>
+      <div id="add-manual" class="hidden">
             <div class="form-grid">
         <input class="span-full" type="text" id="f-title" placeholder="Title"/>
         <input class="span-full" type="text" id="f-author" placeholder="Author"/>
@@ -1137,6 +1142,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <div class="genre-preview hidden" id="genre-preview">Will be tagged as: <span id="genre-preview-tag"></span></div>
       <p class="form-error hidden" id="form-error"></p>
       <button class="submit-btn" onclick="submitBook()">Add to list</button>
+      </div>
     </div>
   </div>
 
@@ -3641,6 +3647,9 @@ function openAddSheet(){
   o.classList.remove('hidden');
   document.body.style.overflow='hidden';
   clearFormError();
+  try{ hideManual(); }catch(e){}
+  var lf=document.getElementById('f-lookup'); if(lf) lf.value='';
+  var lr=document.getElementById('lookup-results'); if(lr){ lr.innerHTML=''; lr.classList.add('hidden'); }
   try{ renderPasteButton(); }catch(e){}
 }
 function closeAddSheet(){
@@ -4089,7 +4098,7 @@ function _lkFromGoogle(d){
   ((d&&d.items)||[]).forEach(function(it,i){
     var v=it.volumeInfo||{}; if(!v.title) return;
     var yr=((v.publishedDate||'').match(/\d{4}/)||[])[0];
-    out.push({title:v.title+(v.subtitle?': '+v.subtitle:''),
+    out.push({gid:it.id||'', title:v.title+(v.subtitle?': '+v.subtitle:''),
       author:(v.authors&&v.authors[0])||'', year:yr?+yr:null,
       pages:v.pageCount||null, publisher:v.publisher||'',
       desc:v.description||'', cats:v.categories||[], editions:0, rank:i});
@@ -4142,6 +4151,7 @@ function bookLookup(){
       if(!e.publisher&&r.publisher) e.publisher=r.publisher;
       if(!e.year&&r.year) e.year=r.year;
       if(!e.cats.length&&r.cats.length) e.cats=r.cats;
+      if(!e.gid&&r.gid) e.gid=r.gid;
       if(r.editions>e.editions) e.editions=r.editions;
       if(r.rank<e.rank) e.rank=r.rank;
     });
@@ -4162,16 +4172,24 @@ function bookLookup(){
 function _lkGenre(cats){
   if(!cats||!cats.length) return '';
   var have={}; allGenres().forEach(function(g){ have[g.toLowerCase()]=g; });
-  for(var i=0;i<cats.length;i++){
-    var c=(cats[i]||'').toLowerCase();
-    if(have[c]) return have[c];
-    var seg=c.split('/')[0].trim();
-    if(have[seg]) return have[seg];
-  }
+  var tries=[];
+  cats.forEach(function(c){
+    var full=String(c).trim().toLowerCase();
+    if(full) tries.push(full);
+    String(c).split('/').forEach(function(seg){
+      seg=seg.trim().toLowerCase();
+      if(seg && seg!=='general') tries.push(seg);
+    });
+  });
+  // Later segments are the more specific ones ("Fiction / Fantasy"), so
+  // prefer them; only ever returns a genre you already use.
+  for(var i=tries.length-1;i>=0;i--) if(have[tries[i]]) return have[tries[i]];
   return '';
 }
-// Write a description into the summary field, stripped of markup and
-// trimmed to a sane length. Never overwrites text already there.
+function _lkApplyGenre(cats){
+  var g=_lkGenre(cats);
+  if(g){ try{ selectFormGenre(g); }catch(e){} }
+}
 function _lkFillSummary(txt){
   var sum=document.getElementById('f-summary');
   if(!sum || sum.value.trim() || !txt) return;
@@ -4181,30 +4199,43 @@ function _lkFillSummary(txt){
 }
 function lookupPick(i){
   var r=_lookupDocs[i]; if(!r) return;
+  showManual();
   document.getElementById('f-title').value=r.title||'';
   document.getElementById('f-author').value=r.author||'';
   if(r.pages) document.getElementById('f-pages').value=r.pages;
-  var sum=document.getElementById('f-summary');
-  if(sum && !sum.value.trim()){
-    if(r.desc) _lkFillSummary(r.desc);
-    else {
-      // This record came from a source with no description field — ask Google
-      // Books directly for this exact title/author before giving up.
-      var qq='intitle:'+(r.title||'').split(':')[0]+(r.author?' inauthor:'+r.author:'');
-      fetch('https://www.googleapis.com/books/v1/volumes?maxResults=3&q='+encodeURIComponent(qq))
-        .then(function(x){ return x.ok?x.json():null; })
-        .then(function(d2){
-          var hit='';
-          ((d2&&d2.items)||[]).forEach(function(it){
-            if(!hit && it.volumeInfo && it.volumeInfo.description) hit=it.volumeInfo.description;
-          });
-          if(hit) _lkFillSummary(hit);
-        }).catch(function(){});
-    }
-  }
-  var g=_lkGenre(r.cats);
-  if(g){ try{ selectFormGenre(g); }catch(e){} }
+  if(r.desc) _lkFillSummary(r.desc);
+  if(r.cats&&r.cats.length) _lkApplyGenre(r.cats);
   var box=document.getElementById('lookup-results'); box.innerHTML=''; box.classList.add('hidden');
+  var lf=document.getElementById('f-lookup'); if(lf) lf.value='';
+  // Search results are thin — Open Library carries no description or
+  // categories at all — so always confirm against Google's full volume
+  // record and backfill whatever is still missing.
+  _lkDetails(r);
+}
+function _lkDetails(r){
+  var u = r.gid
+    ? 'https://www.googleapis.com/books/v1/volumes/'+encodeURIComponent(r.gid)
+    : 'https://www.googleapis.com/books/v1/volumes?maxResults=3&q='+encodeURIComponent(
+        'intitle:'+(r.title||'').split(':')[0]+(r.author?' inauthor:'+r.author:''));
+  fetch(u).then(function(x){ return x.ok?x.json():null; }).then(function(d){
+    if(!d) return;
+    var v=d.volumeInfo||(d.items&&d.items[0]&&d.items[0].volumeInfo);
+    if(!v) return;
+    if(v.description) _lkFillSummary(v.description);
+    if(v.categories&&v.categories.length) _lkApplyGenre(v.categories);
+    var pf=document.getElementById('f-pages');
+    if(pf && !pf.value && v.pageCount) pf.value=v.pageCount;
+    var af=document.getElementById('f-author');
+    if(af && !af.value && v.authors && v.authors[0]) af.value=v.authors[0];
+  }).catch(function(){});
+}
+function showManual(){
+  var m=document.getElementById('add-manual'); if(m) m.classList.remove('hidden');
+  var t=document.getElementById('manual-toggle'); if(t) t.classList.add('hidden');
+}
+function hideManual(){
+  var m=document.getElementById('add-manual'); if(m) m.classList.add('hidden');
+  var t=document.getElementById('manual-toggle'); if(t) t.classList.remove('hidden');
 }
 
 // ── ISBN barcode scanner ─────────────────────────────────────────────────────
