@@ -4108,7 +4108,7 @@ function _lkFromGoogle(d){
   ((d&&d.items)||[]).forEach(function(it,i){
     var v=it.volumeInfo||{}; if(!v.title) return;
     var yr=((v.publishedDate||'').match(/\d{4}/)||[])[0];
-    out.push({gid:it.id||'', title:v.title+(v.subtitle?': '+v.subtitle:''),
+    out.push({gid:it.id||'', olkey:'', title:v.title+(v.subtitle?': '+v.subtitle:''),
       author:(v.authors&&v.authors[0])||'', year:yr?+yr:null,
       pages:v.pageCount||null, publisher:v.publisher||'',
       desc:v.description||'', cats:v.categories||[], editions:0, rank:i});
@@ -4122,7 +4122,7 @@ function _lkFromOL(d){
     out.push({title:x.title, author:(x.author_name&&x.author_name[0])||'',
       year:x.first_publish_year||null, pages:x.number_of_pages_median||null,
       publisher:(x.publisher&&x.publisher[0])||'', desc:'', cats:[],
-      editions:x.edition_count||0, rank:i});
+      editions:x.edition_count||0, olkey:x.key||'', rank:i});
   });
   return out;
 }
@@ -4172,6 +4172,7 @@ function bookLookup(){
       if(!e.year&&r.year) e.year=r.year;
       if(!e.cats.length&&r.cats.length) e.cats=r.cats;
       if(!e.gid&&r.gid) e.gid=r.gid;
+      if(!e.olkey&&r.olkey) e.olkey=r.olkey;
       if(r.editions>e.editions) e.editions=r.editions;
       if(r.rank<e.rank) e.rank=r.rank;
     });
@@ -4210,12 +4211,58 @@ function _lkApplyGenre(cats){
   var g=_lkGenre(cats);
   if(g){ try{ selectFormGenre(g); }catch(e){} }
 }
+// ── Description quality ─────────────────────────────────────────────────────
+// Publisher blurbs are marketing copy: award banners, film tie-ins and review
+// quotes. Strip that, then score what's left so the cleanest edition wins.
+function _lkClean(txt){
+  var d=String(txt||'').replace(/<[^>]*>/g,' ').replace(/&[a-z]+;/gi,' ').replace(/\s+/g,' ').trim();
+  d=d.replace(/^\s*(?:[^.!?]{0,90}?(?:BESTSELLER|BEST SELLER|AWARD|WINNER|FINALIST|NOTABLE BOOK|BOOK OF THE YEAR|PULITZER|BOOKER)[^.!?]{0,90}?[\u2022\u00b7|\u2014-]\s*)+/i,'');
+  d=d.replace(/(?:^|\s)(?:Now|Soon to be)\s+a\s+(?:major\s+)?(?:motion picture|film|movie|Netflix|HBO|Hulu|Amazon|Apple TV|major series|television series|TV series)[^.!?]*[.!?]/gi,' ');
+  d=d.replace(/(?:^|\s)(?:Includes?|Featuring|With)\s+(?:a\s+)?(?:new\s+)?(?:afterword|foreword|introduction|reading group guide|discussion guide|bonus|preview)[^.!?]*[.!?]/gi,' ');
+  d=d.replace(/\bAbout the Author\b[\s\S]*$/i,'');
+  // Quote + capitalised attribution = a review pull-quote at any length
+  // ("A triumph." —The Times). Requiring the capital keeps ordinary quoted
+  // phrases inside a real synopsis intact.
+  d=d.replace(/[\u201c"][^\u201d"]{3,}[\u201d"]\s*[\u2014\u2013-]{1,2}\s*[A-Z][^.!?]{1,60}[.!?]?/g,' ');
+  d=d.replace(/[\u201c"][^\u201d"]{40,}[\u201d"]/g,' ');
+  d=d.replace(/\s*[\u2022\u00b7|]\s*/g,' ').replace(/\s{2,}/g,' ').trim();
+  d=d.replace(/^[\s\u2014\u2013-]+/,'').trim();
+  return d;
+}
+function _lkQuality(d){
+  if(!d) return -1e9;
+  var n=d.length;
+  if(n<60) return -1e9;
+  var caps=(d.match(/\b[A-Z]{3,}\b/g)||[]).length;
+  var quotes=(d.match(/[\u201c"]/g)||[]).length;
+  var attrib=(d.match(/[\u2014\u2013]\s*[A-Z]/g)||[]).length;
+  var hype=(d.match(/\b(bestseller|best seller|award[- ]winning|acclaimed|masterpiece|instant classic|#1|major motion picture|now a|prize)\b/gi)||[]).length;
+  var sc=Math.min(n,900)/22;
+  if(n>2200) sc-=(n-2200)/60;
+  sc -= caps*7 + quotes*5 + attrib*9 + hype*8;
+  if(/\b(?:tells|follows|story of|when |after |must |discovers|set in|explores|chronicles)\b/i.test(d)) sc+=22;
+  return sc;
+}
+function _lkBestDesc(cands){
+  var best='', bestQ=-1e9;
+  (cands||[]).forEach(function(c){
+    var d=_lkClean(c), q=_lkQuality(d);
+    if(q>bestQ){ bestQ=q; best=d; }
+  });
+  if(bestQ<=-1e9) return '';
+  if(best.length>760){
+    var cut=best.slice(0,760), dot=Math.max(cut.lastIndexOf('. '),cut.lastIndexOf('! '),cut.lastIndexOf('? '));
+    best=(dot>320?cut.slice(0,dot+1):cut.trim()+'\u2026');
+  }
+  return best;
+}
+// Each pick costs requests against a 1,000/day quota — cache by book.
+function _lkCacheGet(k){ try{ var r=storage.getItem('rl_lkc_'+k); return r?JSON.parse(r):null; }catch(e){ return null; } }
+function _lkCacheSet(k,v){ try{ storage.setItem('rl_lkc_'+k,JSON.stringify(v)); }catch(e){} }
 function _lkFillSummary(txt){
   var sum=document.getElementById('f-summary');
   if(!sum || sum.value.trim() || !txt) return;
-  var d=String(txt).replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
-  if(d.length>700){ var cut=d.slice(0,700), dot=cut.lastIndexOf('. '); d=(dot>300?cut.slice(0,dot+1):cut+'\u2026'); }
-  sum.value=d;
+  sum.value=txt;
 }
 function lookupPick(i){
   var r=_lookupDocs[i]; if(!r) return;
@@ -4233,54 +4280,67 @@ function lookupPick(i){
   _lkDetails(r);
 }
 function _lkDetails(r){
-  _lkStatus('Fetching details\u2026');
-  // Plain query only. Field operators (intitle:/inauthor:) combined with
-  // langRestrict match nothing surprisingly often — that returned zero
-  // results for Piranesi. Filter to the right book client-side instead.
   var base=_lkNorm((r.title||'').split(':')[0]);
   var aStem=(_lkNorm(r.author||'').split(' ').pop()||'').slice(0,4);
+  var ck=base+'|'+aStem;
+  var cached=_lkCacheGet(ck);
+  if(cached){ _lkApplyDetails(cached,'cache'); return; }
+  _lkStatus('Fetching details\u2026');
   var q=(r.title||'').split(':')[0].trim()+(r.author?' '+r.author:'');
-  var u='https://www.googleapis.com/books/v1/volumes?maxResults=20&q='+encodeURIComponent(q)+'&key='+GBOOKS_KEY;
-  fetch(u).then(function(x){
-    if(!x.ok){
-      _lkStatus(x.status===429?'Google Books quota reached \u2014 try again tomorrow'
-               :x.status===403?'Google Books key rejected \u2014 check referrer restrictions'
-               :'Google Books error '+x.status);
-      return null;
+  var G='https://www.googleapis.com/books/v1/volumes?maxResults=20&q='+encodeURIComponent(q)+'&key='+GBOOKS_KEY;
+  var O=r.olkey?('https://openlibrary.org'+r.olkey+'.json'):'';
+  var gErr='';
+  function fetchJSON(u,tag){
+    if(!u) return Promise.resolve(null);
+    return fetch(u).then(function(x){
+      if(!x.ok){ if(tag==='g') gErr=String(x.status); return null; }
+      return x.json();
+    }).catch(function(){ if(tag==='g') gErr='net'; return null; });
+  }
+  Promise.all([fetchJSON(G,'g'),fetchJSON(O,'o')]).then(function(res){
+    var items=(res[0]&&res[0].items)||[], work=res[1]||null;
+    var descs=[], cats=[], pages=0, n=0;
+    // Open Library's community-written work description reads like a synopsis
+    // rather than jacket copy, so it goes into the pool first.
+    if(work){
+      var wd=work.description;
+      if(wd && typeof wd==='object') wd=wd.value;
+      if(wd) descs.push(wd);
+      (work.subjects||[]).forEach(function(x){ cats.push(x); });
     }
-    return x.json();
-  }).then(function(d){
-    if(!d) return;
-    var items=(d&&d.items)||[];
-    // Only volumes that really are this book: title base must match and, if
-    // we know the author, their surname stem must appear.
-    function harvest(enOnly){
-      var desc='',cats=null,pages=0;
-      items.forEach(function(it){
-        var v=it.volumeInfo||{};
-        if(_lkNorm((v.title||'').split(':')[0])!==base) return;
-        if(aStem){
-          var va=_lkNorm((v.authors||[]).join(' '));
-          if(va.indexOf(aStem)<0) return;
-        }
-        if(enOnly && v.language && v.language!=='en') return;
-        if(!desc && v.description && v.description.length>40) desc=v.description;
-        if(!cats && v.categories && v.categories.length) cats=v.categories;
-        if(!pages && v.pageCount) pages=v.pageCount;
-      });
-      return {desc:desc,cats:cats,pages:pages};
-    }
-    var g=harvest(true);                                   // English editions first
-    if(!g.desc && !g.cats) g=harvest(false);               // then any language
-    var got=[];
-    if(g.desc){ _lkFillSummary(g.desc); got.push('summary'); }
-    if(g.cats){ var gg=_lkGenre(g.cats); if(gg){ try{ selectFormGenre(gg); got.push('genre'); }catch(e){} } }
-    var pf=document.getElementById('f-pages');
-    if(pf && !pf.value && g.pages){ pf.value=g.pages; got.push('pages'); }
-    if(got.length) _lkStatus('Filled '+got.join(', ')+' from Google Books');
-    else if(!items.length) _lkStatus('Google Books returned nothing for this title');
-    else _lkStatus('Found '+items.length+' editions, none with a description');
-  }).catch(function(){ _lkStatus('Couldn\u2019t reach Google Books \u2014 fill in manually'); });
+    // Then every matching Google edition — best-of-N, not first-found.
+    items.forEach(function(it){
+      var v=it.volumeInfo||{};
+      if(_lkNorm((v.title||'').split(':')[0])!==base) return;
+      if(aStem){
+        var va=_lkNorm((v.authors||[]).join(' '));
+        if(va.indexOf(aStem)<0) return;
+      }
+      n++;
+      if(v.description) descs.push(v.description);
+      (v.categories||[]).forEach(function(c){ cats.push(c); });
+      if(!pages && v.pageCount) pages=v.pageCount;
+    });
+    var payload={desc:_lkBestDesc(descs),cats:cats,pages:pages,n:n,gErr:gErr};
+    if(payload.desc||payload.cats.length||payload.pages) _lkCacheSet(ck,payload);
+    _lkApplyDetails(payload,'live');
+  });
+}
+function _lkApplyDetails(d,src){
+  var got=[];
+  if(d.desc){ _lkFillSummary(d.desc); got.push('summary'); }
+  if(d.cats && d.cats.length){
+    var g=_lkGenre(d.cats);
+    if(g){ try{ selectFormGenre(g); got.push('genre'); }catch(e){} }
+  }
+  var pf=document.getElementById('f-pages');
+  if(pf && !pf.value && d.pages){ pf.value=d.pages; got.push('pages'); }
+  if(got.length) _lkStatus('Filled '+got.join(', ')+(src==='cache'?' (cached)':''));
+  else if(d.gErr==='429') _lkStatus('Google Books quota reached \u2014 try again tomorrow');
+  else if(d.gErr==='403') _lkStatus('Google Books key rejected \u2014 check referrer restrictions');
+  else if(d.gErr) _lkStatus('Google Books unreachable ('+d.gErr+')');
+  else if(!d.n) _lkStatus('No matching editions found');
+  else _lkStatus('Found '+d.n+' editions, none with a usable description');
 }
 // Small line under the lookup row so autofill never fails silently.
 function _lkStatus(msg){
