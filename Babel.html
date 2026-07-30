@@ -3722,6 +3722,11 @@ function _hWeek(d){
 function loadHearth(){
   try{ var r=storage.getItem('rl_hearth'); if(r){ var o=JSON.parse(r); for(var k in o) babelHearth[k]=o[k]; } }catch(e){}
   ['frozen','claims','unlocked','logins'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
+  // Legacy string anchors -> timestamp.
+  if(typeof babelHearth.freezeFrom==='string' && babelHearth.freezeFrom){
+    var q=babelHearth.freezeFrom.split('-'), qd=new Date(+q[0],+q[1]-1,+q[2]);
+    qd.setHours(0,0,0,0); babelHearth.freezeFrom=qd.getTime();
+  }
 }
 function saveHearth(){
   try{ storage.setItem('rl_hearth',JSON.stringify(babelHearth)); }catch(e){}
@@ -3747,7 +3752,7 @@ var HEARTH_TRACKS=[
   {k:'sess',  name:'Sessions logged', suf:'',  tiers:mkTiers(5,5000,26)},
   {k:'rate',  name:'Ratings given',   suf:'',  tiers:mkTiers(5,1000,22)},
   {k:'rev',   name:'Reviews written', suf:'',  tiers:mkTiers(1,500,20)},
-  {k:'streak',name:'Day streak',      suf:'d', tiers:[3,7,14,21,30,45,60,90,120,180,250,365,550,750,1200,3650]},
+  {k:'streak',name:'Day streak',      suf:'d', tiers:[3,5,7,10,14,21,30,45,60,90,120,160,210,270,340,420,510,610,730,900,1100,1400,1800,2400,3650]},
   {k:'long',  name:'Longest session', suf:'m', tiers:[30,45,60,90,120,180,240,300]}
 ];
 // One entry per REAL book (deduped by bookId), merging the fullest copy —
@@ -3824,6 +3829,9 @@ function applyStreakFreezes(){
   while(guard++<7){
     var k=_dayKey(d);
     if(met[k]||babelHearth.frozen[k]) break;
+    // Days before the freeze was acquired are not coverable. Compared as
+    // timestamps: day-key strings are unpadded and sort incorrectly.
+    if(babelHearth.freezeFrom && d.getTime()<babelHearth.freezeFrom) break;
     gap.push(k); d.setDate(d.getDate()-1);
   }
   // Only spend if a streak actually existed before the gap.
@@ -3832,6 +3840,7 @@ function applyStreakFreezes(){
   if(!met[before] && !babelHearth.frozen[before]) return;
   var used=0;
   while(gap.length && babelHearth.freezes>0){ babelHearth.frozen[gap.pop()]=1; babelHearth.freezes--; used++; }
+  if(babelHearth.freezes<=0) babelHearth.freezeFrom=0;
   if(used){ babelHearth.freezeNote=used; saveHearth(); }
 }
 function hearthInit(){
@@ -3958,6 +3967,9 @@ function renderShop(){
 function buyFreeze(){
   if(babelHearth.embers<50) return;
   babelHearth.embers-=50; babelHearth.freezes++;
+  // A freeze covers days from the day you bought it onward — it must never be
+  // eaten retroactively by a gap that already happened.
+  if(!babelHearth.freezeFrom){ var _t=new Date(); _t.setHours(0,0,0,0); babelHearth.freezeFrom=_t.getTime(); }
   saveHearth(); renderShop(); renderHearth();
 }
 
@@ -3966,6 +3978,7 @@ function buyFreeze(){
 function freezeDay(key){
   if(!babelHearth.freezes||babelHearth.frozen[key]) return;
   babelHearth.frozen[key]=1; babelHearth.freezes--;
+  if(babelHearth.freezes<=0) babelHearth.freezeFrom=0;
   saveHearth();
   try{ renderReadingScreen(); renderStreak(); renderHearth(); }catch(e){}
 }
