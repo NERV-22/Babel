@@ -610,6 +610,25 @@ body{padding:0}
 .stat-mini-v{font-family:sans-serif;font-size:13px;color:var(--text);margin-top:6px}
 
 .genre-chart{margin-top:6px}
+.lookup-row{display:flex;gap:8px;margin-bottom:10px}
+.lookup-row input{flex:1;min-width:0;padding:10px 12px;font-size:14px;font-family:sans-serif;border:1px solid var(--border);border-radius:9px;background:var(--bg1);color:var(--text);outline:none}
+.lookup-btn{flex:none;padding:0 14px;border:1px solid var(--accent);border-radius:9px;background:transparent;color:var(--accent);font-family:sans-serif;font-size:13px;font-weight:600;cursor:pointer}
+.lookup-scan{padding:0 11px;display:flex;align-items:center}
+.lookup-scan svg{width:16px;height:16px}
+.lookup-results{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;max-height:250px;overflow-y:auto}
+.lookup-results.hidden{display:none}
+.lookup-item{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:9px 11px;border:1px solid var(--border);border-radius:9px;background:var(--bg1);cursor:pointer;font-family:sans-serif}
+.lookup-item:active{border-color:var(--accent)}
+.lookup-t{font-size:13.5px;font-weight:600;color:var(--text)}
+.lookup-m{font-size:11.5px;color:var(--text-muted)}
+.lookup-note{font-family:sans-serif;font-size:12.5px;color:var(--text-muted);padding:6px 2px}
+.scan-overlay{position:fixed;inset:0;background:#000;z-index:400;display:flex;align-items:center;justify-content:center}
+.scan-overlay.hidden{display:none}
+#scan-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.scan-frame{position:relative;width:78%;max-width:340px;aspect-ratio:1.6;border:2.5px solid var(--accent);border-radius:14px;box-shadow:0 0 0 2000px rgba(0,0,0,.45)}
+.scan-hint{position:absolute;bottom:110px;left:0;right:0;text-align:center;color:#fff;font-family:sans-serif;font-size:13.5px;text-shadow:0 1px 3px #000}
+.scan-cancel{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);padding:11px 26px;border:1px solid rgba(255,255,255,.4);border-radius:999px;background:rgba(0,0,0,.5);color:#fff;font-family:sans-serif;font-size:14px;cursor:pointer}
+
 .fav-btn svg,.reading-btn svg,.menu-btn svg{width:16px;height:16px;display:block}
 .reading-btn svg{width:13px;height:13px}
 .fav-btn.on svg{fill:currentColor}
@@ -1053,6 +1072,12 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div id="timer-pick-list"></div>
   </div>
 </div>
+<div class="scan-overlay hidden" id="scan-overlay">
+  <video id="scan-video" playsinline muted></video>
+  <div class="scan-frame"></div>
+  <div class="scan-hint">Point at the barcode on the back cover</div>
+  <button class="scan-cancel" onclick="closeScan()">Cancel</button>
+</div>
 <div class="sheet-overlay hidden" id="add-sheet" onclick="if(event.target===this)closeAddSheet()">
   <div class="sheet">
     <div class="sheet-grab" onclick="closeAddSheet()"></div>
@@ -1092,6 +1117,12 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     </div>
     <div class="add-form hidden" id="add-form">
       <p class="form-title-text">New book</p>
+      <div class="lookup-row">
+        <input type="text" id="f-lookup" placeholder="Look up by title, author or ISBN" onkeydown="if(event.key==='Enter'){event.preventDefault();bookLookup();}"/>
+        <button type="button" class="lookup-btn" onclick="bookLookup()">Look up</button>
+        <button type="button" class="lookup-btn lookup-scan" onclick="scanISBN()" title="Scan ISBN barcode"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 5h2v14H2zM5 5h1v14H5zM8 5h2v14H8zM12 5h1v14h-1zM15 5h3v14h-3zM20 5h2v14h-2z"/></svg></button>
+      </div>
+      <div class="lookup-results hidden" id="lookup-results"></div>
             <div class="form-grid">
         <input class="span-full" type="text" id="f-title" placeholder="Title"/>
         <input class="span-full" type="text" id="f-author" placeholder="Author"/>
@@ -3613,6 +3644,7 @@ function openAddSheet(){
   try{ renderPasteButton(); }catch(e){}
 }
 function closeAddSheet(){
+  if(typeof closeScan==='function') closeScan();
   var o=document.getElementById('add-sheet'); if(o) o.classList.add('hidden');
   var f=document.getElementById('add-form'); if(f) f.classList.add('hidden');
   document.body.style.overflow='';
@@ -4008,6 +4040,197 @@ function rollDice(){
     +'<div class="dice-a">'+esc(b.author||'')+(b.pages?' \u00b7 '+b.pages+'p':'')+'</div>'
     +(b.genre?'<div class="dice-g">'+esc(b.genre)+'</div>':'')
   +'</div>';
+}
+
+
+// ── Book lookup: Google Books + Open Library ─────────────────────────────────
+// Two sources queried in parallel and merged. Google Books carries the better
+// relevance ranking and real descriptions; Open Library contributes edition
+// counts (a popularity signal) and fills gaps. Records are deduped by
+// title+author, corroborated entries score higher, and the whole set is
+// re-ranked against what the user actually typed — Open Library's own ordering
+// buries canonical works behind same-title obscurities.
+var _lookupDocs=[];
+function _lkNorm(x){ return (x||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+var _LK_NONLATIN=/[\u0370-\u03FF\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF\u0590-\u05FF\u0600-\u06FF]/;
+function _lkScore(r,q){
+  var nq=_lkNorm(q), nt=_lkNorm(r.title), na=_lkNorm(r.author), sc=0;
+  if(nt===nq) sc+=100;
+  else if(nt.indexOf(nq)===0) sc+=62;
+  else if(nt.indexOf(nq)>=0) sc+=34;
+  // Stem-tolerant matching: transliterations differ across sources
+  // (Dostoevsky / Dostoyevsky, Tolstoy / Tolstoi), so compare on word stems.
+  var words=nq.split(' ').filter(Boolean), hitT=0, hitA=0, missed=0;
+  var ntw=nt.split(' ').filter(Boolean), naw=na.split(' ').filter(Boolean);
+  function fuzzy(list,w){
+    var stem=w.slice(0,5);
+    return list.some(function(x){ return x===w || x.indexOf(stem)===0 || w.indexOf(x.slice(0,5))===0; });
+  }
+  words.forEach(function(w){
+    if(w.length<2) return;
+    var inT=(nt.indexOf(w)>=0)||fuzzy(ntw,w), inA=fuzzy(naw,w);
+    if(inT) hitT++;
+    if(inA) hitA++;
+    // A distinctive word you typed that matches nothing is a strong demotion:
+    // searching "the idiot dostoevsky" should sink every other The Idiot.
+    if(!inT && !inA && w.length>2) missed++;
+  });
+  sc += hitT*11 + hitA*20 - missed*18;
+  if(r.pages) sc+=16;
+  if(r.desc)  sc+=9;
+  if(r.both)  sc+=26;                      // found by both sources
+  if(r.editions) sc+=Math.min(28,Math.log(r.editions+1)*7);
+  sc -= (r.rank||0)*1.4;                   // keep some of each source's ordering
+  if(!_LK_NONLATIN.test(q) && _LK_NONLATIN.test(r.title)) sc-=70;
+  return sc;
+}
+function _lkFromGoogle(d){
+  var out=[];
+  ((d&&d.items)||[]).forEach(function(it,i){
+    var v=it.volumeInfo||{}; if(!v.title) return;
+    var yr=((v.publishedDate||'').match(/\d{4}/)||[])[0];
+    out.push({title:v.title+(v.subtitle?': '+v.subtitle:''),
+      author:(v.authors&&v.authors[0])||'', year:yr?+yr:null,
+      pages:v.pageCount||null, publisher:v.publisher||'',
+      desc:v.description||'', cats:v.categories||[], editions:0, rank:i});
+  });
+  return out;
+}
+function _lkFromOL(d){
+  var out=[];
+  ((d&&d.docs)||[]).forEach(function(x,i){
+    if(!x.title) return;
+    out.push({title:x.title, author:(x.author_name&&x.author_name[0])||'',
+      year:x.first_publish_year||null, pages:x.number_of_pages_median||null,
+      publisher:(x.publisher&&x.publisher[0])||'', desc:'', cats:[],
+      editions:x.edition_count||0, rank:i});
+  });
+  return out;
+}
+function bookLookup(){
+  var q=(document.getElementById('f-lookup').value||'').trim();
+  var box=document.getElementById('lookup-results');
+  if(!q){ box.innerHTML=''; box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  box.innerHTML='<div class="lookup-note">Searching\u2026</div>';
+  var digits=q.replace(/[-\s]/g,'');
+  var isbn=(/^\d{9}[\dXx]$/.test(digits)||/^\d{13}$/.test(digits))?digits:'';
+  var gq = isbn ? ('isbn:'+isbn) : q;
+  var oq = isbn ? ('isbn:'+isbn) : q;
+  var G='https://www.googleapis.com/books/v1/volumes?maxResults='+(isbn?5:20)+'&q='+encodeURIComponent(gq);
+  var O='https://openlibrary.org/search.json?limit='+(isbn?5:20)
+      +'&fields=key,title,author_name,first_publish_year,number_of_pages_median,edition_count,publisher&q='+encodeURIComponent(oq);
+  function grab(u){ return fetch(u).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }); }
+  Promise.all([grab(G),grab(O)]).then(function(res){
+    var recs=_lkFromGoogle(res[0]).concat(_lkFromOL(res[1]));
+    if(!recs.length){
+      box.innerHTML='<div class="lookup-note">No matches \u2014 try fewer words, the author\u2019s name, or the ISBN from the copyright page.</div>';
+      return;
+    }
+    // Merge duplicates across the two sources.
+    var map={}, order=[];
+    recs.forEach(function(r){
+      var _sn=(_lkNorm(r.author).split(' ').pop()||'').slice(0,4);
+      var k=_lkNorm(r.title)+'|'+_sn;
+      var e=map[k];
+      if(!e){ map[k]=r; order.push(k); return; }
+      e.both=true;
+      if(!e.pages&&r.pages) e.pages=r.pages;
+      if(!e.desc&&r.desc) e.desc=r.desc;
+      if(!e.publisher&&r.publisher) e.publisher=r.publisher;
+      if(!e.year&&r.year) e.year=r.year;
+      if(!e.cats.length&&r.cats.length) e.cats=r.cats;
+      if(r.editions>e.editions) e.editions=r.editions;
+      if(r.rank<e.rank) e.rank=r.rank;
+    });
+    var list=order.map(function(k){ return map[k]; });
+    list.forEach(function(r){ r.score=_lkScore(r,q); });
+    list.sort(function(a,b){ return b.score-a.score; });
+    _lookupDocs=list.slice(0,8);
+    box.innerHTML=_lookupDocs.map(function(r,i){
+      var meta=[r.author,r.year,(r.pages?r.pages+' pages':null),r.publisher].filter(Boolean).join(' \u00b7 ');
+      return '<button type="button" class="lookup-item" onclick="lookupPick('+i+')">'
+        +'<span class="lookup-t">'+esc(r.title)+'</span>'
+        +'<span class="lookup-m">'+esc(meta)+'</span></button>';
+    }).join('');
+  });
+}
+// Only ever selects a genre you already use — never invents one from the
+// API's coarse category soup.
+function _lkGenre(cats){
+  if(!cats||!cats.length) return '';
+  var have={}; allGenres().forEach(function(g){ have[g.toLowerCase()]=g; });
+  for(var i=0;i<cats.length;i++){
+    var c=(cats[i]||'').toLowerCase();
+    if(have[c]) return have[c];
+    var seg=c.split('/')[0].trim();
+    if(have[seg]) return have[seg];
+  }
+  return '';
+}
+function lookupPick(i){
+  var r=_lookupDocs[i]; if(!r) return;
+  document.getElementById('f-title').value=r.title||'';
+  document.getElementById('f-author').value=r.author||'';
+  if(r.pages) document.getElementById('f-pages').value=r.pages;
+  var sum=document.getElementById('f-summary');
+  if(sum && !sum.value.trim() && r.desc){
+    var d=r.desc.replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
+    if(d.length>700){ var cut=d.slice(0,700), dot=cut.lastIndexOf('. '); d=(dot>300?cut.slice(0,dot+1):cut+'\u2026'); }
+    sum.value=d;
+  }
+  var g=_lkGenre(r.cats);
+  if(g){ try{ selectFormGenre(g); }catch(e){} }
+  var box=document.getElementById('lookup-results'); box.innerHTML=''; box.classList.add('hidden');
+}
+
+// ── ISBN barcode scanner ─────────────────────────────────────────────────────
+var _scanStream=null,_scanTimer=null,_scanDet=null;
+function scanISBN(){
+  var box=document.getElementById('lookup-results');
+  if(!('BarcodeDetector' in window)){
+    box.classList.remove('hidden');
+    box.innerHTML='<div class="lookup-note">Barcode scanning isn\u2019t supported in this browser \u2014 type the ISBN instead.</div>';
+    return;
+  }
+  document.getElementById('scan-overlay').classList.remove('hidden');
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(function(st){
+    _scanStream=st;
+    var v=document.getElementById('scan-video'); v.srcObject=st; v.play();
+    try{ _scanDet=new BarcodeDetector({formats:['ean_13']}); }catch(e){ try{ _scanDet=new BarcodeDetector(); }catch(e2){ _scanDet=null; } }
+    if(!_scanDet){ closeScan(); return; }
+    _scanTick();
+  }).catch(function(){
+    closeScan();
+    box.classList.remove('hidden');
+    box.innerHTML='<div class="lookup-note">Camera unavailable or permission denied.</div>';
+  });
+}
+function _scanTick(){
+  var v=document.getElementById('scan-video');
+  if(!_scanDet||!_scanStream) return;
+  if(!v||v.readyState<2){ _scanTimer=setTimeout(_scanTick,250); return; }
+  _scanDet.detect(v).then(function(codes){
+    var hit=null;
+    (codes||[]).forEach(function(c){
+      var d=(c.rawValue||'').replace(/\D/g,'');
+      if(d.length===13&&(d.slice(0,3)==='978'||d.slice(0,3)==='979')) hit=d;
+    });
+    if(hit){
+      try{ if(navigator.vibrate) navigator.vibrate(60); }catch(e){}
+      closeScan();
+      document.getElementById('f-lookup').value=hit;
+      bookLookup();
+      return;
+    }
+    _scanTimer=setTimeout(_scanTick,250);
+  }).catch(function(){ _scanTimer=setTimeout(_scanTick,350); });
+}
+function closeScan(){
+  clearTimeout(_scanTimer); _scanTimer=null; _scanDet=null;
+  if(_scanStream){ try{ _scanStream.getTracks().forEach(function(t){t.stop();}); }catch(e){} _scanStream=null; }
+  var v=document.getElementById('scan-video'); if(v) v.srcObject=null;
+  var ov=document.getElementById('scan-overlay'); if(ov) ov.classList.add('hidden');
 }
 
 // ── Deep stats ───────────────────────────────────────────────────────────────
