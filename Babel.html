@@ -622,6 +622,8 @@ body{padding:0}
 .lookup-t{font-size:13.5px;font-weight:600;color:var(--text)}
 .lookup-m{font-size:11.5px;color:var(--text-muted)}
 .lookup-note{font-family:sans-serif;font-size:12.5px;color:var(--text-muted);padding:6px 2px}
+.lookup-status{font-family:sans-serif;font-size:11.5px;color:var(--accent);padding:2px 2px 8px}
+.lookup-status.hidden{display:none}
 .manual-toggle{display:block;width:100%;padding:10px;margin-top:2px;border:1px dashed var(--border);border-radius:9px;background:transparent;color:var(--text-muted);font-family:sans-serif;font-size:12.5px;cursor:pointer}
 .manual-toggle:active{border-color:var(--accent);color:var(--accent)}
 #add-manual.hidden{display:none}
@@ -1126,6 +1128,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <button type="button" class="lookup-btn lookup-scan" onclick="scanISBN()" title="Scan ISBN barcode"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 5h2v14H2zM5 5h1v14H5zM8 5h2v14H8zM12 5h1v14h-1zM15 5h3v14h-3zM20 5h2v14h-2z"/></svg></button>
       </div>
       <div class="lookup-results hidden" id="lookup-results"></div>
+      <div class="lookup-status hidden" id="lookup-status"></div>
       <button type="button" class="manual-toggle" id="manual-toggle" onclick="showManual()">Enter details manually</button>
       <div id="add-manual" class="hidden">
             <div class="form-grid">
@@ -3650,6 +3653,7 @@ function openAddSheet(){
   try{ hideManual(); }catch(e){}
   var lf=document.getElementById('f-lookup'); if(lf) lf.value='';
   var lr=document.getElementById('lookup-results'); if(lr){ lr.innerHTML=''; lr.classList.add('hidden'); }
+  try{ _lkStatus(''); }catch(e){}
   try{ renderPasteButton(); }catch(e){}
 }
 function closeAddSheet(){
@@ -4087,6 +4091,7 @@ function _lkScore(r,q){
   sc += hitT*11 + hitA*20 - missed*18;
   if(r.pages) sc+=16;
   if(r.desc)  sc+=9;
+  if(r.cats&&r.cats.length) sc+=8;
   if(r.both)  sc+=26;                      // found by both sources
   if(r.editions) sc+=Math.min(28,Math.log(r.editions+1)*7);
   sc -= (r.rank||0)*1.4;                   // keep some of each source's ordering
@@ -4213,21 +4218,37 @@ function lookupPick(i){
   _lkDetails(r);
 }
 function _lkDetails(r){
-  var u = r.gid
-    ? 'https://www.googleapis.com/books/v1/volumes/'+encodeURIComponent(r.gid)
-    : 'https://www.googleapis.com/books/v1/volumes?maxResults=3&q='+encodeURIComponent(
-        'intitle:'+(r.title||'').split(':')[0]+(r.author?' inauthor:'+r.author:''));
+  _lkStatus('Fetching details\u2026');
+  // Don't trust a single volume: Google's top match is often a foreign or
+  // obscure edition with no description or categories (the French Piranesi,
+  // for instance). Scan several English editions and take the first that
+  // actually carries each field.
+  var t=(r.title||'').split(':')[0].trim();
+  var q='intitle:"'+t+'"'+(r.author?' inauthor:"'+r.author+'"':'');
+  var u='https://www.googleapis.com/books/v1/volumes?maxResults=12&langRestrict=en&q='+encodeURIComponent(q);
   fetch(u).then(function(x){ return x.ok?x.json():null; }).then(function(d){
-    if(!d) return;
-    var v=d.volumeInfo||(d.items&&d.items[0]&&d.items[0].volumeInfo);
-    if(!v) return;
-    if(v.description) _lkFillSummary(v.description);
-    if(v.categories&&v.categories.length) _lkApplyGenre(v.categories);
+    var items=(d&&d.items)||[], desc='', cats=null, pages=0;
+    items.forEach(function(it){
+      var v=it.volumeInfo||{};
+      if(!desc && v.description && v.description.length>40) desc=v.description;
+      if(!cats && v.categories && v.categories.length) cats=v.categories;
+      if(!pages && v.pageCount) pages=v.pageCount;
+    });
+    var got=[];
+    if(desc){ _lkFillSummary(desc); got.push('summary'); }
+    if(cats){ var g=_lkGenre(cats); if(g){ try{ selectFormGenre(g); got.push('genre'); }catch(e){} } }
     var pf=document.getElementById('f-pages');
-    if(pf && !pf.value && v.pageCount) pf.value=v.pageCount;
-    var af=document.getElementById('f-author');
-    if(af && !af.value && v.authors && v.authors[0]) af.value=v.authors[0];
-  }).catch(function(){});
+    if(pf && !pf.value && pages){ pf.value=pages; got.push('pages'); }
+    if(got.length) _lkStatus('Filled '+got.join(', ')+' from Google Books');
+    else if(!items.length) _lkStatus('No extra details found for this book');
+    else _lkStatus('This edition has no description or category listed');
+  }).catch(function(){ _lkStatus('Couldn\u2019t reach Google Books \u2014 fill in manually'); });
+}
+// Small line under the lookup row so autofill never fails silently.
+function _lkStatus(msg){
+  var el=document.getElementById('lookup-status'); if(!el) return;
+  el.textContent=msg||'';
+  el.classList.toggle('hidden',!msg);
 }
 function showManual(){
   var m=document.getElementById('add-manual'); if(m) m.classList.remove('hidden');
