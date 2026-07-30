@@ -610,6 +610,68 @@ body{padding:0}
 .stat-mini-v{font-family:sans-serif;font-size:13px;color:var(--text);margin-top:6px}
 
 .genre-chart{margin-top:6px}
+/* ── Hearth ─────────────────────────────────────────────────────────────────── */
+.h-top{display:flex;align-items:center;gap:10px;margin:2px 0 14px}
+.h-subtabs{display:flex;gap:6px;flex:1;min-width:0}
+.h-st{flex:none;padding:8px 14px;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-muted);font-family:sans-serif;font-size:12.5px;cursor:pointer}
+.h-st.active{background:var(--surface);color:var(--text);border-color:var(--accent)}
+.h-shop{flex:none;width:42px;height:42px;border-radius:50%;border:none;background:var(--accent);color:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 10px var(--accent-shadow)}
+.h-shop svg{width:20px;height:20px}
+.h-bal{display:flex;align-items:baseline;gap:7px;margin-bottom:12px}
+.h-emb{font-family:Georgia,serif;font-size:26px;font-weight:700;color:var(--star);text-shadow:0 0 9px var(--accent-shadow)}
+.h-embl{font-family:sans-serif;font-size:12px;color:var(--text-muted)}
+.h-frz{margin-left:auto;font-family:sans-serif;font-size:12px;color:var(--text-muted)}
+.h-note{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius,14px);padding:10px 12px;margin-bottom:12px;font-family:sans-serif;font-size:12.5px;color:var(--text)}
+.h-note-x{margin-left:auto;background:none;border:none;color:var(--text-muted);font-size:17px;cursor:pointer;line-height:1}
+.h-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius,14px);padding:12px 13px;margin-bottom:9px}
+.h-row.ready{border-color:var(--accent)}
+.h-row.claimed{opacity:.62}
+.h-row-t{display:flex;align-items:center;gap:9px;cursor:pointer}
+.h-row.ach .h-row-t{cursor:pointer}
+.h-row-n{flex:1;min-width:0;font-family:sans-serif;font-size:13.5px;color:var(--text)}
+.h-row-e{font-family:sans-serif;font-size:12px;font-weight:700;color:var(--star)}
+.h-bar{height:6px;border-radius:4px;background:color-mix(in srgb,var(--text) 9%,transparent);overflow:hidden;margin:9px 0 7px}
+.h-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .6s ease}
+.h-prog,.h-done{font-family:sans-serif;font-size:11.5px;color:var(--text-muted)}
+.h-claim{padding:7px 16px;border:none;border-radius:999px;background:var(--accent);color:var(--surface);font-family:sans-serif;font-size:12.5px;font-weight:700;cursor:pointer}
+.h-ladder{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.h-tier{font-family:sans-serif;font-size:10.5px;padding:3px 7px;border-radius:999px;border:1px solid var(--border);color:var(--text-muted)}
+.h-tier.got{border-color:var(--accent);color:var(--accent);background:var(--accent-shadow)}
+.shop-head{display:flex;align-items:baseline;margin-bottom:14px}
+.shop-t{font-family:Georgia,serif;font-size:19px;font-weight:700;color:var(--text)}
+.shop-bal{margin-left:auto;font-family:sans-serif;font-size:13px;color:var(--star);font-weight:700}
+.shop-item{display:flex;align-items:center;gap:12px;background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius,14px);padding:13px}
+.shop-i-l{flex:1;min-width:0}
+.shop-i-n{font-family:sans-serif;font-size:14px;color:var(--text);font-weight:600}
+.shop-i-d{font-family:sans-serif;font-size:11.5px;color:var(--text-muted);margin-top:3px}
+.shop-buy{flex:none;padding:9px 18px;border:none;border-radius:999px;background:var(--accent);color:var(--surface);font-family:sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+.shop-buy.off{opacity:.4;cursor:default}
+.shop-note{font-family:sans-serif;font-size:11.5px;color:var(--text-muted);margin-top:9px;text-align:center}
+
+/* ── Book page (read-throughs) ──────────────────────────────────────────────── */
+.bk-id{cursor:pointer}
+.my-stars.ro{pointer-events:none}
+.rt-badge{opacity:.75}
+.bp-prog{margin:2px 0 14px}
+.bp-bar{height:6px;border-radius:4px;background:color-mix(in srgb,var(--text) 10%,transparent);overflow:hidden}
+.bp-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .6s ease}
+.bp-progl{font-family:sans-serif;font-size:12px;color:var(--text-muted);margin-top:6px}
+.bp-empty{font-family:sans-serif;font-size:12.5px;color:var(--text-muted);text-align:center;padding:14px 0}
+.rt-card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius,14px);padding:12px 13px;margin-bottom:10px}
+.rt-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.rt-n{font-family:sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700}
+.rt-dates{display:flex;gap:9px;margin-bottom:9px}
+.rt-d{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.rt-d span{font-family:sans-serif;font-size:10.5px;color:var(--text-muted)}
+.rt-d input{width:100%;padding:7px 9px;font-size:12.5px;font-family:sans-serif;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none}
+.rt-rate{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.rt-stars{display:inline-flex;gap:3px}
+.rt-star{position:relative;display:inline-block;width:21px;height:21px}
+.rt-star svg{width:100%;height:100%;display:block}
+.rt-hit{position:absolute;top:0;height:100%;width:50%;cursor:pointer}
+.rt-hl{left:0}.rt-hr{right:0}
+.rt-rv{font-family:sans-serif;font-size:12px;color:var(--text-muted);min-width:22px}
+.rt-note{width:100%;min-height:66px;padding:9px 10px;font-size:13px;font-family:sans-serif;line-height:1.45;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);outline:none;resize:vertical}
 /* ── Deep stats ─────────────────────────────────────────────────────────────── */
 #deep-stats{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .ds-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius,14px);padding:14px 15px}
@@ -861,6 +923,16 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <div class="appbar"><div class="appbar-title">Reading</div></div>
       <div id="reading-body"></div>
     </section>
+    <section class="screen hidden" id="screen-hearth" data-screen-label="Hearth">
+      <div class="h-top">
+        <div class="h-subtabs">
+          <button class="h-st active" id="h-st-daily" onclick="hearthSub('daily')">Daily</button>
+          <button class="h-st" id="h-st-ach" onclick="hearthSub('ach')">Achievements</button>
+        </div>
+        <button class="h-shop" onclick="openShop()" title="Shop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16l-1.3 11.2A2 2 0 0 1 16.7 20H7.3a2 2 0 0 1-2-1.8L4 7Z"/><path d="M8.5 7V5.5a3.5 3.5 0 0 1 7 0V7"/></svg></button>
+      </div>
+      <div id="h-body"></div>
+    </section>
     <section class="screen hidden" id="screen-settings" data-screen-label="Settings">
       <div class="appbar"><div class="appbar-title">Settings</div></div>
       <div class="set-list">
@@ -913,8 +985,21 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <button class="tab" data-screen="stats" onclick="switchScreen('stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 20V11M12 20V4M19 20v-6"/></svg><span>Stats</span></button>
     <button class="tab" data-screen="timer" onclick="switchScreen('timer')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5"/><path d="M9.5 2.5h5"/><path d="M19.2 6.8l1.2-1.2"/></svg><span>Timer</span></button>
     <button class="tab" data-screen="reading" onclick="switchScreen('reading')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Reading</span></button>
+    <button class="tab" data-screen="hearth" onclick="switchScreen('hearth')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M12 2c.6 4.2-2.2 6-4 8.2C6.4 12.2 5.5 14 5.5 16c0 3.6 2.9 6 6.5 6s6.5-2.4 6.5-6c0-2.6-1.4-4.6-3-6.2-.4 1.3-1.3 2.2-2.4 2.5C14.4 8.6 15.5 4.6 12 2Z"/></svg><span>Hearth</span></button>
     <button class="tab" data-screen="settings" onclick="switchScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3 5.6 5.6"/></svg><span>Settings</span></button>
   </nav>
+</div>
+<div class="sheet-overlay hidden" id="shop-sheet" onclick="if(event.target===this)closeShop()">
+  <div class="sheet">
+    <div class="shop-head"><span class="shop-t">Shop</span><span class="shop-bal" id="shop-bal"></span></div>
+    <div class="shop-item">
+      <div class="shop-i-l"><div class="shop-i-n">Streak freeze</div><div class="shop-i-d" id="shop-frz"></div>
+        <div class="shop-i-d">Covers a day you miss, automatically.</div></div>
+      <button class="shop-buy" id="shop-buy" onclick="buyFreeze()">50</button>
+    </div>
+    <div class="shop-note" id="shop-note"></div>
+    <div class="modal-btns" style="margin-top:12px"><button class="modal-cancel" onclick="closeShop()">Done</button></div>
+  </div>
 </div>
 <div class="sheet-overlay hidden" id="timer-pick" onclick="if(event.target===this)tmrClosePicker()">
   <div class="sheet">
@@ -1024,11 +1109,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <div class="modal" style="max-width:540px">
     <p class="modal-title">
       <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" style="vertical-align:-2px;margin-right:6px"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5 H13.5"/><path d="M5.5 2 V5 M10.5 2 V5"/><circle cx="5.5" cy="9" r=".6" fill="currentColor" stroke="none"/><circle cx="8" cy="9" r=".6" fill="currentColor" stroke="none"/><circle cx="10.5" cy="9" r=".6" fill="currentColor" stroke="none"/><circle cx="5.5" cy="11.2" r=".6" fill="currentColor" stroke="none"/><circle cx="8" cy="11.2" r=".6" fill="currentColor" stroke="none"/></svg>
-      Session Log
+      <span id="sm-booktitle">Book</span>
     </p>
     <p class="modal-subtitle" id="sm-subtitle"></p>
     <div class="slist" id="sm-list"></div>
-    <button class="sadd" onclick="addSession()">+ Add session</button>
+    <button class="sadd" onclick="addSession()">+ Add read</button>
     <div class="modal-btns" style="margin-top:10px">
       <span class="scount" id="sm-count"></span>
       <button class="modal-cancel" onclick="closeSM()">Done</button>
@@ -1255,6 +1340,7 @@ function computeStreak(){
   var map=_gatherSecByDay();
   var met={};
   Object.keys(map).forEach(function(k){if(map[k]>=babelGoalMin*60)met[k]=true;});
+  try{ Object.keys(babelHearth.frozen).forEach(function(k){ met[k]=true; }); }catch(e){}
   var today=new Date();today.setHours(0,0,0,0);
   var cur=0,d=new Date(today);
   if(!met[_dayKey(today)])d.setDate(d.getDate()-1);
@@ -1336,6 +1422,91 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 
 // ── Meta persistence ──────────────────────────────────────────────────────────
 function saveMeta(){storage.setItem(LS_META,JSON.stringify({lists:lists,activeId:activeId}));}
+// ── Shared book identity ─────────────────────────────────────────────────────
+// Every book carries a stable bookId. The SAME physical book copied into
+// several lists shares one bookId, so it counts once and reading logged on
+// any copy appears on all copies. Migration runs once on existing data,
+// seeding IDs and reconciling pre-existing duplicates by title+author.
+function newBookId(){ return 'b'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function _bkKey(b){ return ((b.title||'').trim().toLowerCase())+'\u241f'+((b.author||'').trim().toLowerCase()); }
+// Reuse an existing book's id when the same title+author already exists in
+// ANY list, so typing a book manually into a second list links it up too.
+function resolveBookId(title,author){
+  var k=((title||'').trim().toLowerCase())+'\u241f'+((author||'').trim().toLowerCase()), found=null;
+  books.forEach(function(x){ if(!found&&x.bookId&&_bkKey(x)===k) found=x.bookId; });
+  lists.forEach(function(l){
+    if(found||l.id===activeId) return;
+    try{
+      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+      JSON.parse(raw).forEach(function(x){ if(!found&&x.bookId&&_bkKey(x)===k) found=x.bookId; });
+    }catch(e){}
+  });
+  return found||newBookId();
+}
+function migrateBookIds(){
+  if(storage.getItem('rl_bookIdMigrated')) return;
+  try{
+    var byKey={}, sessByKey={};
+    // Pass 1 — assign a shared id per title+author, collect all their sessions.
+    lists.forEach(function(l){
+      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+      var arr=JSON.parse(raw);
+      arr.forEach(function(b){
+        var k=_bkKey(b);
+        if(!byKey[k]) byKey[k]=b.bookId||newBookId();
+        b.bookId=byKey[k];
+        if(!sessByKey[k]) sessByKey[k]=[];
+        (b.timerSessions||[]).forEach(function(x){ sessByKey[k].push(x); });
+      });
+      storage.setItem(listKey(l.id), JSON.stringify(arr));
+    });
+    // Pass 2 — give every copy the merged history, de-duped by startTime, so
+    // a book already sitting in two lists reads as one continuous history.
+    lists.forEach(function(l){
+      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+      var arr=JSON.parse(raw);
+      arr.forEach(function(b){
+        var seen={}, out=[];
+        (sessByKey[_bkKey(b)]||[]).forEach(function(x){
+          if(!x) return; var k2=String(x.startTime);
+          if(seen[k2]) return; seen[k2]=1; out.push(x);
+        });
+        out.sort(function(m,n){ return (m.startTime||0)-(n.startTime||0); });
+        b.timerSessions=out;
+      });
+      storage.setItem(listKey(l.id), JSON.stringify(arr));
+    });
+    storage.setItem('rl_bookIdMigrated','1');
+  }catch(e){}
+}
+// Append a session to every other copy of the same book, so a reread logged
+// in one list shows up in the others. Active list is patched in memory (and
+// saved, which marks it dirty for cloud sync); other lists in storage.
+function fanOutSession(bookId, session, skipListId){
+  if(!bookId||!session) return;
+  function add(b){
+    if(b.bookId!==bookId) return false;
+    b.timerSessions=b.timerSessions||[];
+    if(b.timerSessions.some(function(x){ return x&&x.startTime===session.startTime; })) return false;
+    b.timerSessions.push(session); return true;
+  }
+  if(activeId!==skipListId){
+    var t=false; books.forEach(function(b){ if(add(b)) t=true; });
+    if(t) saveCurrentList();
+  }
+  lists.forEach(function(l){
+    if(l.id===skipListId||l.id===activeId) return;
+    try{
+      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+      var arr=JSON.parse(raw), hit=false;
+      arr.forEach(function(b){ if(add(b)) hit=true; });
+      if(hit){
+        storage.setItem(listKey(l.id), JSON.stringify(arr));
+        try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(l.id); }catch(e){}
+      }
+    }catch(e){}
+  });
+}
 function listKey(id){return "rl_books_"+id;}
 function readKey(id){return "rl_read_"+id;}
 
@@ -1346,6 +1517,7 @@ function saveCurrentList(){
 }
 
 function loadListData(id){
+  migrateBookIds();
   try{
     var b=storage.getItem(listKey(id));
     var r=storage.getItem(readKey(id));
@@ -1363,6 +1535,11 @@ function loadListData(id){
       if(b.seriesOrder===undefined) b.seriesOrder="";
       if(b.seriesName===undefined)  b.seriesName="";
       if(!b.timerSessions)         b.timerSessions=[];
+      if(!b.bookId)                b.bookId=resolveBookId(b.title,b.author);
+      // Read-throughs carry their own rating; seed the newest existing read
+      // with the book's current rating so old data displays correctly.
+      if(b.myRating && b.sessions.length && !b.sessions.some(function(x){return x.rating;}))
+        b.sessions[b.sessions.length-1].rating=b.myRating;
     });
   }catch(e){books=[];readSet=new Set();}
   var lst=lists.find(function(l){return l.id===id;})||lists[0];
@@ -1522,6 +1699,22 @@ function genreColor(g){
 }
 function genreTagHTML(g){var c=genreColor(g);return '<span class="genre-tag" style="background:'+c+'1a;color:'+c+';border:1px solid '+c+'44">'+esc(g)+'</span>';}
 
+// Display-only stars for library rows — rating now happens inside a
+// read-through on the book page, so rows are purely informational.
+function starsDisplayHTML(mr,uid){
+  mr=mr||0;
+  var tier = mr>=5?' rating-5' : (mr>=4.5?' rating-4':'');
+  var pts="8,1.5 10,6 15,6.5 11.2,10 12.5,15 8,12.2 3.5,15 4.8,10 1,6.5 6,6";
+  var h='<span class="my-stars ro'+tier+'">';
+  for(var i=0;i<5;i++){
+    var full=mr>=i+1, half=!full&&mr>=i+0.5;
+    h+='<span class="my-star-wrap"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="rs'+uid+'_'+i+'"><rect x="0" y="0" width="9" height="18"/></clipPath></defs>'
+      +'<polygon points="'+pts+'" fill="'+(full?'var(--star)':'none')+'" stroke="'+((full||half)?'var(--star)':'var(--text-muted)')+'" stroke-width="1"/>'
+      +(half?'<polygon points="'+pts+'" fill="var(--star)" stroke="none" clip-path="url(#rs'+uid+'_'+i+')"/>':'')
+      +'</svg></span>';
+  }
+  return h+'</span><span class="rating-num">'+(mr?(Math.round(mr*10)/10).toFixed(1):'-')+'</span>';
+}
 function myStarsHTML(idx,mr){
   if(!mr)mr=0;
   // Add rating tier class so CSS can glow 4.5★ stars softly and 5★ stars
@@ -1983,6 +2176,7 @@ function submitBook(){
   if(!genre)                   return showFormError("Please select or type a genre.");
 
   books.push({
+    bookId:resolveBookId(title,author),
     title:title, author:author, pages:pages, genre:genre,
     summary:summary, optional:false, myRating:0,
     seriesOrder:seriesOrder, seriesName:seriesName,
@@ -2190,6 +2384,7 @@ function copyBook(idx){
   // Snapshot all fields, plus whether this book was marked read in the
   // SOURCE list (so Inherit can replay that on the destination).
   clipboardBook = {
+    bookId: b.bookId,
     title: b.title, author: b.author, pages: b.pages, genre: b.genre,
     summary: b.summary || "",
     seriesOrder: b.seriesOrder || "",
@@ -2233,6 +2428,9 @@ function confirmPaste(mode){
   if(!clipboardBook) return;
   var c=clipboardBook;
   var newBook = {
+    // Same bookId as the source: pasting SHOWS the same book in another list
+    // rather than creating a second, separately-counted book.
+    bookId: c.bookId || resolveBookId(c.title,c.author),
     title: c.title, author: c.author, pages: c.pages, genre: c.genre,
     summary: c.summary, optional: c.optional,
     seriesOrder: c.seriesOrder, seriesName: c.seriesName,
@@ -2351,6 +2549,9 @@ function importBackup(e){
         if(b.seriesOrder===undefined) b.seriesOrder="";
         if(b.seriesName===undefined)  b.seriesName="";
         if(!b.timerSessions)         b.timerSessions=[];
+        if(!b.bookId)                b.bookId=resolveBookId(b.title,b.author);
+        if(b.myRating && b.sessions.length && !b.sessions.some(function(x){return x.rating;}))
+          b.sessions[b.sessions.length-1].rating=b.myRating;
       });
       readSet=data.read?new Set(data.read):new Set();
       if(data.listName&&data.listName.trim()){activeList().name=data.listName.trim();document.getElementById("list-name-input").value=data.listName.trim();}
@@ -2661,6 +2862,7 @@ function finishTimer(){
       b.timerSessions = b.timerSessions || [];
       b.timerSessions.push(session);
       saveCurrentList();
+      fanOutSession(b.bookId, session, activeId);
     }
     activeTimer = null;
     saveActiveTimer();
@@ -2669,6 +2871,7 @@ function finishTimer(){
     renderTimerWidget();
     if(currentTab==="list") renderTable();
     updateStats(); // refresh Read Today / This Week stats
+    try{ hearthCheckUnlocks(); renderHearth(); }catch(e){}
   });
 }
 // Drop a timer without logging (used when switching to a different book).
@@ -2897,7 +3100,6 @@ document.getElementById("rl-widget-top").addEventListener("click",function(){
 var smIdx=-1;
 function openSM(idx){
   smIdx=idx;
-  document.getElementById("sm-subtitle").textContent=books[idx].title;
   renderSM();
   document.getElementById("sessions-modal").classList.remove("hidden");
 }
@@ -2907,41 +3109,98 @@ function closeSM(){
   smIdx=-1;
 }
 document.getElementById("sessions-modal").addEventListener("click",function(e){if(e.target===this)closeSM();});
-function renderSM(){
+// Interactive half-step stars for one read-through. Two hit zones per star
+// (left = .5, right = full); tapping the current value again clears it.
+function readStarsHTML(i,r){
+  var pts="8,1.5 10,6 15,6.5 11.2,10 12.5,15 8,12.2 3.5,15 4.8,10 1,6.5 6,6";
+  var h='<span class="rt-stars">';
+  for(var k=0;k<5;k++){
+    var full=r>=k+1, half=!full&&r>=k+0.5;
+    h+='<span class="rt-star">'
+      +'<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="rt'+i+'_'+k+'"><rect x="0" y="0" width="9" height="18"/></clipPath></defs>'
+      +'<polygon points="'+pts+'" fill="'+(full?'var(--star)':'none')+'" stroke="'+((full||half)?'var(--star)':'var(--text-muted)')+'" stroke-width="1"/>'
+      +(half?'<polygon points="'+pts+'" fill="var(--star)" stroke="none" clip-path="url(#rt'+i+'_'+k+')"/>':'')
+      +'</svg>'
+      +'<span class="rt-hit rt-hl" onclick="setReadRating('+i+','+(k+0.5)+')"></span>'
+      +'<span class="rt-hit rt-hr" onclick="setReadRating('+i+','+(k+1)+')"></span>'
+    +'</span>';
+  }
+  return h+'</span><span class="rt-rv">'+(r?(Math.round(r*10)/10).toFixed(1):'\u2013')+'</span>';
+}
+// The book's headline rating (shown on the library row and used by stats) is
+// the most recent read-through that carries one.
+function syncHeadlineRating(idx){
+  var ss=books[idx].sessions||[], best=null, bestEnd='';
+  ss.forEach(function(x){
+    if(!x.rating) return;
+    var e=x.end||'';
+    if(best===null || e>=bestEnd){ best=x.rating; bestEnd=e; }
+  });
+  if(best!==null) books[idx].myRating=best;
+}
+function setReadRating(i,val){
   if(smIdx<0)return;
   var ss=books[smIdx].sessions||[];
-  var n=ss.length;
-  document.getElementById("sm-count").textContent=n?n+' session'+(n!==1?'s':''):'';
+  if(!ss[i])return;
+  if(ss[i].rating===val) val=0;   // tap the same value again to clear
+  ss[i].rating=val;
+  syncHeadlineRating(smIdx);
+  saveCurrentList(); renderSM(); renderTable(); updateStats();
+}
+// The book page: identity, progress, then every read-through newest-first,
+// each with its own dates, rating and written thoughts.
+function renderSM(){
+  if(smIdx<0)return;
+  var b=books[smIdx];
+  document.getElementById("sm-booktitle").textContent=b.title||'Book';
+  document.getElementById("sm-subtitle").textContent=
+    [b.author,seriesText(b),b.genre,(b.pages?b.pages+'p':'')].filter(Boolean).join(' \u00b7 ');
+  var cur=currentPageFor(b)||0, tot=b.pages||0, pct=tot?Math.round(cur/tot*100):0;
+  var head='<div class="bp-prog"><div class="bp-bar"><div class="bp-fill" style="width:'+pct+'%"></div></div>'
+    +'<div class="bp-progl">'+cur+' of '+tot+' pages ('+pct+'%)</div></div>';
+  var ss=b.sessions||[], n=ss.length;
+  document.getElementById("sm-count").textContent=n?(n+' read'+(n!==1?'s':'')):'';
+  var body;
   if(!n){
-    document.getElementById("sm-list").innerHTML='<p style="font-size:12px;color:var(--text-muted);font-family:sans-serif;text-align:center;padding:8px 0">No sessions yet. Click \"+ Add session\" to log a read.</p>';
-    return;
-  }
-  document.getElementById("sm-list").innerHTML=ss.map(function(s,i){
-    return '<div class="sitem">'
-      +'<div class="sfields">'
-        +'<div class="srow"><span class="slbl">Start</span><input class="sinput" type="date" value="'+esc(s.start||'')+'" onchange="updS('+i+',\'start\',this.value)"/></div>'
-        +'<div class="srow"><span class="slbl">End</span><input class="sinput" type="date" value="'+esc(s.end||'')+'" onchange="updS('+i+',\'end\',this.value)"/></div>'
-        +'<textarea class="snote" placeholder="Note e.g. first read, reread after watching the film..." onchange="updS('+i+',\'note\',this.value)">'+esc(s.note||'')+'</textarea>'
-      +'</div>'
-      +'<button class="sdel" onclick="delS('+i+')" title="Remove">'+ICONS.close+'</button>'
+    body='<p class="bp-empty">No reads logged yet. Tap \u201c+ Add read\u201d when you start or finish this book.</p>';
+  } else {
+    // Newest first — undated reads sink to the bottom.
+    var order=ss.map(function(x,i){return {s:x,i:i};});
+    order.sort(function(x,y){ return (y.s.end||'').localeCompare(x.s.end||''); });
+    body=order.map(function(o,pos){
+      var x=o.s, i=o.i;
+      return '<div class="rt-card">'
+        +'<div class="rt-head"><span class="rt-n">Read #'+(n-pos)+'</span>'
+          +'<button class="sdel" onclick="delS('+i+')" title="Remove this read">'+ICONS.close+'</button></div>'
+        +'<div class="rt-dates">'
+          +'<label class="rt-d"><span>Started</span><input type="date" value="'+esc(x.start||'')+'" onchange="updS('+i+',\'start\',this.value)"/></label>'
+          +'<label class="rt-d"><span>Finished</span><input type="date" value="'+esc(x.end||'')+'" onchange="updS('+i+',\'end\',this.value)"/></label>'
+        +'</div>'
+        +'<div class="rt-rate">'+readStarsHTML(i,x.rating||0)+'</div>'
+        +'<textarea class="rt-note" placeholder="What did you think of this read?" onchange="updS('+i+',\'note\',this.value)">'+esc(x.note||'')+'</textarea>'
       +'</div>';
-  }).join("");
+    }).join('');
+  }
+  document.getElementById("sm-list").innerHTML=head+body;
 }
 function addSession(){
   if(smIdx<0)return;
   if(!books[smIdx].sessions)books[smIdx].sessions=[];
-  books[smIdx].sessions.push({start:"",end:"",note:""});
+  var _d=new Date(), _iso=_d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');
+  books[smIdx].sessions.push({start:_iso,end:"",note:"",rating:0});
   saveCurrentList();renderSM();renderTable();
 }
 function delS(i){
   if(smIdx<0)return;
   books[smIdx].sessions.splice(i,1);
-  saveCurrentList();renderSM();renderTable();
+  syncHeadlineRating(smIdx);
+  saveCurrentList();renderSM();renderTable();updateStats();
 }
 function updS(i,field,val){
   if(smIdx<0)return;
   books[smIdx].sessions[i][field]=val;
-  saveCurrentList();renderTable();
+  if(field==='end'){ syncHeadlineRating(smIdx); renderSM(); }
+  saveCurrentList();renderTable();updateStats();
 }
 
 
@@ -3116,8 +3375,8 @@ function tmrConfirmFinish(){
   var sec=_tmrFrozenSec, idx=activeTimer.bookIdx, startPage=activeTimer.startPage;
   var startTime=activeTimer.startTime-(activeTimer.accumulatedSec||0)*1000;
   var session={ startTime:startTime, endTime:startTime+sec*1000, durationSec:sec, startPage:startPage, endPage:endPage };
-  if(activeTimer.listId===activeId){ var b=books[idx]; if(b){ b.timerSessions=b.timerSessions||[]; b.timerSessions.push(session); saveCurrentList(); } }
-  else { try{ var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[]; if(arr[idx]){ arr[idx].timerSessions=arr[idx].timerSessions||[]; arr[idx].timerSessions.push(session); storage.setItem(listKey(activeTimer.listId), JSON.stringify(arr)); } }catch(e){} }
+  if(activeTimer.listId===activeId){ var b=books[idx]; if(b){ b.timerSessions=b.timerSessions||[]; b.timerSessions.push(session); saveCurrentList(); fanOutSession(b.bookId, session, activeId); } }
+  else { try{ var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[]; if(arr[idx]){ arr[idx].timerSessions=arr[idx].timerSessions||[]; arr[idx].timerSessions.push(session); storage.setItem(listKey(activeTimer.listId), JSON.stringify(arr)); fanOutSession(arr[idx].bookId, session, activeTimer.listId); } }catch(e){} }
   activeTimer=null; saveActiveTimer(); tmrStopTick(); _tmrFrozenSec=0; tmrMode='idle'; pushTimerState(); pushWidgetSnapshot();
   updateStats(); renderTimerTab(); if(currentTab==='list') renderTable();
   showToast('Logged '+formatHMS(sec)+' \u00b7 '+Math.max(0,endPage-startPage)+' pages');
@@ -3196,13 +3455,14 @@ window.addEventListener('load',function(){ tmrBridgeSync(); });
 
 /* ===== Babel app shell logic ===== */
 function switchScreen(name){
-  ['library','stats','timer','reading','settings'].forEach(function(s){
+  ['library','stats','timer','reading','hearth','settings'].forEach(function(s){
     var el=document.getElementById('screen-'+s); if(el) el.classList.toggle('hidden', s!==name);
   });
   document.querySelectorAll('.tabbar .tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-screen')===name); });
   var fab=document.getElementById('fab-add'); if(fab) fab.style.display=(name==='library')?'flex':'none';
   if(name==='stats') updateStats();
   if(name==='reading') renderReadingScreen();
+  if(name==='hearth'){ renderHearth(); }
   if(name==='timer') renderTimerTab();
   if(name==='library' && currentTab==='genre') renderGenreTab();
   try{ window.scrollTo(0,0); }catch(e){}
@@ -3263,7 +3523,7 @@ function pushWidgetSnapshot(){
 window.addEventListener('load',function(){
   try{
     var tp=new URLSearchParams(location.search).get('tab');
-    if(tp && ['library','stats','timer','reading','settings'].indexOf(tp)>=0) switchScreen(tp);
+    if(tp && ['library','stats','timer','reading','hearth','settings'].indexOf(tp)>=0) switchScreen(tp);
   }catch(e){}
 });
 function openAddSheet(){
@@ -3305,15 +3565,17 @@ function renderTable(){
     var hasSeriesName=!!b.seriesName;
     var inlineSeriesTag=(b.seriesOrder&&!hasSeriesName)?' <span class="snum">('+esc(b.seriesOrder)+')</span>':'';
     var seriesLine=hasSeriesName?'<div class="bk-series">'+esc(seriesText(b))+'</div>':'';
-    var sc=b.sessions&&b.sessions.length;
-    var sBadge=sc?'<span class="sbadge">'+(sc>1?sc+' reads':(b.sessions[0].end?esc(b.sessions[0].end):'1 read'))+'</span>':'';
+    var _ss=b.sessions||[], sc=_ss.length, _last='';
+    _ss.forEach(function(x){ if(x.end && x.end>_last) _last=x.end; });
+    var sBadge=(_last?'<span class="sbadge">'+esc(_last)+'</span>':'')
+             +(sc>1?'<span class="sbadge rt-badge">'+sc+' reads</span>':'');
     var sum='';
     var timerOn=(activeTimer && activeTimer.bookIdx===b.idx && activeTimer.listId===activeId);
     return '<div class="bk-card'+(isRead?' is-read':'')+(b.isReading?' is-reading':'')+'" data-bidx="'+b.idx+'">'
       +'<div class="bk-row1">'
         +'<button class="chk'+(isRead?' checked':'')+'" onclick="toggleRead('+b.idx+')" title="Mark read"></button>'
-        +'<div class="bk-id">'
-          +'<div class="bk-title" onclick="toggleTT('+b.idx+',this)">'+esc(b.title)+inlineSeriesTag+(b.optional?'<span class="optional-tag">(optional)</span>':'')+sBadge+'</div>'
+        +'<div class="bk-id" onclick="openSM('+b.idx+')" title="Open book">'
+          +'<div class="bk-title">'+esc(b.title)+inlineSeriesTag+(b.optional?'<span class="optional-tag">(optional)</span>':'')+sBadge+'</div>'
           +seriesLine
           +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+' &middot; '+b.pages+'p</div>'
         +'</div>'
@@ -3321,11 +3583,10 @@ function renderTable(){
       +'</div>'
       +sum
       +'<div class="bk-row2">'
-        +'<span class="bk-left">'+myStarsHTML(b.idx,b.myRating||0)+'</span>'
+        +'<span class="bk-left">'+starsDisplayHTML(b.myRating||0,b.idx)+'</span>'
         +'<span class="bk-actions">'
           +'<button class="reading-btn'+(b.isReading?' on':'')+'" onclick="toggleReading('+b.idx+')" title="Currently reading">&#9654;</button>'
           +'<button class="icon-btn" title="Reading time log" onclick="openRL('+b.idx+')">'+ICONS.clock+'</button>'
-          +'<button class="icon-btn" title="Session log" onclick="openSM('+b.idx+')">'+ICONS.calendar+'</button>'
           +'<button class="icon-btn menu-btn" title="More" onclick="openRowMenu(event,'+b.idx+')">&#8943;</button>'
         +'</span>'
       +'</div>'
@@ -3364,6 +3625,261 @@ function setReadFilter(v){ var sel=document.getElementById('read-select'); if(se
 function renderStatusPills(){ var sp=document.getElementById('status-pills'); if(!sp) return; var sel=document.getElementById('read-select'); var cur=sel?sel.value:''; Array.prototype.forEach.call(sp.querySelectorAll('button'), function(b){ b.classList.toggle('active', b.getAttribute('data-rf')===cur); }); }
 
 /* ---- stats: genre chart ---- */
+
+// ── Hearth: embers, daily claims, freezes, achievements ──────────────────────
+var babelHearth={embers:0,freezes:0,frozen:{},claims:{},unlocked:{},logins:{},lastFreezeWeek:'',freezeNote:0};
+var _hSub='daily', _hOpen={};
+function _hDay(d){ d=d||new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function _hWeek(d){
+  var t=d?new Date(d):new Date(); t.setHours(0,0,0,0);
+  t.setDate(t.getDate()+4-(t.getDay()||7));
+  var y0=new Date(t.getFullYear(),0,1);
+  return t.getFullYear()+'-W'+String(Math.ceil(((t-y0)/86400000+1)/7)).padStart(2,'0');
+}
+function loadHearth(){
+  try{ var r=storage.getItem('rl_hearth'); if(r){ var o=JSON.parse(r); for(var k in o) babelHearth[k]=o[k]; } }catch(e){}
+  ['frozen','claims','unlocked','logins'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
+}
+function saveHearth(){
+  try{ storage.setItem('rl_hearth',JSON.stringify(babelHearth)); }catch(e){}
+  try{ if(window.BabelCloud&&BabelCloud.touchSettings) BabelCloud.touchSettings(); }catch(e){}
+}
+// Tier ladders: gaps start at one unit and widen gradually, so the next
+// milestone is always "keep reading a while", never a cliff.
+function mkTiers(min,max,n,step){
+  step=step||1;
+  var out=[],prev=0,cur=min,r=Math.pow(max/min,1/(n-1));
+  for(var i=0;i<n;i++){
+    var v=Math.round(cur/step)*step;
+    if(v<=prev) v=prev+step;
+    out.push(v); prev=v; cur*=r;
+  }
+  out[n-1]=max; return out;
+}
+var HEARTH_TRACKS=[
+  {k:'time',  name:'Reading time',    suf:'h', tiers:mkTiers(1,7000,34)},
+  {k:'pages', name:'Pages read',      suf:'',  tiers:mkTiers(100,350000,34,10)},
+  {k:'fin',   name:'Books finished',  suf:'',  tiers:mkTiers(1,1000,30)},
+  {k:'add',   name:'Books added',     suf:'',  tiers:mkTiers(1,1500,26)},
+  {k:'sess',  name:'Sessions logged', suf:'',  tiers:mkTiers(5,5000,26)},
+  {k:'rate',  name:'Ratings given',   suf:'',  tiers:mkTiers(5,1000,22)},
+  {k:'rev',   name:'Reviews written', suf:'',  tiers:mkTiers(1,500,20)},
+  {k:'streak',name:'Day streak',      suf:'d', tiers:[3,7,14,21,30,45,60,90,120,180,250,365,550,750,1200,3650]},
+  {k:'long',  name:'Longest session', suf:'m', tiers:[30,45,60,90,120,180,240,300]}
+];
+// One entry per REAL book (deduped by bookId), merging the fullest copy —
+// a book sitting in several lists counts once.
+function _hearthBooks(){
+  var seen={}, out=[];
+  function add(b,isRead){
+    if(!b) return;
+    var id=b.bookId||((b.title||'')+'|'+(b.author||''));
+    var e=seen[id];
+    if(!e){ seen[id]={pages:b.pages||0,myRating:b.myRating||0,ts:b.timerSessions||[],rt:b.sessions||[],isRead:!!isRead}; out.push(seen[id]); return; }
+    if((b.timerSessions||[]).length>e.ts.length) e.ts=b.timerSessions;
+    if((b.sessions||[]).length>e.rt.length) e.rt=b.sessions;
+    if((b.myRating||0)>e.myRating) e.myRating=b.myRating||0;
+    if(isRead) e.isRead=true;
+  }
+  books.forEach(function(b,i){ add(b, readSet.has(i)); });
+  lists.forEach(function(l){
+    if(l.id===activeId) return;
+    try{
+      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+      var arr=JSON.parse(raw), rr=storage.getItem(readKey(l.id));
+      var rs=rr?new Set(JSON.parse(rr)):new Set();
+      arr.forEach(function(b,i){ add(b, rs.has(i)); });
+    }catch(e){}
+  });
+  return out;
+}
+function hearthStats(){
+  var bs=_hearthBooks(), sec=0,pages=0,sess=0,fin=0,rate=0,rev=0,longest=0,owl=false,bird=false;
+  bs.forEach(function(b){
+    sess+=b.ts.length;
+    b.ts.forEach(function(x){
+      sec+=(x.durationSec||0);
+      pages+=Math.max(0,(x.endPage||0)-(x.startPage||0));
+      if((x.durationSec||0)>longest) longest=x.durationSec||0;
+      var h=new Date(x.startTime).getHours();
+      if(h<4) owl=true; else if(h<6) bird=true;
+    });
+    // Each completed read-through is a finish; a checked book counts as one.
+    fin  += Math.max(b.rt.filter(function(x){return x.end;}).length, b.isRead?1:0);
+    rate += Math.max(b.rt.filter(function(x){return x.rating>0;}).length, b.myRating>0?1:0);
+    rev  += b.rt.filter(function(x){return (x.note||'').trim();}).length;
+  });
+  var st=computeStreak();
+  return {time:sec/3600,pages:pages,sess:sess,fin:fin,add:bs.length,rate:rate,rev:rev,
+          streak:Math.max(st.best||0,st.current||0),long:longest/60,owl:owl,bird:bird};
+}
+// Unlock every tier the numbers have passed, paying 3 embers each. On first
+// run this naturally recognises everything already earned.
+function hearthCheckUnlocks(){
+  var v=hearthStats(), gained=0;
+  HEARTH_TRACKS.forEach(function(t){
+    t.tiers.forEach(function(val,i){
+      var key=t.k+':'+i;
+      if(babelHearth.unlocked[key]) return;
+      if((v[t.k]||0)>=val){ babelHearth.unlocked[key]=1; gained+=3; }
+    });
+  });
+  [['owl',v.owl],['bird',v.bird]].forEach(function(o){
+    if(!babelHearth.unlocked[o[0]] && o[1]){ babelHearth.unlocked[o[0]]=1; gained+=3; }
+  });
+  if(gained){ babelHearth.embers+=gained; saveHearth(); }
+  return gained;
+}
+// A missed day is covered automatically if a freeze is banked.
+function applyStreakFreezes(){
+  if(babelHearth.freezes<=0) return;
+  var map=_gatherSecByDay(), met={};
+  Object.keys(map).forEach(function(k){ if(map[k]>=babelGoalMin*60) met[k]=true; });
+  var today=new Date(); today.setHours(0,0,0,0);
+  var d=new Date(today); d.setDate(d.getDate()-1);
+  var gap=[], guard=0;
+  while(guard++<7){
+    var k=_dayKey(d);
+    if(met[k]||babelHearth.frozen[k]) break;
+    gap.push(k); d.setDate(d.getDate()-1);
+  }
+  // Only spend if a streak actually existed before the gap.
+  if(!gap.length) return;
+  var before=_dayKey(d);
+  if(!met[before] && !babelHearth.frozen[before]) return;
+  var used=0;
+  while(gap.length && babelHearth.freezes>0){ babelHearth.frozen[gap.pop()]=1; babelHearth.freezes--; used++; }
+  if(used){ babelHearth.freezeNote=used; saveHearth(); }
+}
+function hearthInit(){
+  loadHearth();
+  babelHearth.logins[_hDay()]=1;
+  applyStreakFreezes();
+  hearthCheckUnlocks();
+  saveHearth();
+}
+// Today's / this week's claimable rewards.
+function hearthDaily(){
+  var dmap=_gatherDayStats(), today=_dayKey(new Date());
+  var mins=((dmap[today]||{sec:0}).sec)/60;
+  var mid=new Date(); mid.setHours(0,0,0,0);
+  var wSec=0, logins=0;
+  for(var i=0;i<7;i++){
+    var day=new Date(mid.getTime()-i*86400000);
+    var st=dmap[_dayKey(day)]; if(st) wSec+=st.sec;
+    if(babelHearth.logins[_hDay(day)]) logins++;
+  }
+  var D=_hDay(), W=_hWeek();
+  function mk(k,label,em,done,prog,per){
+    return {k:k,label:label,em:em,done:done,prog:Math.max(0,Math.min(prog,1)),per:per,
+            claimed:babelHearth.claims[k]===(per==='week'?W:D)};
+  }
+  return [
+    mk('login','Open Babel today',1,true,1,'day'),
+    mk('r5','Read 5 minutes today',1,mins>=5,mins/5,'day'),
+    mk('r10','Read 10 minutes today',1,mins>=10,mins/10,'day'),
+    mk('r15','Read 15 minutes today',1,mins>=15,mins/15,'day'),
+    mk('r30','Read 30 minutes today',2,mins>=30,mins/30,'day'),
+    mk('w7','Open Babel all 7 days',3,logins>=7,logins/7,'week'),
+    mk('w2h','Read 2 hours this week',5,wSec>=7200,wSec/7200,'week')
+  ];
+}
+function claimHearth(k){
+  var it=null;
+  hearthDaily().forEach(function(x){ if(x.k===k) it=x; });
+  if(!it||!it.done||it.claimed) return;
+  babelHearth.embers+=it.em;
+  babelHearth.claims[k]= it.per==='week'?_hWeek():_hDay();
+  saveHearth(); renderHearth();
+}
+function hearthSub(w){ _hSub=w;
+  document.getElementById('h-st-daily').classList.toggle('active',w==='daily');
+  document.getElementById('h-st-ach').classList.toggle('active',w==='ach');
+  renderHearth();
+}
+function hToggle(k){ _hOpen[k]=!_hOpen[k]; renderHearth(); }
+function _hNum(n){ return n>=1000?Math.round(n).toLocaleString():(Math.round(n*10)/10); }
+function renderHearth(){
+  var el=document.getElementById('h-body'); if(!el) return;
+  var h='<div class="h-bal"><span class="h-emb">'+babelHearth.embers+'</span><span class="h-embl">embers</span>'
+      +'<span class="h-frz">'+babelHearth.freezes+'/5 freezes</span></div>';
+  if(babelHearth.freezeNote){
+    h+='<div class="h-note">\u2744\ufe0f Freeze used \u2014 your streak was saved.'
+      +'<button class="h-note-x" onclick="babelHearth.freezeNote=0;saveHearth();renderHearth();">\u00d7</button></div>';
+  }
+  if(_hSub==='daily'){
+    var items=hearthDaily();
+    // Claimable first, then closest to done.
+    items.sort(function(a,b){
+      var ac=(a.done&&!a.claimed)?1:0, bc=(b.done&&!b.claimed)?1:0;
+      if(ac!==bc) return bc-ac;
+      if(a.claimed!==b.claimed) return a.claimed?1:-1;
+      return b.prog-a.prog;
+    });
+    h+=items.map(function(x){
+      var state=x.claimed?'claimed':(x.done?'ready':'');
+      return '<div class="h-row '+state+'">'
+        +'<div class="h-row-t"><span class="h-row-n">'+x.label+'</span><span class="h-row-e">+'+x.em+'</span></div>'
+        +'<div class="h-bar"><div class="h-fill" style="width:'+Math.round(x.prog*100)+'%"></div></div>'
+        +(x.claimed?'<div class="h-done">Claimed</div>'
+          : x.done?'<button class="h-claim" onclick="claimHearth(\''+x.k+'\')">Claim</button>'
+          : '<div class="h-prog">'+Math.round(x.prog*100)+'%</div>')
+      +'</div>';
+    }).join('');
+  } else {
+    var v=hearthStats();
+    var rows=HEARTH_TRACKS.map(function(t){
+      var val=v[t.k]||0, nextI=-1;
+      for(var i=0;i<t.tiers.length;i++){ if(!babelHearth.unlocked[t.k+':'+i]){ nextI=i; break; } }
+      var earned=t.tiers.filter(function(x,i){return babelHearth.unlocked[t.k+':'+i];}).length;
+      var prev = nextI>0 ? t.tiers[nextI-1] : 0;
+      var goal = nextI<0 ? t.tiers[t.tiers.length-1] : t.tiers[nextI];
+      var prog = nextI<0 ? 1 : Math.max(0,Math.min((val-prev)/((goal-prev)||1),1));
+      return {t:t,val:val,earned:earned,goal:goal,prog:prog,done:nextI<0};
+    });
+    rows.sort(function(a,b){ if(a.done!==b.done) return a.done?1:-1; return b.prog-a.prog; });
+    h+=rows.map(function(r){
+      var t=r.t, open=_hOpen[t.k];
+      var ladder = open ? '<div class="h-ladder">'+t.tiers.map(function(x,i){
+          var got=babelHearth.unlocked[t.k+':'+i];
+          return '<span class="h-tier'+(got?' got':'')+'">'+_hNum(x)+t.suf+'</span>';
+        }).join('')+'</div>' : '';
+      return '<div class="h-row ach'+(r.done?' claimed':'')+'" >'
+        +'<div class="h-row-t" onclick="hToggle(\''+t.k+'\')">'
+          +'<span class="h-row-n">'+t.name+'</span>'
+          +'<span class="h-row-e">'+r.earned+'/'+t.tiers.length+'</span></div>'
+        +'<div class="h-bar"><div class="h-fill" style="width:'+Math.round(r.prog*100)+'%"></div></div>'
+        +'<div class="h-prog">'+(r.done?'All earned':_hNum(r.val)+t.suf+' \u2192 '+_hNum(r.goal)+t.suf)+'</div>'
+        +ladder
+      +'</div>';
+    }).join('');
+    var one=[['owl','Night owl','A session after midnight'],['bird','Early bird','A session before 6am']];
+    h+=one.map(function(o){
+      var got=babelHearth.unlocked[o[0]];
+      return '<div class="h-row'+(got?' claimed':'')+'"><div class="h-row-t"><span class="h-row-n">'+o[1]+'</span>'
+        +'<span class="h-row-e">'+(got?'\u2713':'+3')+'</span></div><div class="h-prog">'+o[2]+'</div></div>';
+    }).join('');
+  }
+  el.innerHTML=h;
+}
+function openShop(){ renderShop(); document.getElementById('shop-sheet').classList.remove('hidden'); }
+function closeShop(){ document.getElementById('shop-sheet').classList.add('hidden'); }
+function renderShop(){
+  document.getElementById('shop-bal').textContent=babelHearth.embers+' embers';
+  document.getElementById('shop-frz').textContent=babelHearth.freezes+' of 5 held';
+  var btn=document.getElementById('shop-buy'), note=document.getElementById('shop-note'), why='';
+  if(babelHearth.freezes>=5) why='You are holding the maximum of 5 freezes.';
+  else if(babelHearth.lastFreezeWeek===_hWeek()) why='You have already bought a freeze this week.';
+  else if(babelHearth.embers<50) why='Need '+(50-babelHearth.embers)+' more embers.';
+  btn.disabled=!!why; btn.classList.toggle('off',!!why);
+  note.textContent=why||'One freeze per week.';
+}
+function buyFreeze(){
+  if(babelHearth.freezes>=5||babelHearth.lastFreezeWeek===_hWeek()||babelHearth.embers<50) return;
+  babelHearth.embers-=50; babelHearth.freezes++; babelHearth.lastFreezeWeek=_hWeek();
+  saveHearth(); renderShop(); renderHearth();
+}
+
 // ── Deep stats ───────────────────────────────────────────────────────────────
 // Time-based charts use timer sessions from ALL lists (reading is reading,
 // matching the calendar/streak scope); library-composition charts (authors,
@@ -3648,6 +4164,7 @@ storage.init().then(function(){
   loadAll();
   babelGoalMin = parseInt(storage.getItem('rl_dailyGoalMin'),10) || 10;
   babelYearlyGoal = parseInt(storage.getItem('rl_yearlyGoal'),10) || 12;
+  setTimeout(function(){ try{ hearthInit(); }catch(e){} },0);
   var _ygi=document.getElementById('ygoal-input'); if(_ygi) _ygi.value=babelYearlyGoal;
   renderTopBar();
   document.getElementById("list-name-input").value=activeList().name;
@@ -3735,7 +4252,7 @@ window.BabelCloud = (function(){
   function rowFor(id){
     if(id===SETTINGS_ID){
       return { id:SETTINGS_ID, user_id:user.id, name:'__settings',
-               theme:{goalMin:babelGoalMin,yearlyGoal:babelYearlyGoal}, books:[], read:[],
+               theme:{goalMin:babelGoalMin,yearlyGoal:babelYearlyGoal,hearth:babelHearth}, books:[], read:[],
                updated_at:new Date(settingsUpdatedAt()||Date.now()).toISOString(), deleted:false };
     }
     var l=listById(id); if(!l) return null;
@@ -3866,6 +4383,12 @@ window.BabelCloud = (function(){
           try{ storage.setItem('rl_yearlyGoal',String(babelYearlyGoal)); }catch(e){}
           var _yi=document.getElementById('ygoal-input'); if(_yi) _yi.value=babelYearlyGoal;
         }
+        if(row.theme.hearth && typeof row.theme.hearth==='object'){
+          babelHearth=row.theme.hearth;
+          ['frozen','claims','unlocked','logins'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
+          try{ storage.setItem('rl_hearth',JSON.stringify(babelHearth)); }catch(e){}
+          try{ renderHearth(); }catch(e){}
+        }
         try{
           renderGoalSeg(); renderGoalBar(); renderStreak();
           var rs=document.getElementById('screen-reading'); if(rs && !rs.classList.contains('hidden')) renderReadingScreen();
@@ -3958,7 +4481,7 @@ window.BabelCloud = (function(){
   return {
     init:init, signUp:signUp, signIn:signIn, signOut:signOut,
     backupAll:backupAll, pull:pull, syncNow:function(){ pushDirty(); pull(); },
-    saveConfig:saveConfig, touchSettings:touchSettings,
+    saveConfig:saveConfig, touchSettings:touchSettings, touch:touch,
     state:function(){ return {status:status, user:user, configured:configured(), cfg:cfg, lastSync:lastSync, dirty:Object.keys(dirty).length}; }
   };
 })();
