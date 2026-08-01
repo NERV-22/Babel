@@ -712,6 +712,26 @@ body{padding:0}
 .rt-card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius,14px);padding:12px 13px;margin-bottom:10px}
 .rt-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
 .rt-n{font-family:sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700}
+.bk-trans{color:var(--text-muted);opacity:.85}
+.fs-bar{display:flex;gap:8px;margin-top:8px}
+.fs-wrap{position:relative;flex:1}
+.fs-btn{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-family:sans-serif;font-size:12.5px;cursor:pointer}
+.fs-btn.on{border-color:var(--accent);color:var(--accent)}
+.fs-count{font-weight:700}
+.fs-panel{position:absolute;z-index:60;top:calc(100% + 6px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius,14px);padding:11px;box-shadow:0 8px 26px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:8px}
+.fs-panel{max-height:66vh;overflow-y:auto}
+.fs-panel.hidden{display:none}
+.fs-row{display:flex;align-items:center;gap:8px}
+.fs-row span{flex:none;width:74px;font-family:sans-serif;font-size:11.5px;color:var(--text-muted)}
+.fs-row select{flex:1;min-width:0;padding:7px 8px;font-family:sans-serif;font-size:12.5px;border:1px solid var(--border);border-radius:8px;background:var(--bg1);color:var(--text);outline:none}
+.fs-clear{margin-top:2px;padding:8px;border:1px dashed var(--border);border-radius:9px;background:transparent;color:var(--text-muted);font-family:sans-serif;font-size:12px;cursor:pointer}
+.fs-clear:active{border-color:var(--accent);color:var(--accent)}
+.ds-year{cursor:pointer}
+.yb-list{display:flex;flex-direction:column;gap:7px;max-height:60vh;overflow-y:auto}
+.yb-item{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius,14px);background:var(--bg1);cursor:pointer;font-family:sans-serif}
+.yb-item:active{border-color:var(--accent)}
+.yb-t{font-size:13.5px;font-weight:600;color:var(--text)}
+.yb-m{font-size:11.5px;color:var(--text-muted)}
 .rt-bar{height:5px;border-radius:3px;background:color-mix(in srgb,var(--text) 10%,transparent);overflow:hidden;margin-bottom:5px}
 .rt-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .6s ease}
 .rt-pages{font-family:sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:9px}
@@ -926,16 +946,59 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <input class="h1-input" id="list-name-input" value="" placeholder="Name this list..." onchange="renameCurrentList(this.value)" onblur="renameCurrentList(this.value)"/>
   </div>
   <div id="tab-list">
-    <div class="status-pills" id="status-pills">
-      <button data-rf="" onclick="setReadFilter('')">All</button>
-      <button data-rf="unread" onclick="setReadFilter('unread')">Unread</button>
-      <button data-rf="reading" onclick="setReadFilter('reading')">Reading</button>
-      <button data-rf="read" onclick="setReadFilter('read')">Read</button>
-      <button data-rf="fav" onclick="setReadFilter('fav')" title="Favourites"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" style="width:15px;height:15px"><path d="M12 20.3s-7.2-4.7-7.2-9.7a3.9 3.9 0 0 1 7.2-2.1 3.9 3.9 0 0 1 7.2 2.1c0 5-7.2 9.7-7.2 9.7Z"/></svg></button>
-    </div>
-    <div class="pills" id="filter-pills"></div>
+
     <div class="filter-row">
       <input type="text" id="search-input" placeholder="Search title, author, series&hellip;" oninput="applyFiltersDebounced()"/>
+      <div class="fs-bar">
+        <div class="fs-wrap">
+          <button class="fs-btn" id="fs-filter-btn" onclick="toggleFsPanel('filter')">Filter<span class="fs-count" id="fs-count"></span></button>
+          <div class="fs-panel hidden" id="fs-panel-filter">
+            <label class="fs-row"><span>Status</span><select id="ff-status" onchange="applyFilters()">
+              <option value="">Any</option><option value="unread">Unread</option>
+              <option value="reading">Reading</option><option value="read">Read</option>
+            </select></label>
+            <label class="fs-row"><span>Favourite</span><select id="ff-fav" onchange="applyFilters()">
+              <option value="">Any</option><option value="yes">Favourites only</option><option value="no">Not favourited</option>
+            </select></label>
+            <label class="fs-row"><span>Genre</span><select id="ff-genre" onchange="applyFilters()"><option value="">Any</option></select></label>
+            <label class="fs-row"><span>Author</span><select id="ff-author" onchange="applyFilters()"><option value="">Any</option></select></label>
+            <label class="fs-row"><span>Series</span><select id="ff-series" onchange="applyFilters()"><option value="">Any</option></select></label>
+            <label class="fs-row"><span>Translator</span><select id="ff-trans" onchange="applyFilters()"><option value="">Any</option></select></label>
+            <label class="fs-row"><span>Rating</span><select id="ff-rating" onchange="applyFilters()">
+              <option value="">Any</option><option value="unrated">Unrated</option>
+              <option value="5">5&#9733;</option><option value="4">4&#9733; and up</option>
+              <option value="3">3&#9733; and up</option><option value="2">2&#9733; and up</option><option value="1">1&#9733; and up</option>
+            </select></label>
+            <label class="fs-row"><span>Notes</span><select id="ff-review" onchange="applyFilters()">
+              <option value="">Any</option><option value="yes">Has notes</option><option value="no">No notes</option>
+            </select></label>
+            <label class="fs-row"><span>Length</span><select id="ff-len" onchange="applyFilters()">
+              <option value="">Any</option><option value="s">Under 200p</option><option value="m">200&ndash;500p</option><option value="l">Over 500p</option>
+            </select></label>
+            <label class="fs-row"><span>Optional</span><select id="ff-opt" onchange="applyFilters()">
+              <option value="">Any</option><option value="yes">Optional only</option><option value="no">Hide optional</option>
+            </select></label>
+            <button class="fs-clear" onclick="clearFilters()">Clear filters</button>
+          </div>
+        </div>
+        <div class="fs-wrap">
+          <button class="fs-btn" id="fs-sort-btn" onclick="toggleFsPanel('sort')">Sort</button>
+          <div class="fs-panel hidden" id="fs-panel-sort">
+            <label class="fs-row"><span>Order by</span><select id="ff-sort" onchange="applyFilters()">
+              <option value="title">Title A&ndash;Z</option><option value="title-d">Title Z&ndash;A</option>
+              <option value="author">Author A&ndash;Z</option><option value="author-d">Author Z&ndash;A</option>
+              <option value="rating-d">Rating, highest</option><option value="rating">Rating, lowest</option>
+              <option value="pages-d">Longest</option><option value="pages">Shortest</option>
+              <option value="progress-d">Furthest along</option>
+              <option value="recent">Recently read</option>
+              <option value="finished">Recently finished</option>
+              <option value="time-d">Most time read</option>
+              <option value="series">Series, then order</option>
+              <option value="added-d">Recently added</option><option value="added">Oldest added</option>
+            </select></label>
+          </div>
+        </div>
+      </div>
       <select id="genre-select" onchange="syncPillFromSelect()" style="display:none"><option value="">All genres</option></select>
       <select id="read-select" onchange="applyFilters()" style="display:none">
         <option value="">All</option><option value="unread">Unread</option><option value="reading">Reading</option><option value="read">Read</option><option value="fav">Favourites</option>
@@ -1056,6 +1119,13 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     </div>
     <div class="shop-note" id="shop-note"></div>
     <div class="modal-btns" style="margin-top:12px"><button class="modal-cancel" onclick="closeShop()">Done</button></div>
+  </div>
+</div>
+<div class="sheet-overlay hidden" id="yearbooks-sheet" onclick="if(event.target===this)closeYearBooks()">
+  <div class="sheet">
+    <div class="shop-head"><span class="shop-t" id="yb-title">Finished this year</span><span class="shop-bal" id="yb-count"></span></div>
+    <div id="yb-list" class="yb-list"></div>
+    <div class="modal-btns" style="margin-top:12px"><button class="modal-cancel" onclick="closeYearBooks()">Done</button></div>
   </div>
 </div>
 <div class="sheet-overlay hidden" id="dice-sheet" onclick="if(event.target===this)closeDice()">
@@ -1910,7 +1980,7 @@ function setMyRating(idx,val){
   saveCurrentList();
   // If currently sorted by rating, the change reorders rows — full re-render.
   // Otherwise update just this row's stars in place.
-  if(currentTab==="list" && sortKey!=="myRating") patchRowRating(idx);
+  if(currentTab==="list" && _fv('ff-sort').indexOf('rating')<0) patchRowRating(idx);
   else if(currentTab==="list") renderTable();
   else renderGenreTab();
 }
@@ -2042,7 +2112,7 @@ function renderFilterPills(){
     var c=genreColor(g),on=activeGenreFilter===g;
     html+='<button class="pill" onclick="setGenreFilter(\''+g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\') " style="background:'+(on?c:c+'1a')+';color:'+(on?'#fff':c)+';border-color:'+c+'55">'+esc(g)+'</button>';
   });
-  document.getElementById("filter-pills").innerHTML=html;
+  var _fp=document.getElementById("filter-pills"); if(_fp) _fp.innerHTML=html;
 }
 function renderGenreDropdown(){
   var sel=document.getElementById("genre-select"),cur=sel.value;
@@ -2050,8 +2120,15 @@ function renderGenreDropdown(){
   allGenres().forEach(function(g){var o=document.createElement("option");o.value=g;o.textContent=g;if(g===cur)o.selected=true;sel.appendChild(o);});
 }
 function syncPillFromSelect(){activeGenreFilter=document.getElementById("genre-select").value;renderFilterPills();applyFilters();}
-function setGenreFilter(g){activeGenreFilter=activeGenreFilter===g?"":g;document.getElementById("genre-select").value=activeGenreFilter;renderFilterPills();applyFilters();}
-function applyFilters(){renderFilterPills();renderStatusPills();renderTable();}
+function setGenreFilter(g){
+  // Genre lives in the Filter panel now; the Genre tab drives that control
+  // so there is exactly one place a genre filter can come from.
+  activeGenreFilter=g||'';
+  var el=document.getElementById('ff-genre'); if(el) el.value=activeGenreFilter;
+  applyFilters();
+}
+function applyFilters(){
+  try{ renderFilterCount(); }catch(e){}renderFilterPills();renderStatusPills();renderTable();}
 // Wait 150ms after the user stops typing before re-rendering. At a few
 // hundred books the full re-render takes long enough to feel choppy on
 // every keystroke; this collapses bursts of typing into a single render.
@@ -2071,6 +2148,73 @@ function sortBy(key){
   });
   renderTable();
 }
+// ── Filter + sort panels ────────────────────────────────────────────────────
+function toggleFsPanel(which){
+  var open=document.getElementById('fs-panel-'+which);
+  ['filter','sort'].forEach(function(k){
+    var el=document.getElementById('fs-panel-'+k);
+    if(el && el!==open) el.classList.add('hidden');
+  });
+  if(open) open.classList.toggle('hidden');
+}
+document.addEventListener('click',function(e){
+  var el=e.target;
+  while(el && el!==document.body){
+    if(el.classList && (el.classList.contains('fs-wrap'))) return;
+    el=el.parentElement;
+  }
+  ['filter','sort'].forEach(function(k){
+    var pnl=document.getElementById('fs-panel-'+k); if(pnl) pnl.classList.add('hidden');
+  });
+});
+function _fv(id){ var el=document.getElementById(id); return el?el.value:''; }
+function clearFilters(){
+  ['ff-status','ff-fav','ff-genre','ff-author','ff-series','ff-trans','ff-rating','ff-review','ff-len','ff-opt'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  activeGenreFilter='';
+  applyFilters();
+}
+// Keep the dropdowns in step with what's actually in this list.
+function _fillSel(id,vals,extra){
+  var el=document.getElementById(id); if(!el) return;
+  var cur=el.value;
+  el.innerHTML='<option value="">Any</option>'+(extra||'')
+    +vals.map(function(v){ return '<option value="'+esc(v)+'">'+esc(v)+'</option>'; }).join('');
+  el.value=cur;
+  if(el.value!==cur) el.value='';   // the old choice no longer exists
+}
+function renderFilterOptions(){
+  var auth={}, ser={}, tr={};
+  books.forEach(function(b){
+    if((b.author||'').trim()) auth[b.author.trim()]=1;
+    if((b.seriesName||'').trim()) ser[b.seriesName.trim()]=1;
+    if((b.translator||'').trim()) tr[b.translator.trim()]=1;
+  });
+  function sorted(o){ return Object.keys(o).sort(function(x,y){ return x.localeCompare(y); }); }
+  _fillSel('ff-genre',allGenres());
+  _fillSel('ff-author',sorted(auth));
+  _fillSel('ff-series',sorted(ser),'<option value="__in">In a series</option><option value="__stand">Standalone</option>');
+  _fillSel('ff-trans',sorted(tr),'<option value="__yes">Translated</option><option value="__no">Not translated</option>');
+}
+// Badge the Filter button with how many filters are active.
+function renderFilterCount(){
+  var n=0;
+  ['ff-status','ff-fav','ff-genre','ff-author','ff-series','ff-trans','ff-rating','ff-review','ff-len','ff-opt'].forEach(function(id){ if(_fv(id)) n++; });
+  var el=document.getElementById('fs-count'); if(el) el.textContent=n?' '+n:'';
+  var btn=document.getElementById('fs-filter-btn'); if(btn) btn.classList.toggle('on',n>0);
+}
+// Last timer session (ms) and total time read — used by the sort options.
+function _lastReadAt(b){
+  var t=0; (b.timerSessions||[]).forEach(function(x){ if(x&&x.startTime>t) t=x.startTime; }); return t;
+}
+function _totalSec(b){
+  var t=0; (b.timerSessions||[]).forEach(function(x){ t+=(x&&x.durationSec)||0; }); return t;
+}
+function _finishedAtStr(b){
+  var f=''; (b.sessions||[]).forEach(function(x){ if(x.end && x.end>f) f=x.end; });
+  return f;
+}
 function filteredBooks(){
   var q=(document.getElementById("search-input").value||"").toLowerCase();
   var rf=document.getElementById("read-select").value;
@@ -2084,23 +2228,76 @@ function filteredBooks(){
       && b.author.toLowerCase().indexOf(q)<0
       && (!b.seriesName || b.seriesName.toLowerCase().indexOf(q)<0)
       && (!b.translator || b.translator.toLowerCase().indexOf(q)<0)
+      // Search your own writing as well — summaries and per-read notes.
+      && (!b.summary || b.summary.toLowerCase().indexOf(q)<0)
+      && !(b.sessions||[]).some(function(x){ return (x.note||'').toLowerCase().indexOf(q)>=0; })
     )continue;
-    if(activeGenreFilter&&b.genre!==activeGenreFilter)continue;
     if(rf==="read"&&!readSet.has(i))continue;
     if(rf==="unread"&&(readSet.has(i)||b.isReading))continue;
     if(rf==="reading"&&!b.isReading)continue;
     if(rf==="fav"&&!b.isFav)continue;
+    // Dropdown filters — each is skipped when left on "Any".
+    var st=_fv('ff-status');
+    if(st==='read'   && !readSet.has(i)) continue;
+    if(st==='unread' && (readSet.has(i)||b.isReading)) continue;
+    if(st==='reading'&& !b.isReading) continue;
+    var fav=_fv('ff-fav');
+    if(fav==='yes' && !b.isFav) continue;
+    if(fav==='no'  && b.isFav) continue;
+    var fg=_fv('ff-genre'); if(fg && b.genre!==fg) continue;
+    var fa=_fv('ff-author'); if(fa && (b.author||'').trim()!==fa) continue;
+    var fs2=_fv('ff-series');
+    if(fs2==='__in' && !b.seriesName) continue;
+    else if(fs2==='__stand' && b.seriesName) continue;
+    else if(fs2 && fs2.indexOf('__')!==0 && (b.seriesName||'').trim()!==fs2) continue;
+    var ft=_fv('ff-trans'), tval=(b.translator||'').trim();
+    if(ft==='__yes' && !tval) continue;
+    else if(ft==='__no' && tval) continue;
+    else if(ft && ft.indexOf('__')!==0 && tval!==ft) continue;
+    var fr=_fv('ff-rating');
+    if(fr==='unrated'){ if(b.myRating) continue; }
+    else if(fr){ if((b.myRating||0) < parseFloat(fr)) continue; }
+    var fv2=_fv('ff-review');
+    var hasNote=(b.summary||'').trim() || (b.sessions||[]).some(function(x){return (x.note||'').trim();});
+    if(fv2==='yes' && !hasNote) continue;
+    if(fv2==='no' && hasNote) continue;
+    var fl=_fv('ff-len'), pg=b.pages||0;
+    if(fl==='s' && !(pg>0&&pg<200)) continue;
+    if(fl==='m' && !(pg>=200&&pg<=500)) continue;
+    if(fl==='l' && !(pg>500)) continue;
+    var fo=_fv('ff-opt');
+    if(fo==='yes' && !b.optional) continue;
+    if(fo==='no'  && b.optional) continue;
     list.push(b);
   }
+  var mode=_fv('ff-sort')||'title';
   list.sort(function(a,b){
-    // Currently-reading books always float to the top, regardless of
-    // which column the user has selected to sort by.
+    // Currently-reading books still float to the top — the thing you're in
+    // the middle of should be reachable whatever the ordering.
     if(a.isReading&&!b.isReading)return -1;
     if(!a.isReading&&b.isReading)return 1;
-    if(sortKey==="myRating")return sortDir*((b.myRating||0)-(a.myRating||0));
-    var av=a[sortKey],bv=b[sortKey];
-    if(typeof av==="string")return sortDir*av.localeCompare(bv);
-    return sortDir*(av-bv);
+    switch(mode){
+      case 'title-d':   return (b.title||'').localeCompare(a.title||'');
+      case 'author':    return (a.author||'').localeCompare(b.author||'') || (a.title||'').localeCompare(b.title||'');
+      case 'author-d':  return (b.author||'').localeCompare(a.author||'') || (a.title||'').localeCompare(b.title||'');
+      case 'rating-d':  return (b.myRating||0)-(a.myRating||0) || (a.title||'').localeCompare(b.title||'');
+      case 'rating':    return (a.myRating||0)-(b.myRating||0) || (a.title||'').localeCompare(b.title||'');
+      case 'pages-d':   return (b.pages||0)-(a.pages||0);
+      case 'pages':     return (a.pages||0)-(b.pages||0);
+      case 'progress-d':{
+        var pa=a.pages?(currentPageFor(a)||0)/a.pages:0, pb=b.pages?(currentPageFor(b)||0)/b.pages:0;
+        return pb-pa;
+      }
+      case 'recent':    return _lastReadAt(b)-_lastReadAt(a);
+      case 'finished':  return (_finishedAtStr(b)||'').localeCompare(_finishedAtStr(a)||'');
+      case 'time-d':    return _totalSec(b)-_totalSec(a);
+      case 'series':    return (a.seriesName||'\uffff').localeCompare(b.seriesName||'\uffff')
+                            || String(a.seriesOrder||'').localeCompare(String(b.seriesOrder||''),undefined,{numeric:true})
+                            || (a.title||'').localeCompare(b.title||'');
+      case 'added-d':   return b.idx-a.idx;
+      case 'added':     return a.idx-b.idx;
+      default:          return (a.title||'').localeCompare(b.title||'');
+    }
   });
   return list;
 }
@@ -2313,6 +2510,7 @@ function toggleAddForm(){
   clearFormError();
 }
 function renderGenrePickPills(){
+  try{ renderFilterOptions(); }catch(e){}
   document.getElementById("genre-pick-pills").innerHTML=allGenres().map(function(g){
     var c=genreColor(g),on=selectedFormGenre===g;
     return '<button type="button" class="genre-pick-pill" onclick="selectFormGenre(\''+g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\') " style="background:'+(on?c:c+'1a')+';color:'+(on?'#fff':c)+';border-color:'+c+'55">'+esc(g)+'</button>';
@@ -3821,7 +4019,7 @@ function renderTable(){
         +'<div class="bk-id" onclick="openSM('+b.idx+')" title="Open book">'
           +'<div class="bk-title">'+esc(b.title)+inlineSeriesTag+(b.optional?'<span class="optional-tag">(optional)</span>':'')+sBadge+'</div>'
           +seriesLine
-          +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+' &middot; '+b.pages+'p</div>'
+          +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+(b.translator?' &middot; <span class="bk-trans">trans. '+esc(b.translator)+'</span>':'')+' &middot; '+b.pages+'p</div>'
         +'</div>'
         +'<button class="fav-btn'+(b.isFav?' on':'')+'" onclick="toggleFav('+b.idx+')" title="Favourite">'+ICONS.heart+'</button>'
       +'</div>'
@@ -4528,6 +4726,37 @@ function closeScan(){
   var ov=document.getElementById('scan-overlay'); if(ov) ov.classList.add('hidden');
 }
 
+// ── Books finished this year ────────────────────────────────────────────────
+// Tapping the yearly goal ring lists exactly which books it counted, so the
+// number is auditable rather than mysterious.
+function showYearBooks(){
+  var yr=new Date().getFullYear(), rows=[];
+  books.forEach(function(b,i){
+    if(!readSet.has(i)) return;
+    if(_finishYear(b)!==yr) return;
+    var fin='';
+    (b.sessions||[]).forEach(function(x){ if(x.end && x.end>fin) fin=x.end; });
+    if(!fin && b.finishedAt){
+      var d=new Date(b.finishedAt);
+      fin=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    }
+    rows.push({i:i,b:b,fin:fin});
+  });
+  rows.sort(function(x,y){ return (y.fin||'').localeCompare(x.fin||''); });
+  document.getElementById('yb-title').textContent='Finished in '+yr;
+  document.getElementById('yb-count').textContent=rows.length+' of '+babelYearlyGoal;
+  document.getElementById('yb-list').innerHTML = rows.length
+    ? rows.map(function(r){
+        var meta=[r.b.author,(r.b.pages?r.b.pages+'p':''),r.fin].filter(Boolean).join(' \u00b7 ');
+        return '<button type="button" class="yb-item" onclick="closeYearBooks();openSM('+r.i+')">'
+          +'<span class="yb-t">'+esc(r.b.title||'')+'</span>'
+          +'<span class="yb-m">'+esc(meta)+'</span></button>';
+      }).join('')
+    : '<div class="lookup-note">No books finished in '+yr+' yet. Books count once they are marked read with a finish date.</div>';
+  document.getElementById('yearbooks-sheet').classList.remove('hidden');
+}
+function closeYearBooks(){ document.getElementById('yearbooks-sheet').classList.add('hidden'); }
+
 // ── Deep stats ───────────────────────────────────────────────────────────────
 // Time-based charts use timer sessions from ALL lists (reading is reading,
 // matching the calendar/streak scope); library-composition charts (authors,
@@ -4560,7 +4789,7 @@ function renderDeepStats(){
   var finished=0;
   books.forEach(function(b,i){ if(readSet.has(i) && _finishYear(b)===thisYear) finished++; });
   var pct=babelYearlyGoal>0?Math.min(finished/babelYearlyGoal,1):0, C=2*Math.PI*34;
-  h+='<div class="ds-card ds-year"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--border)" stroke-width="7"/><circle cx="40" cy="40" r="34" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+(pct*C).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 40 40)"/></svg>'
+  h+='<div class="ds-card ds-year" onclick="showYearBooks()" title="See the books"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--border)" stroke-width="7"/><circle cx="40" cy="40" r="34" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+(pct*C).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 40 40)"/></svg>'
     +'<div><div class="ds-year-n">'+finished+' / '+babelYearlyGoal+'</div><div class="ds-year-l">books in '+thisYear+'</div></div></div>';
 
   // Pages per month (last 12)
