@@ -712,6 +712,10 @@ body{padding:0}
 .rt-card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius,14px);padding:12px 13px;margin-bottom:10px}
 .rt-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
 .rt-n{font-family:sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700}
+.rt-bar{height:5px;border-radius:3px;background:color-mix(in srgb,var(--text) 10%,transparent);overflow:hidden;margin-bottom:5px}
+.rt-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .6s ease}
+.rt-pages{font-family:sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:9px}
+.lookup-own{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:999px;background:var(--accent-shadow);color:var(--accent);font-size:9.5px;font-weight:600;vertical-align:1px}
 .rt-dates{display:flex;gap:9px;margin-bottom:9px}
 .rt-d{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .rt-d span{font-family:sans-serif;font-size:10.5px;color:var(--text-muted)}
@@ -1134,6 +1138,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
             <div class="form-grid">
         <input class="span-full" type="text" id="f-title" placeholder="Title"/>
         <input class="span-full" type="text" id="f-author" placeholder="Author"/>
+        <input class="span-full" type="text" id="f-translator" placeholder="Translator (optional)"/>
         <input type="number" id="f-pages" placeholder="Page count" min="1"/>
         <input type="text" id="f-series" placeholder="Series # (optional, e.g. 1, 2, Prequel)"/>
         <input class="span-full" type="text" id="f-series-name" placeholder="Series name (optional, e.g. Harry Potter)"/>
@@ -1260,6 +1265,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div class="form-grid">
       <input class="span-full" type="text" id="d-title"  placeholder="Title"/>
       <input class="span-full" type="text" id="d-author" placeholder="Author"/>
+      <input class="span-full" type="text" id="d-translator" placeholder="Translator (optional)"/>
       <input type="number" id="d-pages"  placeholder="Page count" min="1"/>
       <input type="text"   id="d-series" placeholder="Series # (optional, e.g. 1, 2, Prequel)"/>
       <input class="span-full" type="text" id="d-series-name" placeholder="Series name (optional, e.g. Harry Potter)"/>
@@ -1518,6 +1524,42 @@ function saveMeta(){storage.setItem(LS_META,JSON.stringify({lists:lists,activeId
 // several lists shares one bookId, so it counts once and reading logged on
 // any copy appears on all copies. Migration runs once on existing data,
 // seeding IDs and reconciling pre-existing duplicates by title+author.
+// ── Duplicate detection ─────────────────────────────────────────────────────
+// Normalised so near-misses still match: "The Anti-Christ" vs "The Antichrist",
+// "The Odyssey: A New Translation" vs "The Odyssey". Series is deliberately
+// ignored — it groups different books and would flag every Harry Potter.
+function _dupTitle(t){
+  return String(t||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .split(':')[0]
+    .replace(/[^a-z0-9 ]+/g,'')
+    .replace(/^(the|a|an)\s+/,'')
+    .replace(/\s+/g,' ').trim();
+}
+function _dupAuthor(a){
+  var w=String(a||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/[^a-z0-9 ]+/g,' ').split(/\s+/).filter(Boolean);
+  return w.length?w[w.length-1].slice(0,5):'';
+}
+// Returns an existing book in THIS list that looks like the same book.
+function findDuplicate(title,author,skipIdx){
+  var t=_dupTitle(title), a=_dupAuthor(author);
+  if(!t) return null;
+  for(var i=0;i<books.length;i++){
+    if(i===skipIdx) continue;
+    if(_dupTitle(books[i].title)!==t) continue;
+    var ba=_dupAuthor(books[i].author);
+    if(a && ba && a!==ba) continue;   // same title, clearly different author
+    return books[i];
+  }
+  return null;
+}
+function confirmDuplicate(title,author,skipIdx){
+  var d=findDuplicate(title,author,skipIdx);
+  if(!d) return true;
+  return confirm('"'+(d.title||title)+'"'+(d.author?' by '+d.author:'')
+    +' is already in this list.\n\nAdd it again anyway?');
+}
 function newBookId(){ return 'b'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function _bkKey(b){ return ((b.title||'').trim().toLowerCase())+'\u241f'+((b.author||'').trim().toLowerCase()); }
 // Reuse an existing book's id when the same title+author already exists in
@@ -1653,6 +1695,14 @@ function loadListData(id){
       if(b.seriesName===undefined)  b.seriesName="";
       if(!b.timerSessions)         b.timerSessions=[];
       if(!b.bookId)                b.bookId=resolveBookId(b.title,b.author);
+      if(b.translator===undefined)  b.translator='';
+      // Give every read-through an id, then attach untagged sessions to the
+      // newest read — that is where an untagged history belongs.
+      var _newest=null;
+      b.sessions.forEach(function(x){ if(!x.id) x.id=newReadId(); });
+      var _ci=currentReadIdx(b);
+      if(_ci>=0) _newest=b.sessions[_ci].id;
+      if(_newest) b.timerSessions.forEach(function(x){ if(x && !x.readId) x.readId=_newest; });
       // Read-throughs carry their own rating; seed the newest existing read
       // with the book's current rating so old data displays correctly.
       if(b.myRating && b.sessions.length && !b.sessions.some(function(x){return x.rating;}))
@@ -2033,6 +2083,7 @@ function filteredBooks(){
       && b.title.toLowerCase().indexOf(q)<0
       && b.author.toLowerCase().indexOf(q)<0
       && (!b.seriesName || b.seriesName.toLowerCase().indexOf(q)<0)
+      && (!b.translator || b.translator.toLowerCase().indexOf(q)<0)
     )continue;
     if(activeGenreFilter&&b.genre!==activeGenreFilter)continue;
     if(rf==="read"&&!readSet.has(i))continue;
@@ -2281,6 +2332,7 @@ function submitBook(){
   // Read and validate the form fields.
   var title       = document.getElementById("f-title").value.trim();
   var author      = document.getElementById("f-author").value.trim();
+  var translator  = (document.getElementById("f-translator")||{value:''}).value.trim();
   var pages       = parseInt(document.getElementById("f-pages").value);
   var seriesOrder = document.getElementById("f-series").value.trim();
   var seriesName  = document.getElementById("f-series-name").value.trim();
@@ -2292,9 +2344,10 @@ function submitBook(){
   if(isNaN(pages) || pages<1)  return showFormError("Enter a valid page count.");
   if(!genre)                   return showFormError("Please select or type a genre.");
 
+  if(!confirmDuplicate(title,author,-1)) return;
   books.push({
     bookId:resolveBookId(title,author),
-    title:title, author:author, pages:pages, genre:genre,
+    title:title, author:author, translator:translator, pages:pages, genre:genre,
     summary:summary, optional:false, myRating:0,
     seriesOrder:seriesOrder, seriesName:seriesName,
     isFav:false, isReading:false, sessions:[]
@@ -2403,6 +2456,7 @@ function openDetailsModal(idx){
   var b=books[idx];
   document.getElementById("d-title").value       = b.title || "";
   document.getElementById("d-author").value      = b.author || "";
+  var _dt=document.getElementById("d-translator"); if(_dt) _dt.value = b.translator || "";
   document.getElementById("d-pages").value       = b.pages || "";
   document.getElementById("d-series").value      = b.seriesOrder || "";
   document.getElementById("d-series-name").value = b.seriesName || "";
@@ -2464,6 +2518,7 @@ function saveDetailsModal(){
   if(detailsIdx<0) return;
   var title       = document.getElementById("d-title").value.trim();
   var author      = document.getElementById("d-author").value.trim();
+  var translator  = (document.getElementById("d-translator")||{value:''}).value.trim();
   var pages       = parseInt(document.getElementById("d-pages").value);
   var seriesOrder = document.getElementById("d-series").value.trim();
   var seriesName  = document.getElementById("d-series-name").value.trim();
@@ -2478,7 +2533,7 @@ function saveDetailsModal(){
   // Mutate in place — preserves myRating, isFav, isReading, sessions, and
   // any other fields not exposed in the form.
   var b=books[detailsIdx];
-  b.title=title; b.author=author; b.pages=pages; b.genre=genre;
+  b.title=title; b.author=author; b.translator=translator; b.pages=pages; b.genre=genre;
   b.seriesOrder=seriesOrder; b.seriesName=seriesName; b.summary=summary;
 
   saveCurrentList();
@@ -2502,7 +2557,7 @@ function copyBook(idx){
   // SOURCE list (so Inherit can replay that on the destination).
   clipboardBook = {
     bookId: b.bookId,
-    title: b.title, author: b.author, pages: b.pages, genre: b.genre,
+    title: b.title, author: b.author, translator: b.translator||'', pages: b.pages, genre: b.genre,
     summary: b.summary || "",
     seriesOrder: b.seriesOrder || "",
     seriesName: b.seriesName || "",
@@ -2547,8 +2602,10 @@ function confirmPaste(mode){
   var newBook = {
     // Same bookId as the source: pasting SHOWS the same book in another list
     // rather than creating a second, separately-counted book.
-    bookId: c.bookId || resolveBookId(c.title,c.author),
-    title: c.title, author: c.author, pages: c.pages, genre: c.genre,
+    // Inherit = the SAME book shown in another list (shared id, shared reads).
+    // Reset = a genuinely separate entry, so it gets its own identity.
+    bookId: mode==="inherit" ? (c.bookId || resolveBookId(c.title,c.author)) : newBookId(),
+    title: c.title, author: c.author, translator: c.translator||'', pages: c.pages, genre: c.genre,
     summary: c.summary, optional: c.optional,
     seriesOrder: c.seriesOrder, seriesName: c.seriesName,
     myRating:   mode==="inherit" ? c.myRating  : 0,
@@ -2667,6 +2724,10 @@ function importBackup(e){
         if(b.seriesName===undefined)  b.seriesName="";
         if(!b.timerSessions)         b.timerSessions=[];
         if(!b.bookId)                b.bookId=resolveBookId(b.title,b.author);
+        if(b.translator===undefined)  b.translator='';
+        b.sessions.forEach(function(x){ if(!x.id) x.id=newReadId(); });
+        var _ci2=currentReadIdx(b), _nw=(_ci2>=0)?b.sessions[_ci2].id:null;
+        if(_nw) b.timerSessions.forEach(function(x){ if(x && !x.readId) x.readId=_nw; });
         if(b.myRating && b.sessions.length && !b.sessions.some(function(x){return x.rating;}))
           b.sessions[b.sessions.length-1].rating=b.myRating;
       });
@@ -2863,11 +2924,59 @@ function formatHMS(totalSec){
 }
 
 // Highest end-page across this book's timer sessions = "current page".
+// ── Read-throughs own their sessions ────────────────────────────────────────
+// A book is a spine of reads. Each read-through carries an id; every timer
+// session records which read it belongs to, so a reread tracks from page 1
+// instead of being swallowed by the previous read's furthest page.
+function newReadId(){ return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+// Newest read = latest start date, ties broken by array order (later = newer).
+function currentReadIdx(b){
+  var ss=(b&&b.sessions)||[], best=-1, bestKey='';
+  for(var i=0;i<ss.length;i++){
+    var k=(ss[i].start||'')+'|'+String(i).padStart(4,'0');
+    if(best<0 || k>=bestKey){ best=i; bestKey=k; }
+  }
+  return best;
+}
+// The read a new session should attach to, creating one if the book has none.
+function ensureCurrentRead(b){
+  if(!b) return '';
+  b.sessions=b.sessions||[];
+  var i=currentReadIdx(b);
+  if(i<0){
+    var d=new Date(), iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    b.sessions.push({id:newReadId(),start:iso,end:'',note:'',rating:0});
+    i=b.sessions.length-1;
+  }
+  if(!b.sessions[i].id) b.sessions[i].id=newReadId();
+  return b.sessions[i].id;
+}
+// Furthest page reached within one read-through.
+function pagesForRead(b,readId){
+  var max=0;
+  ((b&&b.timerSessions)||[]).forEach(function(x){
+    if(!x || x.readId!==readId) return;
+    if((x.endPage||0)>max) max=x.endPage||0;
+  });
+  return max;
+}
+// Stamp a session with the book's current read before it is stored.
+function tagSessionRead(b,session){
+  if(!b||!session) return;
+  if(!session.readId) session.readId=ensureCurrentRead(b);
+}
 function currentPageFor(b){
   if(!b || !b.timerSessions || !b.timerSessions.length) return 0;
+  // Progress means "how far into the read I'm on now". Sessions belonging to
+  // an earlier read-through don't count, so restarting a book shows page 1.
+  var i=currentReadIdx(b), rid=(i>=0&&b.sessions[i])?b.sessions[i].id:'';
+  if(rid){
+    var tagged=b.timerSessions.some(function(x){ return x&&x.readId; });
+    if(tagged) return pagesForRead(b,rid);
+  }
   var max=0;
-  for(var i=0;i<b.timerSessions.length;i++){
-    var ep=b.timerSessions[i].endPage||0;
+  for(var j=0;j<b.timerSessions.length;j++){
+    var ep=b.timerSessions[j].endPage||0;
     if(ep>max) max=ep;
   }
   return max;
@@ -2977,6 +3086,7 @@ function finishTimer(){
     };
     if(b){
       b.timerSessions = b.timerSessions || [];
+      tagSessionRead(b, session);
       b.timerSessions.push(session);
       saveCurrentList();
       fanOutSession(b.bookId, session, activeId);
@@ -3264,31 +3374,42 @@ function setReadRating(i,val){
   syncHeadlineRating(smIdx);
   saveCurrentList(); fanOutBookMeta(smIdx); renderSM(); renderTable(); updateStats();
 }
-// The book page: identity, progress, then every read-through newest-first,
-// each with its own dates, rating and written thoughts.
+// The book page: identity, current-read progress, then every read-through
+// newest-first — each with its own bar, dates, rating and written thoughts.
 function renderSM(){
   if(smIdx<0)return;
   var b=books[smIdx];
+  b.sessions=b.sessions||[];
   document.getElementById("sm-booktitle").textContent=b.title||'Book';
   document.getElementById("sm-subtitle").textContent=
-    [b.author,seriesText(b),b.genre,(b.pages?b.pages+'p':'')].filter(Boolean).join(' \u00b7 ');
-  var cur=currentPageFor(b)||0, tot=b.pages||0, pct=tot?Math.round(cur/tot*100):0;
-  var head='<div class="bp-prog"><div class="bp-bar"><div class="bp-fill" style="width:'+pct+'%"></div></div>'
-    +'<div class="bp-progl">'+cur+' of '+tot+' pages ('+pct+'%)</div></div>';
-  var ss=b.sessions||[], n=ss.length;
+    [b.author,(b.translator?'trans. '+b.translator:''),seriesText(b),b.genre,(b.pages?b.pages+'p':'')]
+    .filter(Boolean).join(' \u00b7 ');
+
+  var tot=b.pages||0, ss=b.sessions, n=ss.length;
+  var curIdx=currentReadIdx(b);
+  var curPages=curIdx>=0?pagesForRead(b,ss[curIdx].id):(currentPageFor(b)||0);
+  var curPct=tot?Math.round(curPages/tot*100):0;
+  // Header tracks the read you're on now.
+  var head='<div class="bp-prog"><div class="bp-bar"><div class="bp-fill" style="width:'+curPct+'%"></div></div>'
+    +'<div class="bp-progl">'+curPages+' of '+tot+' pages ('+curPct+'%)</div></div>';
+
   document.getElementById("sm-count").textContent=n?(n+' read'+(n!==1?'s':'')):'';
   var body;
   if(!n){
     body='<p class="bp-empty">No reads logged yet. Tap \u201c+ Add read\u201d when you start or finish this book.</p>';
   } else {
-    // Newest first — undated reads sink to the bottom.
-    var order=ss.map(function(x,i){return {s:x,i:i};});
-    order.sort(function(x,y){ return (y.s.end||'').localeCompare(x.s.end||''); });
+    // Order by START date so a freshly added read appears on top and is
+    // numbered highest — sorting by end date buried undated new reads.
+    var order=ss.map(function(x,i){ return {s:x,i:i,k:(x.start||'')+'|'+String(i).padStart(4,'0')}; });
+    order.sort(function(x,y){ return y.k.localeCompare(x.k); });
     body=order.map(function(o,pos){
       var x=o.s, i=o.i;
+      var rp=pagesForRead(b,x.id), rpct=tot?Math.round(rp/tot*100):0;
       return '<div class="rt-card">'
         +'<div class="rt-head"><span class="rt-n">Read #'+(n-pos)+'</span>'
           +'<button class="sdel" onclick="delS('+i+')" title="Remove this read">'+ICONS.close+'</button></div>'
+        +'<div class="rt-bar"><div class="rt-fill" style="width:'+rpct+'%"></div></div>'
+        +'<div class="rt-pages">'+rp+' of '+tot+' pages ('+rpct+'%)</div>'
         +'<div class="rt-dates">'
           +'<label class="rt-d"><span>Started</span><input type="date" value="'+esc(x.start||'')+'" onchange="updS('+i+',\'start\',this.value)"/></label>'
           +'<label class="rt-d"><span>Finished</span><input type="date" value="'+esc(x.end||'')+'" onchange="updS('+i+',\'end\',this.value)"/></label>'
@@ -3304,7 +3425,7 @@ function addSession(){
   if(smIdx<0)return;
   if(!books[smIdx].sessions)books[smIdx].sessions=[];
   var _d=new Date(), _iso=_d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');
-  books[smIdx].sessions.push({start:_iso,end:"",note:"",rating:0});
+  books[smIdx].sessions.push({id:newReadId(),start:_iso,end:"",note:"",rating:0});
   saveCurrentList();fanOutBookMeta(smIdx);renderSM();renderTable();
 }
 function delS(i){
@@ -3316,7 +3437,7 @@ function delS(i){
 function updS(i,field,val){
   if(smIdx<0)return;
   books[smIdx].sessions[i][field]=val;
-  if(field==='end'){ syncHeadlineRating(smIdx); renderSM(); }
+  if(field==='end'||field==='start'){ syncHeadlineRating(smIdx); renderSM(); }
   saveCurrentList();fanOutBookMeta(smIdx);renderTable();updateStats();
 }
 
@@ -3492,8 +3613,8 @@ function tmrConfirmFinish(){
   var sec=_tmrFrozenSec, idx=activeTimer.bookIdx, startPage=activeTimer.startPage;
   var startTime=activeTimer.startTime-(activeTimer.accumulatedSec||0)*1000;
   var session={ startTime:startTime, endTime:startTime+sec*1000, durationSec:sec, startPage:startPage, endPage:endPage };
-  if(activeTimer.listId===activeId){ var b=books[idx]; if(b){ b.timerSessions=b.timerSessions||[]; b.timerSessions.push(session); saveCurrentList(); fanOutSession(b.bookId, session, activeId); } }
-  else { try{ var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[]; if(arr[idx]){ arr[idx].timerSessions=arr[idx].timerSessions||[]; arr[idx].timerSessions.push(session); storage.setItem(listKey(activeTimer.listId), JSON.stringify(arr)); fanOutSession(arr[idx].bookId, session, activeTimer.listId); } }catch(e){} }
+  if(activeTimer.listId===activeId){ var b=books[idx]; if(b){ b.timerSessions=b.timerSessions||[]; tagSessionRead(b,session); b.timerSessions.push(session); saveCurrentList(); fanOutSession(b.bookId, session, activeId); } }
+  else { try{ var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[]; if(arr[idx]){ arr[idx].timerSessions=arr[idx].timerSessions||[]; tagSessionRead(arr[idx],session); arr[idx].timerSessions.push(session); storage.setItem(listKey(activeTimer.listId), JSON.stringify(arr)); fanOutSession(arr[idx].bookId, session, activeTimer.listId); } }catch(e){} }
   activeTimer=null; saveActiveTimer(); tmrStopTick(); _tmrFrozenSec=0; tmrMode='idle'; pushTimerState(); pushWidgetSnapshot();
   updateStats(); renderTimerTab(); if(currentTab==='list') renderTable();
   showToast('Logged '+formatHMS(sec)+' \u00b7 '+Math.max(0,endPage-startPage)+' pages');
@@ -4182,8 +4303,9 @@ function bookLookup(){
     _lookupDocs=list.slice(0,8);
     box.innerHTML=_lookupDocs.map(function(r,i){
       var meta=[r.author,r.year,(r.pages?r.pages+' pages':null),r.publisher].filter(Boolean).join(' \u00b7 ');
+      var owned=findDuplicate(r.title,r.author,-1);
       return '<button type="button" class="lookup-item" onclick="lookupPick('+i+')">'
-        +'<span class="lookup-t">'+esc(r.title)+'</span>'
+        +'<span class="lookup-t">'+esc(r.title)+(owned?'<span class="lookup-own">in your library</span>':'')+'</span>'
         +'<span class="lookup-m">'+esc(meta)+'</span></button>';
     }).join('');
   });
