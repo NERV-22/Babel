@@ -713,6 +713,14 @@ body{padding:0}
 .rt-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
 .rt-n{font-family:sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700}
 .bk-trans{color:var(--text-muted);opacity:.85}
+.bk-audio{font-size:9.5px;padding:1px 6px;border-radius:999px;border:1px solid var(--accent);color:var(--accent);margin-left:5px}
+.hm-row{display:flex;align-items:center;gap:6px}
+.hm-l{flex:none;font-family:sans-serif;font-size:11.5px;color:var(--text-muted)}
+.hm-row input{width:64px;min-width:0}
+.hm-s{font-family:sans-serif;font-size:11.5px;color:var(--text-muted)}
+.rt-fmt{display:flex;gap:6px;margin-bottom:9px}
+.rt-fmt button{flex:1;padding:7px 0;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-muted);font-family:sans-serif;font-size:12px;cursor:pointer}
+.rt-fmt button.on{border-color:var(--accent);color:var(--accent);background:var(--surface)}
 .fs-bar{display:flex;gap:8px;margin-top:8px;flex-basis:100%;width:100%}
 .fs-wrap{position:relative;flex:1}
 .fs-btn{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-family:sans-serif;font-size:12.5px;cursor:pointer}
@@ -983,6 +991,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
             <label class="fs-row"><span>Length</span><select id="ff-len" onchange="applyFilters()">
               <option value="">Any</option><option value="s">Under 200p</option><option value="m">200&ndash;500p</option><option value="l">Over 500p</option>
             </select></label>
+            <label class="fs-row"><span>Format</span><select id="ff-fmt" onchange="applyFilters()">
+              <option value="">Any</option><option value="audio">Has audiobook</option><option value="print">Print only</option>
+            </select></label>
             <label class="fs-row"><span>Optional</span><select id="ff-opt" onchange="applyFilters()">
               <option value="">Any</option><option value="yes">Optional only</option><option value="no">Hide optional</option>
             </select></label>
@@ -1022,6 +1033,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <div class="stats-hero">
     <div class="sh-card"><div class="sh-n" id="stat-read">0</div><div class="sh-l">read</div></div>
     <div class="sh-card"><div class="sh-n" id="stat-pages-read">0</div><div class="sh-l">pages read</div></div>
+    <div class="sh-card"><div class="sh-n" id="stat-listened">0</div><div class="sh-l">listened</div></div>
     <div class="sh-card"><div class="sh-n" id="stat-streak">0</div><div class="sh-l">streak</div></div>
   </div>
   <div class="progress-wrap">
@@ -1225,6 +1237,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <input class="span-full" type="text" id="f-author" placeholder="Author"/>
         <input class="span-full" type="text" id="f-translator" placeholder="Translator (optional)"/>
         <input type="number" id="f-pages" placeholder="Page count" min="1"/>
+        <div class="hm-row span-full"><span class="hm-l">Audiobook length</span>
+          <input type="number" id="f-rt-h" placeholder="hr" min="0"/><span class="hm-s">hr</span>
+          <input type="number" id="f-rt-m" placeholder="min" min="0" max="59"/><span class="hm-s">min</span></div>
         <input type="text" id="f-series" placeholder="Series # (optional, e.g. 1, 2, Prequel)"/>
         <input class="span-full" type="text" id="f-series-name" placeholder="Series name (optional, e.g. Harry Potter)"/>
         <textarea class="span-full" id="f-summary" placeholder="Summary / thoughts (optional)"></textarea>
@@ -1352,6 +1367,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <input class="span-full" type="text" id="d-author" placeholder="Author"/>
       <input class="span-full" type="text" id="d-translator" placeholder="Translator (optional)"/>
       <input type="number" id="d-pages"  placeholder="Page count" min="1"/>
+      <div class="hm-row span-full"><span class="hm-l">Audiobook length</span>
+        <input type="number" id="d-rt-h" placeholder="hr" min="0"/><span class="hm-s">hr</span>
+        <input type="number" id="d-rt-m" placeholder="min" min="0" max="59"/><span class="hm-s">min</span></div>
       <input type="text"   id="d-series" placeholder="Series # (optional, e.g. 1, 2, Prequel)"/>
       <input class="span-full" type="text" id="d-series-name" placeholder="Series name (optional, e.g. Harry Potter)"/>
       <textarea class="span-full" id="d-summary" placeholder="Summary / thoughts (optional)"></textarea>
@@ -1813,6 +1831,7 @@ function loadListData(id){
       if(!b.timerSessions)         b.timerSessions=[];
       if(!b.bookId)                b.bookId=resolveBookId(b.title,b.author);
       if(b.translator===undefined)  b.translator='';
+      if(b.runtimeMin===undefined)  b.runtimeMin=0;
       // Give every read-through an id, then attach untagged sessions to the
       // newest read — that is where an untagged history belongs.
       var _newest=null;
@@ -2048,6 +2067,16 @@ function updateStats(){
   document.getElementById("stat-togo").textContent=total-read;
   document.getElementById("stat-pages").textContent=pages.toLocaleString();
   document.getElementById("stat-pages-read").textContent=pagesRead.toLocaleString();
+  // Listening time comes only from audio read-throughs; pages come only from
+  // print ones. Neither is ever converted into the other.
+  var _lis=0;
+  books.forEach(function(b){
+    (b.timerSessions||[]).forEach(function(x){
+      if(x && sessionIsAudio(b,x)) _lis+=(x.durationSec||0);
+    });
+  });
+  var _le=document.getElementById("stat-listened");
+  if(_le) _le.textContent=_lis?fmtMins(_lis/60):'0';
   document.getElementById("pct-label").textContent=pct+"%";
   document.getElementById("progress-fill").style.width=pct+"%";
   updateStorageBar();
@@ -2216,7 +2245,7 @@ document.addEventListener('click',function(e){
 });
 function _fv(id){ var el=document.getElementById(id); return el?el.value:''; }
 function clearFilters(){
-  ['ff-status','ff-fav','ff-genre','ff-author','ff-series','ff-trans','ff-rating','ff-review','ff-len','ff-opt'].forEach(function(id){
+  ['ff-status','ff-fav','ff-genre','ff-author','ff-series','ff-trans','ff-rating','ff-review','ff-len','ff-fmt','ff-opt'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.value='';
   });
   activeGenreFilter='';
@@ -2247,7 +2276,7 @@ function renderFilterOptions(){
 // Badge the Filter button with how many filters are active.
 function renderFilterCount(){
   var n=0;
-  ['ff-status','ff-fav','ff-genre','ff-author','ff-series','ff-trans','ff-rating','ff-review','ff-len','ff-opt'].forEach(function(id){ if(_fv(id)) n++; });
+  ['ff-status','ff-fav','ff-genre','ff-author','ff-series','ff-trans','ff-rating','ff-review','ff-len','ff-fmt','ff-opt'].forEach(function(id){ if(_fv(id)) n++; });
   var el=document.getElementById('fs-count'); if(el) el.textContent=n?' '+n:'';
   var btn=document.getElementById('fs-filter-btn'); if(btn) btn.classList.toggle('on',n>0);
 }
@@ -2312,6 +2341,9 @@ function filteredBooks(){
     if(fl==='s' && !(pg>0&&pg<200)) continue;
     if(fl==='m' && !(pg>=200&&pg<=500)) continue;
     if(fl==='l' && !(pg>500)) continue;
+    var ffm=_fv('ff-fmt');
+    if(ffm==='audio' && !(b.runtimeMin>0)) continue;
+    if(ffm==='print' && b.runtimeMin>0) continue;
     var fo=_fv('ff-opt');
     if(fo==='yes' && !b.optional) continue;
     if(fo==='no'  && b.optional) continue;
@@ -2578,6 +2610,7 @@ function submitBook(){
   var title       = document.getElementById("f-title").value.trim();
   var author      = document.getElementById("f-author").value.trim();
   var translator  = (document.getElementById("f-translator")||{value:''}).value.trim();
+  var runtimeMin  = hmGet('f-rt');
   var pages       = parseInt(document.getElementById("f-pages").value);
   var seriesOrder = document.getElementById("f-series").value.trim();
   var seriesName  = document.getElementById("f-series-name").value.trim();
@@ -2592,7 +2625,7 @@ function submitBook(){
   if(!confirmDuplicate(title,author,-1)) return;
   books.push({
     bookId:resolveBookId(title,author),
-    title:title, author:author, translator:translator, pages:pages, genre:genre,
+    title:title, author:author, translator:translator, pages:pages, runtimeMin:runtimeMin, genre:genre,
     summary:summary, optional:false, myRating:0,
     seriesOrder:seriesOrder, seriesName:seriesName,
     isFav:false, isReading:false, sessions:[]
@@ -2702,6 +2735,7 @@ function openDetailsModal(idx){
   document.getElementById("d-title").value       = b.title || "";
   document.getElementById("d-author").value      = b.author || "";
   var _dt=document.getElementById("d-translator"); if(_dt) _dt.value = b.translator || "";
+  hmSet("d-rt", b.runtimeMin||0);
   document.getElementById("d-pages").value       = b.pages || "";
   document.getElementById("d-series").value      = b.seriesOrder || "";
   document.getElementById("d-series-name").value = b.seriesName || "";
@@ -2764,6 +2798,7 @@ function saveDetailsModal(){
   var title       = document.getElementById("d-title").value.trim();
   var author      = document.getElementById("d-author").value.trim();
   var translator  = (document.getElementById("d-translator")||{value:''}).value.trim();
+  var runtimeMin  = hmGet('d-rt');
   var pages       = parseInt(document.getElementById("d-pages").value);
   var seriesOrder = document.getElementById("d-series").value.trim();
   var seriesName  = document.getElementById("d-series-name").value.trim();
@@ -2778,7 +2813,7 @@ function saveDetailsModal(){
   // Mutate in place — preserves myRating, isFav, isReading, sessions, and
   // any other fields not exposed in the form.
   var b=books[detailsIdx];
-  b.title=title; b.author=author; b.translator=translator; b.pages=pages; b.genre=genre;
+  b.title=title; b.author=author; b.translator=translator; b.pages=pages; b.runtimeMin=runtimeMin; b.genre=genre;
   b.seriesOrder=seriesOrder; b.seriesName=seriesName; b.summary=summary;
 
   saveCurrentList();
@@ -2802,7 +2837,7 @@ function copyBook(idx){
   // SOURCE list (so Inherit can replay that on the destination).
   clipboardBook = {
     bookId: b.bookId,
-    title: b.title, author: b.author, translator: b.translator||'', pages: b.pages, genre: b.genre,
+    title: b.title, author: b.author, translator: b.translator||'', pages: b.pages, runtimeMin: b.runtimeMin||0, genre: b.genre,
     summary: b.summary || "",
     seriesOrder: b.seriesOrder || "",
     seriesName: b.seriesName || "",
@@ -2850,7 +2885,7 @@ function confirmPaste(mode){
     // Inherit = the SAME book shown in another list (shared id, shared reads).
     // Reset = a genuinely separate entry, so it gets its own identity.
     bookId: mode==="inherit" ? (c.bookId || resolveBookId(c.title,c.author)) : newBookId(),
-    title: c.title, author: c.author, translator: c.translator||'', pages: c.pages, genre: c.genre,
+    title: c.title, author: c.author, translator: c.translator||'', pages: c.pages, runtimeMin: c.runtimeMin||0, genre: c.genre,
     summary: c.summary, optional: c.optional,
     seriesOrder: c.seriesOrder, seriesName: c.seriesName,
     myRating:   mode==="inherit" ? c.myRating  : 0,
@@ -2970,6 +3005,7 @@ function importBackup(e){
         if(!b.timerSessions)         b.timerSessions=[];
         if(!b.bookId)                b.bookId=resolveBookId(b.title,b.author);
         if(b.translator===undefined)  b.translator='';
+        if(b.runtimeMin===undefined)  b.runtimeMin=0;
         b.sessions.forEach(function(x){ if(!x.id) x.id=newReadId(); });
         var _ci2=currentReadIdx(b), _nw=(_ci2>=0)?b.sessions[_ci2].id:null;
         if(_nw) b.timerSessions.forEach(function(x){ if(x && !x.readId) x.readId=_nw; });
@@ -3210,6 +3246,40 @@ function tagSessionRead(b,session){
   if(!b||!session) return;
   if(!session.readId) session.readId=ensureCurrentRead(b);
 }
+// ── Audiobooks ──────────────────────────────────────────────────────────────
+// Format lives on the READ-THROUGH, not the book: Read #1 is print or audio
+// and never changes. Audio reads measure position in minutes, print reads in
+// pages. Both reuse the same numeric fields, so progress math is shared —
+// only the unit shown, and which statistics a read feeds, differ.
+function readFormat(r){ return (r && r.format==='audio') ? 'audio' : 'print'; }
+function isAudioRead(r){ return readFormat(r)==='audio'; }
+function readTotal(b,r){ return !b?0:(isAudioRead(r)?(b.runtimeMin||0):(b.pages||0)); }
+function fmtMins(n){
+  n=Math.max(0,Math.round(n||0));
+  var h=Math.floor(n/60), m=n%60;
+  return h>0?(h+'h'+(m?' '+m+'m':'')):(m+'m');
+}
+function unitStr(r,n){ return isAudioRead(r)?fmtMins(n):(n+' page'+(n===1?'':'s')); }
+function unitShort(r,n){ return isAudioRead(r)?fmtMins(n):(n+'p'); }
+function readById(b,id){
+  var ss=(b&&b.sessions)||[];
+  for(var i=0;i<ss.length;i++) if(ss[i].id===id) return ss[i];
+  return null;
+}
+function sessionIsAudio(b,x){ return isAudioRead(readById(b,x&&x.readId)); }
+function bookHasAudio(b){ return ((b&&b.sessions)||[]).some(isAudioRead); }
+// Two-box hh/mm entry — one hh:mm field is painful on a phone keypad.
+function hmGet(pfx){
+  var h=parseInt((document.getElementById(pfx+'-h')||{}).value,10)||0;
+  var m=parseInt((document.getElementById(pfx+'-m')||{}).value,10)||0;
+  return Math.max(0,h*60+m);
+}
+function hmSet(pfx,total){
+  total=Math.max(0,Math.round(total||0));
+  var h=document.getElementById(pfx+'-h'), m=document.getElementById(pfx+'-m');
+  if(h) h.value=total?Math.floor(total/60):'';
+  if(m) m.value=total?(total%60):'';
+}
 function currentPageFor(b){
   if(!b || !b.timerSessions || !b.timerSessions.length) return 0;
   // Progress means "how far into the read I'm on now". Sessions belonging to
@@ -3383,7 +3453,11 @@ function showPagePrompt(kind, suggested, onConfirm){
   var label  = document.getElementById("rl-page-prompt-label");
   var btn    = document.getElementById("rl-page-confirm");
   if(!prompt) return;
-  label.textContent = kind==="start" ? "What page are you starting on?" : "What page did you finish on?";
+  var _pb=(rlOpenIdx>=0)?books[rlOpenIdx]:null;
+  var _pr=_pb?readById(_pb,ensureCurrentRead(_pb)):null;
+  label.textContent = isAudioRead(_pr)
+    ? (kind==="start" ? "What minute are you starting at?" : "What minute did you stop at?")
+    : (kind==="start" ? "What page are you starting on?" : "What page did you finish on?");
   btn.textContent   = kind==="start" ? "Start timer" : "Save session";
   // Pre-fill the suggested page (highest end-page from prior sessions) so
   // most starts are a one-tap confirm; user only types when they need to
@@ -3614,6 +3688,18 @@ function syncHeadlineRating(idx){
   });
   if(best!==null) books[idx].myRating=best;
 }
+// A read-through's medium is fixed once it has sessions — switching would
+// reinterpret their recorded positions as the wrong unit.
+function setReadFormat(i,fmt){
+  if(smIdx<0)return;
+  var b=books[smIdx], r=(b.sessions||[])[i]; if(!r) return;
+  if(readFormat(r)===fmt) return;
+  var used=(b.timerSessions||[]).some(function(x){ return x && x.readId===r.id; });
+  if(used){ showToast('This read already has sessions \u2014 start a new read to change medium'); return; }
+  if(fmt==='audio' && !(b.runtimeMin>0)){ showToast('Set the audiobook length on this book first'); return; }
+  r.format=fmt;
+  saveCurrentList(); fanOutBookMeta(smIdx); renderSM(); renderTable();
+}
 function setReadRating(i,val){
   if(smIdx<0)return;
   var ss=books[smIdx].sessions||[];
@@ -3634,13 +3720,14 @@ function renderSM(){
     [b.author,(b.translator?'trans. '+b.translator:''),seriesText(b),b.genre,(b.pages?b.pages+'p':'')]
     .filter(Boolean).join(' \u00b7 ');
 
-  var tot=b.pages||0, ss=b.sessions, n=ss.length;
+  var ss=b.sessions, n=ss.length;
   var curIdx=currentReadIdx(b);
+  var tot=readTotal(b, curIdx>=0?ss[curIdx]:null);
   var curPages=curIdx>=0?pagesForRead(b,ss[curIdx].id):(currentPageFor(b)||0);
   var curPct=tot?Math.round(curPages/tot*100):0;
   // Header tracks the read you're on now.
   var head='<div class="bp-prog"><div class="bp-bar"><div class="bp-fill" style="width:'+curPct+'%"></div></div>'
-    +'<div class="bp-progl">'+curPages+' of '+tot+' pages ('+curPct+'%)</div></div>';
+    +'<div class="bp-progl">'+unitStr(curIdx>=0?ss[curIdx]:null,curPages)+' of '+unitStr(curIdx>=0?ss[curIdx]:null,tot)+' ('+curPct+'%)</div></div>';
 
   document.getElementById("sm-count").textContent=n?(n+' read'+(n!==1?'s':'')):'';
   var body;
@@ -3653,12 +3740,14 @@ function renderSM(){
     order.sort(function(x,y){ return y.k.localeCompare(x.k); });
     body=order.map(function(o,pos){
       var x=o.s, i=o.i;
-      var rp=pagesForRead(b,x.id), rpct=tot?Math.round(rp/tot*100):0;
+      var rp=pagesForRead(b,x.id), rtot=readTotal(b,x), rpct=rtot?Math.round(rp/rtot*100):0;
       return '<div class="rt-card">'
         +'<div class="rt-head"><span class="rt-n">Read #'+(n-pos)+'</span>'
           +'<button class="sdel" onclick="delS('+i+')" title="Remove this read">'+ICONS.close+'</button></div>'
         +'<div class="rt-bar"><div class="rt-fill" style="width:'+rpct+'%"></div></div>'
-        +'<div class="rt-pages">'+rp+' of '+tot+' pages ('+rpct+'%)</div>'
+        +'<div class="rt-pages">'+unitStr(x,rp)+' of '+unitStr(x,rtot)+' ('+rpct+'%)</div>'
+        +'<div class="rt-fmt"><button class="'+(!isAudioRead(x)?'on':'')+'" onclick="setReadFormat('+i+',\'print\')">Print</button>'
+          +'<button class="'+(isAudioRead(x)?'on':'')+'" onclick="setReadFormat('+i+',\'audio\')">Audio</button></div>'
         +'<div class="rt-dates">'
           +'<label class="rt-d"><span>Started</span><input type="date" value="'+esc(x.start||'')+'" onchange="updS('+i+',\'start\',this.value)"/></label>'
           +'<label class="rt-d"><span>Finished</span><input type="date" value="'+esc(x.end||'')+'" onchange="updS('+i+',\'end\',this.value)"/></label>'
@@ -3813,7 +3902,8 @@ function renderTimerTab(){
   else if(tmrMode==='startprompt'){ controls='<div class="tmr-pageform"><label>Starting page</label><input type="number" id="tmr-startpage" min="0" value="'+(b?(currentPageFor(b)||0):0)+'"/><div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrBegin()">Begin</button><button class="tmr-ghost" onclick="tmrCancelStart()">Cancel</button></div></div>'; }
   else if(tmrMode==='running'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Pause</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
   else if(tmrMode==='paused'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Resume</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
-  else if(tmrMode==='finishprompt'){ var sug=b?Math.max(activeTimer.startPage||0,currentPageFor(b)):(activeTimer?activeTimer.startPage:0); controls='<div class="tmr-pageform"><label>Finish at page</label><input type="number" id="tmr-endpage" min="0" value="'+sug+'"/><div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrConfirmFinish()">Save session</button><button class="tmr-ghost" onclick="tmrKeepReading()">Keep reading</button></div></div>'; }
+  else if(tmrMode==='finishprompt'){ var sug=b?Math.max(activeTimer.startPage||0,currentPageFor(b)):(activeTimer?activeTimer.startPage:0); var _fa=b?isAudioRead(readById(b,ensureCurrentRead(b))):false;
+    controls='<div class="tmr-pageform"><label>'+(_fa?'Stopped at minute':'Finish at page')+'</label><input type="number" id="tmr-endpage" min="0" value="'+sug+'"/><div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrConfirmFinish()">Save session</button><button class="tmr-ghost" onclick="tmrKeepReading()">Keep reading</button></div></div>'; }
   body.innerHTML=card+circle+'<div class="tmr-controls">'+controls+'</div>';
   tmrPaint();
 }
@@ -3866,7 +3956,9 @@ function tmrConfirmFinish(){
   else { try{ var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[]; if(arr[idx]){ arr[idx].timerSessions=arr[idx].timerSessions||[]; tagSessionRead(arr[idx],session); arr[idx].timerSessions.push(session); storage.setItem(listKey(activeTimer.listId), JSON.stringify(arr)); fanOutSession(arr[idx].bookId, session, activeTimer.listId); } }catch(e){} }
   activeTimer=null; saveActiveTimer(); tmrStopTick(); _tmrFrozenSec=0; tmrMode='idle'; pushTimerState(); pushWidgetSnapshot();
   updateStats(); renderTimerTab(); if(currentTab==='list') renderTable();
-  showToast('Logged '+formatHMS(sec)+' \u00b7 '+Math.max(0,endPage-startPage)+' pages');
+  var _tb=(tmrSelIdx>=0)?books[tmrSelIdx]:null;
+  var _tr=_tb?readById(_tb,ensureCurrentRead(_tb)):null;
+  showToast('Logged '+formatHMS(sec)+' \u00b7 '+unitStr(_tr,Math.max(0,endPage-startPage)));
 }
 function tmrStartFromReading(idx){ tmrSelIdx=idx; switchScreen('timer'); }
 function tmrInit(){ if(activeTimer){ tmrSelIdx=(activeTimer.listId===activeId)?activeTimer.bookIdx:-1; tmrSyncMode(); if(tmrMode==='running') tmrStartTick(); } }
@@ -4070,7 +4162,7 @@ function renderTable(){
         +'<div class="bk-id" onclick="openSM('+b.idx+')" title="Open book">'
           +'<div class="bk-title">'+esc(b.title)+inlineSeriesTag+(b.optional?'<span class="optional-tag">(optional)</span>':'')+sBadge+'</div>'
           +seriesLine
-          +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+(b.translator?' &middot; <span class="bk-trans">trans. '+esc(b.translator)+'</span>':'')+' &middot; '+b.pages+'p</div>'
+          +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+(b.translator?' &middot; <span class="bk-trans">trans. '+esc(b.translator)+'</span>':'')+' &middot; '+b.pages+'p'+(b.runtimeMin?' <span class="bk-audio">'+fmtMins(b.runtimeMin)+' audio</span>':'')+'</div>'
         +'</div>'
         +'<button class="fav-btn'+(b.isFav?' on':'')+'" onclick="toggleFav('+b.idx+')" title="Favourite">'+ICONS.heart+'</button>'
       +'</div>'
@@ -4178,6 +4270,7 @@ var HEARTH_TRACKS=[
   {k:'sess',  name:'Sessions logged', suf:'',  tiers:mkTiers(5,5000,26)},
   {k:'rate',  name:'Ratings given',   suf:'',  tiers:mkTiers(5,1000,22)},
   {k:'rev',   name:'Reviews written', suf:'',  tiers:mkTiers(1,500,20)},
+  {k:'listen',name:'Listening time',   suf:'h', tiers:mkTiers(1,3000,30)},
   {k:'streak',name:'Day streak',      suf:'d', tiers:[3,5,7,10,14,21,30,45,60,90,120,160,210,270,340,420,510,610,730,900,1100,1400,1800,2400,3650]},
   {k:'long',  name:'Longest session', suf:'m', tiers:[30,45,60,90,120,180,240,300]}
 ];
@@ -4187,6 +4280,9 @@ function _hearthBooks(){
   var seen={}, out=[];
   function add(b,isRead){
     if(!b) return;
+    // Tag each session with its read's medium before the book identity is
+    // merged away, so audio and print stay distinguishable downstream.
+    (b.timerSessions||[]).forEach(function(x){ if(x) x.audio=sessionIsAudio(b,x); });
     var id=b.bookId||((b.title||'')+'|'+(b.author||''));
     var e=seen[id];
     if(!e){ seen[id]={pages:b.pages||0,myRating:b.myRating||0,ts:b.timerSessions||[],rt:b.sessions||[],isRead:!!isRead}; out.push(seen[id]); return; }
@@ -4208,12 +4304,15 @@ function _hearthBooks(){
   return out;
 }
 function hearthStats(){
-  var bs=_hearthBooks(), sec=0,pages=0,sess=0,fin=0,rate=0,rev=0,longest=0,owl=false,bird=false;
+  var bs=_hearthBooks(), sec=0,pages=0,sess=0,fin=0,rate=0,rev=0,longest=0,owl=false,bird=false,lis=0;
   bs.forEach(function(b){
     sess+=b.ts.length;
     b.ts.forEach(function(x){
       sec+=(x.durationSec||0);
-      pages+=Math.max(0,(x.endPage||0)-(x.startPage||0));
+      // Audio positions are minutes, not pages — they must never inflate a
+      // page count. They feed the listening ladder instead.
+      if(x.audio){ lis+=(x.durationSec||0); }
+      else pages+=Math.max(0,(x.endPage||0)-(x.startPage||0));
       if((x.durationSec||0)>longest) longest=x.durationSec||0;
       var h=new Date(x.startTime).getHours();
       // Night owl: started at 10pm or later, or after midnight.
@@ -4227,7 +4326,7 @@ function hearthStats(){
     rev  += b.rt.filter(function(x){return (x.note||'').trim();}).length;
   });
   var st=computeStreak();
-  return {time:sec/3600,pages:pages,sess:sess,fin:fin,add:bs.length,rate:rate,rev:rev,
+  return {time:sec/3600,listen:lis/3600,pages:pages,sess:sess,fin:fin,add:bs.length,rate:rate,rev:rev,
           streak:Math.max(st.best||0,st.current||0),long:longest/60,owl:owl,bird:bird};
 }
 // Unlock every tier the numbers have passed, paying 3 embers each. On first
@@ -5081,7 +5180,7 @@ function _sessionsForDay(key){
         if(!x||!x.startTime) return;
         if(_dayKey(new Date(x.startTime))!==key) return;
         if(seen[x.startTime]) return; seen[x.startTime]=1;
-        out.push({s:x,title:b.title||'',bookId:b.bookId||'',listId:listId});
+        out.push({s:x,title:b.title||'',bookId:b.bookId||'',listId:listId,audio:sessionIsAudio(b,x)});
       });
     });
   }
@@ -5109,7 +5208,8 @@ function openDaySheet(key){
     return '<div class="day-item"><div class="day-i-l">'
       +'<div class="day-i-t">'+esc(r.title)+'</div>'
       +'<div class="day-i-m">'+h12+':'+mm+' '+ap+' \u00b7 '+dur+' min'
-        +(pg?' \u00b7 p.'+r.s.startPage+'\u2013'+r.s.endPage+' ('+pg+')':'')+'</div></div>'
+        +(pg?(r.audio?' \u00b7 '+fmtMins(r.s.startPage)+'\u2013'+fmtMins(r.s.endPage)
+                   :' \u00b7 p.'+r.s.startPage+'\u2013'+r.s.endPage+' ('+pg+')'):'')+'</div></div>'
       +'<button class="sdel" title="Delete this session" onclick="deleteDaySession(\''+key+'\','+r.s.startTime+',\''+r.bookId+'\')">'+ICONS.close+'</button>'
     +'</div>';
   }).join('') : '<div class="lookup-note">No sessions logged on this day.</div>';
