@@ -4235,11 +4235,46 @@ function loadHearth(){
     for(var _k in babelHearth.unlocked) babelHearth.claimedAch[_k]=1;
     babelHearth.achMigrated=1;
   }
-  // One-time replacement for a freeze lost to the sync bug above.
-  if(!babelHearth.freezeGrant1){
-    babelHearth.freezes=(babelHearth.freezes||0)+1;
+  // Make-good for a freeze lost to the sync bug above, plus the three spent
+  // defending a streak that the de-duplication fix then erased.
+  var _hMig=false;
+  if(!babelHearth.freezeGrant2){
+    babelHearth.freezes=(babelHearth.freezes||0)+(babelHearth.freezeGrant1?3:4);
     babelHearth.freezeGrant1=1;
+    babelHearth.freezeGrant2=1;
+    _hMig=true;
   }
+  // De-duplicating shared books halved the recorded minutes on days where a
+  // book sat in two lists, so days that legitimately met the goal under the
+  // old accounting suddenly failed it and the streak collapsed. Re-grade
+  // history once under the old rules and protect those days, free of charge.
+  if(!babelHearth.streakRepair){
+    try{
+      var oldMap={};
+      function _tally(arr){
+        (arr||[]).forEach(function(b){
+          (b.timerSessions||[]).forEach(function(x){
+            if(!x||!x.startTime) return;
+            var k=_dayKey(new Date(x.startTime));
+            oldMap[k]=(oldMap[k]||0)+(x.durationSec||0);   // no de-duplication
+          });
+        });
+      }
+      lists.forEach(function(l){
+        try{ var raw=storage.getItem(listKey(l.id)); if(raw) _tally(JSON.parse(raw)); }catch(e){}
+      });
+      var newMap=_gatherSecByDay(), goal=babelGoalMin*60, today=_dayKey(new Date());
+      Object.keys(oldMap).forEach(function(k){
+        if(k===today) return;                              // today must be earned
+        if(oldMap[k]>=goal && (newMap[k]||0)<goal) babelHearth.frozen[k]=1;
+      });
+    }catch(e){}
+    babelHearth.streakRepair=1;
+    _hMig=true;
+  }
+  // Persist immediately: a one-time grant that isn't written is a grant that
+  // silently disappears on the next load.
+  if(_hMig){ try{ saveHearth(); }catch(e){} }
   // Legacy string anchors -> timestamp.
   if(typeof babelHearth.freezeFrom==='string' && babelHearth.freezeFrom){
     var q=babelHearth.freezeFrom.split('-'), qd=new Date(+q[0],+q[1]-1,+q[2]);
@@ -5550,8 +5585,25 @@ window.BabelCloud = (function(){
           // right after startup replaced the whole object and wiped it before
           // it was ever shown, so carry it across.
           var _keepNote=babelHearth&&babelHearth.freezeNote;
+          // One-time make-goods are local decisions. If an incoming copy
+          // predates them it must not undo them, or the grant is silently
+          // wiped by the next pull — which is how the first one was lost.
+          var _keepGrants={g1:babelHearth&&babelHearth.freezeGrant1,
+                           g2:babelHearth&&babelHearth.freezeGrant2,
+                           sr:babelHearth&&babelHearth.streakRepair,
+                           frozen:(babelHearth&&babelHearth.frozen)||{},
+                           freezes:(babelHearth&&babelHearth.freezes)||0};
           babelHearth=row.theme.hearth;
           if(_keepNote && !babelHearth.freezeNote) babelHearth.freezeNote=_keepNote;
+          if(_keepGrants.g2 && !babelHearth.freezeGrant2){
+            babelHearth.freezeGrant1=1; babelHearth.freezeGrant2=1;
+            babelHearth.freezes=Math.max(babelHearth.freezes||0,_keepGrants.freezes);
+          }
+          if(_keepGrants.sr && !babelHearth.streakRepair){
+            babelHearth.streakRepair=1;
+            babelHearth.frozen=babelHearth.frozen||{};
+            for(var _fk in _keepGrants.frozen) babelHearth.frozen[_fk]=1;
+          }
           ['frozen','claims','unlocked','logins','claimedAch'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
           // A hearth synced from a device that predates claimable achievements
           // has unlocked tiers that were already paid on unlock. Without this
