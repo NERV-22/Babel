@@ -729,6 +729,12 @@ body{padding:0}
 .fs-clear{margin-top:2px;padding:8px;border:1px dashed var(--border);border-radius:9px;background:transparent;color:var(--text-muted);font-family:sans-serif;font-size:12px;cursor:pointer}
 .fs-clear:active{border-color:var(--accent);color:var(--accent)}
 .ds-year{cursor:pointer}
+.day-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius,14px);background:var(--bg1)}
+.day-i-l{flex:1;min-width:0}
+.day-i-t{font-family:sans-serif;font-size:13.5px;font-weight:600;color:var(--text)}
+.day-i-m{font-family:sans-serif;font-size:11.5px;color:var(--text-muted);margin-top:3px}
+.h-row.ready{border-color:var(--accent);box-shadow:0 0 14px var(--accent-shadow)}
+.h-tier.ready{border-color:var(--star);color:var(--star);background:transparent;cursor:pointer;font-weight:700}
 .yb-list{display:flex;flex-direction:column;gap:7px;max-height:60vh;overflow-y:auto}
 .yb-item{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius,14px);background:var(--bg1);cursor:pointer;font-family:sans-serif}
 .yb-item:active{border-color:var(--accent)}
@@ -1123,6 +1129,13 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div class="modal-btns" style="margin-top:12px"><button class="modal-cancel" onclick="closeShop()">Done</button></div>
   </div>
 </div>
+<div class="sheet-overlay hidden" id="day-sheet" onclick="if(event.target===this)closeDaySheet()">
+  <div class="sheet">
+    <div class="shop-head"><span class="shop-t" id="day-title">Day</span><span class="shop-bal" id="day-sum"></span></div>
+    <div id="day-list" class="yb-list"></div>
+    <div class="modal-btns" style="margin-top:12px"><button class="modal-cancel" onclick="closeDaySheet()">Done</button></div>
+  </div>
+</div>
 <div class="sheet-overlay hidden" id="yearbooks-sheet" onclick="if(event.target===this)closeYearBooks()">
   <div class="sheet">
     <div class="shop-head"><span class="shop-t" id="yb-title">Finished this year</span><span class="shop-bal" id="yb-count"></span></div>
@@ -1489,8 +1502,13 @@ var STREAK_MIN_SEC=15*60;
 var babelGoalMin=10;
 function _dayKey(d){return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
 function _gatherSecByDay(){
-  var map={};
-  function addTS(arr){(arr||[]).forEach(function(s){if(!s||!s.startTime)return;var k=_dayKey(new Date(s.startTime));map[k]=(map[k]||0)+(s.durationSec||0);});}
+  var map={}, seen={};
+  // A book in two lists holds the SAME session in both copies (fan-out), so
+  // count each session once — keyed on its start moment, which is unique.
+  function addTS(arr){(arr||[]).forEach(function(s){
+    if(!s||!s.startTime)return;
+    if(seen[s.startTime])return; seen[s.startTime]=1;
+    var k=_dayKey(new Date(s.startTime));map[k]=(map[k]||0)+(s.durationSec||0);});}
   books.forEach(function(b){addTS(b.timerSessions);});
   lists.forEach(function(l){
     if(l.id===activeId)return;
@@ -1687,6 +1705,33 @@ function migrateBookIds(){
 // Append a session to every other copy of the same book, so a reread logged
 // in one list shows up in the others. Active list is patched in memory (and
 // saved, which marks it dirty for cloud sync); other lists in storage.
+// Remove a session from every other copy of this book. Without this a
+// deleted session survives in the other list and keeps being counted.
+function fanOutSessionDelete(bookId, startTime, skipListId){
+  if(!bookId||!startTime) return;
+  function strip(arr){
+    var before=arr.length;
+    for(var i=arr.length-1;i>=0;i--) if(arr[i] && arr[i].startTime===startTime) arr.splice(i,1);
+    return arr.length!==before;
+  }
+  if(activeId!==skipListId){
+    var touched=false;
+    books.forEach(function(b){ if(b.bookId===bookId && b.timerSessions && strip(b.timerSessions)) touched=true; });
+    if(touched) saveCurrentList();
+  }
+  lists.forEach(function(l){
+    if(l.id===skipListId||l.id===activeId) return;
+    try{
+      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+      var arr=JSON.parse(raw), hit=false;
+      arr.forEach(function(b){ if(b.bookId===bookId && b.timerSessions && strip(b.timerSessions)) hit=true; });
+      if(hit){
+        storage.setItem(listKey(l.id), JSON.stringify(arr));
+        try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(l.id); }catch(e){}
+      }
+    }catch(e){}
+  });
+}
 function fanOutSession(bookId, session, skipListId){
   if(!bookId||!session) return;
   function add(b){
@@ -3478,9 +3523,13 @@ function deleteRLSession(i){
   if(rlOpenIdx<0) return;
   var b = books[rlOpenIdx];
   if(!b || !b.timerSessions) return;
+  var gone=b.timerSessions[i];
   b.timerSessions.splice(i, 1);
   saveCurrentList();
+  if(gone) fanOutSessionDelete(b.bookId, gone.startTime, activeId);
   renderRLModal();
+  try{ hearthCheckUnlocks(); renderHearth(); }catch(e){}
+  try{ updateStats(); }catch(e){}
 }
 document.getElementById("rl-modal").addEventListener("click",function(e){if(e.target===this)closeRL();});
 
@@ -4087,7 +4136,18 @@ function _hWeek(d){
 }
 function loadHearth(){
   try{ var r=storage.getItem('rl_hearth'); if(r){ var o=JSON.parse(r); for(var k in o) babelHearth[k]=o[k]; } }catch(e){}
-  ['frozen','claims','unlocked','logins'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
+  ['frozen','claims','unlocked','logins','claimedAch'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
+  // One-time: tiers unlocked before achievements became claimable were paid
+  // on unlock, so mark them claimed rather than paying the embers twice.
+  if(!babelHearth.achMigrated){
+    for(var _k in babelHearth.unlocked) babelHearth.claimedAch[_k]=1;
+    babelHearth.achMigrated=1;
+  }
+  // One-time replacement for a freeze lost to the sync bug above.
+  if(!babelHearth.freezeGrant1){
+    babelHearth.freezes=(babelHearth.freezes||0)+1;
+    babelHearth.freezeGrant1=1;
+  }
   // Legacy string anchors -> timestamp.
   if(typeof babelHearth.freezeFrom==='string' && babelHearth.freezeFrom){
     var q=babelHearth.freezeFrom.split('-'), qd=new Date(+q[0],+q[1]-1,+q[2]);
@@ -4156,7 +4216,10 @@ function hearthStats(){
       pages+=Math.max(0,(x.endPage||0)-(x.startPage||0));
       if((x.durationSec||0)>longest) longest=x.durationSec||0;
       var h=new Date(x.startTime).getHours();
-      if(h<4) owl=true; else if(h<6) bird=true;
+      // Night owl: started at 10pm or later, or after midnight.
+      // Early bird: started before 9am.
+      if(h>=22 || h<4) owl=true;
+      if(h>=4 && h<9) bird=true;
     });
     // Each completed read-through is a finish; a checked book counts as one.
     fin  += Math.max(b.rt.filter(function(x){return x.end;}).length, b.isRead?1:0);
@@ -4175,13 +4238,14 @@ function hearthCheckUnlocks(){
     t.tiers.forEach(function(val,i){
       var key=t.k+':'+i;
       if(babelHearth.unlocked[key]) return;
-      if((v[t.k]||0)>=val){ babelHearth.unlocked[key]=1; gained+=3; }
+      // Unlocking no longer pays out — the embers wait to be claimed.
+      if((v[t.k]||0)>=val){ babelHearth.unlocked[key]=1; gained++; }
     });
   });
   [['owl',v.owl],['bird',v.bird]].forEach(function(o){
-    if(!babelHearth.unlocked[o[0]] && o[1]){ babelHearth.unlocked[o[0]]=1; gained+=3; }
+    if(!babelHearth.unlocked[o[0]] && o[1]){ babelHearth.unlocked[o[0]]=1; gained++; }
   });
-  if(gained){ babelHearth.embers+=gained; saveHearth(); }
+  if(gained) saveHearth();
   return gained;
 }
 // A missed day is covered automatically if a freeze is banked.
@@ -4220,13 +4284,16 @@ function hearthInit(){
 function hearthDaily(){
   var dmap=_gatherDayStats(), today=_dayKey(new Date());
   var mins=((dmap[today]||{sec:0}).sec)/60;
+  // Weekly progress runs Monday 00:00 → now, matching when the claim resets.
   var mid=new Date(); mid.setHours(0,0,0,0);
+  var back=(mid.getDay()+6)%7;             // 0 = Monday
   var wSec=0, logins=0;
-  for(var i=0;i<7;i++){
+  for(var i=0;i<=back;i++){
     var day=new Date(mid.getTime()-i*86400000);
     var st=dmap[_dayKey(day)]; if(st) wSec+=st.sec;
     if(babelHearth.logins[_hDay(day)]) logins++;
   }
+  var weekDays=back+1;
   var D=_hDay(), W=_hWeek();
   function mk(k,label,em,done,prog,per){
     return {k:k,label:label,em:em,done:done,prog:Math.max(0,Math.min(prog,1)),per:per,
@@ -4238,9 +4305,35 @@ function hearthDaily(){
     mk('r10','Read 10 minutes today',1,mins>=10,mins/10,'day'),
     mk('r15','Read 15 minutes today',1,mins>=15,mins/15,'day'),
     mk('r30','Read 30 minutes today',2,mins>=30,mins/30,'day'),
-    mk('w7','Open Babel all 7 days',3,logins>=7,logins/7,'week'),
+    mk('w7','Open Babel every day this week',3,logins>=weekDays,logins/weekDays,'week'),
     mk('w2h','Read 2 hours this week',5,wSec>=7200,wSec/7200,'week')
   ];
+}
+// Achievements are claimed, not auto-paid. Anything unlocked before this
+// change was already paid then, so it is marked claimed on migration.
+function achClaimed(key){ return !!(babelHearth.claimedAch&&babelHearth.claimedAch[key]); }
+function pendingAch(){ var n=0; for(var k in babelHearth.unlocked) if(!achClaimed(k)) n++; return n; }
+function claimAch(key){
+  if(!babelHearth.unlocked[key] || achClaimed(key)) return;
+  babelHearth.claimedAch=babelHearth.claimedAch||{};
+  babelHearth.claimedAch[key]=1;
+  babelHearth.embers+=3;
+  saveHearth(); renderHearth();
+}
+function claimTrack(k){
+  babelHearth.claimedAch=babelHearth.claimedAch||{};
+  var n=0;
+  for(var key in babelHearth.unlocked){
+    if(key.indexOf(k+':')!==0) continue;
+    if(!achClaimed(key)){ babelHearth.claimedAch[key]=1; n++; }
+  }
+  if(n){ babelHearth.embers+=n*3; saveHearth(); renderHearth(); }
+}
+function claimAllAch(){
+  babelHearth.claimedAch=babelHearth.claimedAch||{};
+  var n=0;
+  for(var k in babelHearth.unlocked) if(!achClaimed(k)){ babelHearth.claimedAch[k]=1; n++; }
+  if(n){ babelHearth.embers+=n*3; saveHearth(); renderHearth(); }
 }
 function claimHearth(k){
   var it=null;
@@ -4259,6 +4352,13 @@ function hToggle(k){ _hOpen[k]=!_hOpen[k]; renderHearth(); }
 function _hNum(n){ return n>=1000?Math.round(n).toLocaleString():(Math.round(n*10)/10); }
 function renderHearth(){
   var el=document.getElementById('h-body'); if(!el) return;
+  // Recompute here so the panel can never show a stale "next tier" below the
+  // current value — sessions from the Timer tab never hit the old check.
+  try{ hearthCheckUnlocks(); }catch(e){}
+  try{
+    var _pa=pendingAch(), _st=document.getElementById('h-st-ach');
+    if(_st) _st.textContent='Achievements'+(_pa?' \u00b7 '+_pa:'');
+  }catch(e){}
   var h='<div class="h-bal"><span class="h-emb">'+babelHearth.embers+'</span><span class="h-embl">embers</span>'
       +'<span class="h-frz">'+babelHearth.freezes+' freeze'+(babelHearth.freezes!==1?'s':'')+'</span></div>';
   if(babelHearth.freezeNote){
@@ -4290,32 +4390,41 @@ function renderHearth(){
       var val=v[t.k]||0, nextI=-1;
       for(var i=0;i<t.tiers.length;i++){ if(!babelHearth.unlocked[t.k+':'+i]){ nextI=i; break; } }
       var earned=t.tiers.filter(function(x,i){return babelHearth.unlocked[t.k+':'+i];}).length;
+      var ready=t.tiers.filter(function(x,i){return babelHearth.unlocked[t.k+':'+i] && !achClaimed(t.k+':'+i);}).length;
       var prev = nextI>0 ? t.tiers[nextI-1] : 0;
       var goal = nextI<0 ? t.tiers[t.tiers.length-1] : t.tiers[nextI];
       var prog = nextI<0 ? 1 : Math.max(0,Math.min((val-prev)/((goal-prev)||1),1));
-      return {t:t,val:val,earned:earned,goal:goal,prog:prog,done:nextI<0};
+      return {t:t,val:val,earned:earned,ready:ready,goal:goal,prog:prog,done:nextI<0};
     });
-    rows.sort(function(a,b){ if(a.done!==b.done) return a.done?1:-1; return b.prog-a.prog; });
+    // Anything claimable rides to the top, then closest-to-next.
+    rows.sort(function(a,b){
+      if((a.ready>0)!==(b.ready>0)) return b.ready-a.ready;
+      if(a.done!==b.done) return a.done?1:-1;
+      return b.prog-a.prog;
+    });
     h+=rows.map(function(r){
       var t=r.t, open=_hOpen[t.k];
       var ladder = open ? '<div class="h-ladder">'+t.tiers.map(function(x,i){
-          var got=babelHearth.unlocked[t.k+':'+i];
-          return '<span class="h-tier'+(got?' got':'')+'">'+_hNum(x)+t.suf+'</span>';
+          var key=t.k+':'+i, got=babelHearth.unlocked[key], cl=achClaimed(key);
+          var cls=got?(cl?' got':' ready'):'';
+          return '<span class="h-tier'+cls+'"'+(got&&!cl?' onclick="claimAch(\''+key+'\')"':'')+'>'+_hNum(x)+t.suf+'</span>';
         }).join('')+'</div>' : '';
-      return '<div class="h-row ach'+(r.done?' claimed':'')+'" >'
+      return '<div class="h-row ach'+(r.ready?' ready':'')+(r.done&&!r.ready?' claimed':'')+'">'
         +'<div class="h-row-t" onclick="hToggle(\''+t.k+'\')">'
           +'<span class="h-row-n">'+t.name+'</span>'
           +'<span class="h-row-e">'+r.earned+'/'+t.tiers.length+'</span></div>'
         +'<div class="h-bar"><div class="h-fill" style="width:'+Math.round(r.prog*100)+'%"></div></div>'
         +'<div class="h-prog">'+(r.done?'All earned':_hNum(r.val)+t.suf+' \u2192 '+_hNum(r.goal)+t.suf)+'</div>'
+        +(r.ready?'<button class="h-claim" onclick="claimTrack(\''+t.k+'\')">Claim '+r.ready+' \u00d7 +3</button>':'')
         +ladder
       +'</div>';
     }).join('');
     var one=[['owl','Night owl','A session after midnight'],['bird','Early bird','A session before 6am']];
     h+=one.map(function(o){
-      var got=babelHearth.unlocked[o[0]];
-      return '<div class="h-row'+(got?' claimed':'')+'"><div class="h-row-t"><span class="h-row-n">'+o[1]+'</span>'
-        +'<span class="h-row-e">'+(got?ICONS.check:'+3')+'</span></div><div class="h-prog">'+o[2]+'</div></div>';
+      var got=babelHearth.unlocked[o[0]], cl=achClaimed(o[0]);
+      return '<div class="h-row'+(got&&!cl?' ready':(cl?' claimed':''))+'"><div class="h-row-t"><span class="h-row-n">'+o[1]+'</span>'
+        +'<span class="h-row-e">'+(cl?ICONS.check:'+3')+'</span></div><div class="h-prog">'+o[2]+'</div>'
+        +(got&&!cl?'<button class="h-claim" onclick="claimAch(\''+o[0]+'\')">Claim +3</button>':'')+'</div>';
     }).join('');
   }
   el.innerHTML=h;
@@ -4868,9 +4977,11 @@ var _calY=null, _calM=null;
 // Per-day stats {key:{sec,pages}} across all lists — same walk as
 // _gatherSecByDay but also sums pages, for the tap-detail line.
 function _gatherDayStats(){
-  var map={};
+  var map={}, seen={};
+  // Same de-duplication as _gatherSecByDay — shared books must not double-count.
   function addTS(arr){(arr||[]).forEach(function(s){
     if(!s||!s.startTime)return;
+    if(seen[s.startTime])return; seen[s.startTime]=1;
     var k=_dayKey(new Date(s.startTime));
     if(!map[k])map[k]={sec:0,pages:0};
     map[k].sec+=(s.durationSec||0);
@@ -4929,7 +5040,8 @@ function renderCalendar(){
     if(!isFuture) monthSec+=st.sec;
     if(isToday && cls!=='met')
       svg+='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--text-muted)" stroke-width="1" opacity="0.5"/>';
-    cells+='<div class="cal-day '+cls+'"'+sty+' onclick="calDayTap(\''+key+'\')"><svg viewBox="0 0 40 40">'+svg+'</svg><span class="cal-num">'+day+'</span></div>';
+    var tapFn = isFuture ? '' : ' onclick="calDayTap(\''+key+'\');openDaySheet(\''+key+'\')"';
+    cells+='<div class="cal-day '+cls+'"'+sty+tapFn+'><svg viewBox="0 0 40 40">'+svg+'</svg><span class="cal-num">'+day+'</span></div>';
   }
 
   var h=Math.floor(monthSec/3600), m=Math.round((monthSec%3600)/60);
@@ -4959,6 +5071,66 @@ function calNav(dir){
 }
 
 // Tap a day — show its stats in the detail line under the calendar.
+// Every session on one day, across all lists, de-duplicated the same way the
+// totals are. Sessions can be deleted here and vanish from every list.
+function _sessionsForDay(key){
+  var out=[], seen={};
+  function scan(arr,listId){
+    (arr||[]).forEach(function(b){
+      (b.timerSessions||[]).forEach(function(x){
+        if(!x||!x.startTime) return;
+        if(_dayKey(new Date(x.startTime))!==key) return;
+        if(seen[x.startTime]) return; seen[x.startTime]=1;
+        out.push({s:x,title:b.title||'',bookId:b.bookId||'',listId:listId});
+      });
+    });
+  }
+  scan(books,activeId);
+  lists.forEach(function(l){
+    if(l.id===activeId) return;
+    try{ var raw=storage.getItem(listKey(l.id)); if(raw) scan(JSON.parse(raw),l.id); }catch(e){}
+  });
+  out.sort(function(a,b){ return a.s.startTime-b.s.startTime; });
+  return out;
+}
+function openDaySheet(key){
+  var rows=_sessionsForDay(key), st=_gatherDayStats()[key]||{sec:0,pages:0};
+  var p=key.split('-');
+  var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('day-title').textContent=MON[+p[1]-1]+' '+p[2]+', '+p[0];
+  var mins=Math.max(0,Math.round(st.sec/60));
+  document.getElementById('day-sum').textContent=mins+' min'+(st.pages?' \u00b7 '+st.pages+' page'+(st.pages!==1?'s':''):'');
+  document.getElementById('day-list').innerHTML = rows.length ? rows.map(function(r){
+    var d=new Date(r.s.startTime);
+    var hh=d.getHours(), mm=String(d.getMinutes()).padStart(2,'0');
+    var ap=hh<12?'AM':'PM', h12=hh%12; if(h12===0) h12=12;
+    var dur=Math.max(1,Math.round((r.s.durationSec||0)/60));
+    var pg=Math.max(0,(r.s.endPage||0)-(r.s.startPage||0));
+    return '<div class="day-item"><div class="day-i-l">'
+      +'<div class="day-i-t">'+esc(r.title)+'</div>'
+      +'<div class="day-i-m">'+h12+':'+mm+' '+ap+' \u00b7 '+dur+' min'
+        +(pg?' \u00b7 p.'+r.s.startPage+'\u2013'+r.s.endPage+' ('+pg+')':'')+'</div></div>'
+      +'<button class="sdel" title="Delete this session" onclick="deleteDaySession(\''+key+'\','+r.s.startTime+',\''+r.bookId+'\')">'+ICONS.close+'</button>'
+    +'</div>';
+  }).join('') : '<div class="lookup-note">No sessions logged on this day.</div>';
+  document.getElementById('day-sheet').classList.remove('hidden');
+}
+function closeDaySheet(){ document.getElementById('day-sheet').classList.add('hidden'); }
+function deleteDaySession(key,startTime,bookId){
+  var touched=false;
+  books.forEach(function(b){
+    if(bookId && b.bookId!==bookId) return;
+    if(!b.timerSessions) return;
+    for(var i=b.timerSessions.length-1;i>=0;i--)
+      if(b.timerSessions[i] && b.timerSessions[i].startTime===startTime){ b.timerSessions.splice(i,1); touched=true; }
+  });
+  if(touched) saveCurrentList();
+  fanOutSessionDelete(bookId, startTime, activeId);
+  try{ hearthCheckUnlocks(); }catch(e){}
+  try{ updateStats(); }catch(e){}
+  renderReadingScreen();
+  if(_sessionsForDay(key).length) openDaySheet(key); else closeDaySheet();
+}
 function calDayTap(key){
   var el=document.getElementById('cal-detail'); if(!el) return;
   var st=_gatherDayStats()[key];
@@ -5274,8 +5446,20 @@ window.BabelCloud = (function(){
           var _yi=document.getElementById('ygoal-input'); if(_yi) _yi.value=babelYearlyGoal;
         }
         if(row.theme.hearth && typeof row.theme.hearth==='object'){
+          // freezeNote is a local "we used a freeze" notice. A pull landing
+          // right after startup replaced the whole object and wiped it before
+          // it was ever shown, so carry it across.
+          var _keepNote=babelHearth&&babelHearth.freezeNote;
           babelHearth=row.theme.hearth;
-          ['frozen','claims','unlocked','logins'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
+          if(_keepNote && !babelHearth.freezeNote) babelHearth.freezeNote=_keepNote;
+          ['frozen','claims','unlocked','logins','claimedAch'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
+          // A hearth synced from a device that predates claimable achievements
+          // has unlocked tiers that were already paid on unlock. Without this
+          // they would all become claimable again and pay out a second time.
+          if(!babelHearth.achMigrated){
+            for(var _ck in babelHearth.unlocked) babelHearth.claimedAch[_ck]=1;
+            babelHearth.achMigrated=1;
+          }
           try{ storage.setItem('rl_hearth',JSON.stringify(babelHearth)); }catch(e){}
           try{ renderHearth(); }catch(e){}
         }
