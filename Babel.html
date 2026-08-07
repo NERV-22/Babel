@@ -599,7 +599,7 @@ body{padding:0}
 .bk-reading-tag{margin-left:10px;font-family:sans-serif;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}
 .bk-row2 .my-stars{transform:scale(.96);transform-origin:left center}
 
-.stats-hero{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:16px}
+.stats-hero{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin-bottom:16px}
 .sh-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:17px 8px;text-align:center}
 .sh-n{font-family:Georgia,serif;font-size:27px;font-weight:700;color:var(--text);line-height:1}
 .sh-l{font-family:sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:7px}
@@ -713,7 +713,7 @@ body{padding:0}
 .rt-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
 .rt-n{font-family:sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700}
 .bk-trans{color:var(--text-muted);opacity:.85}
-.bk-audio{font-size:9.5px;padding:1px 6px;border-radius:999px;border:1px solid var(--accent);color:var(--accent);margin-left:5px}
+.bk-audio{font-family:sans-serif;font-size:10.5px;padding:1px 6px;border-radius:999px;border:1px solid var(--border);color:var(--text-muted);margin-left:5px}
 .hm-row{display:flex;align-items:center;gap:6px}
 .hm-l{flex:none;font-family:sans-serif;font-size:11.5px;color:var(--text-muted)}
 .hm-row input{width:64px;min-width:0}
@@ -5478,7 +5478,10 @@ function renderGoalBar(){
   var pct=goalSec>0?Math.min(100, Math.round(s.todaySec/goalSec*100)):0;
   var f=document.getElementById('goal-fill'); if(f) f.style.width=pct+'%';
   var p=document.getElementById('goal-pct'); if(p) p.textContent=pct+'%';
-  var d=document.getElementById('goal-detail'); if(d) d.textContent=mins+' / '+babelGoalMin+' min today'+(s.todayMet?' '+ICONS.check:'');
+  // The tick is an inline SVG, so this line has to be innerHTML — as textContent
+  // it printed the whole <svg ...> tag as visible text under the goal bar.
+  var d=document.getElementById('goal-detail');
+  if(d) d.innerHTML=esc(mins+' / '+babelGoalMin+' min today')+(s.todayMet?' '+ICONS.check:'');
 }
 
 /* ---- card-aware row patchers (override the old table-row versions) ---- */
@@ -5512,7 +5515,7 @@ function renderStreak(){
   var flame='<svg class="bs-flame" viewBox="0 0 16 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 0c.4 3.2-1.6 4.6-3 6.2C3.4 8 2 9.6 2 12.4 2 16.6 5 19.6 8 19.6s6-3 6-7.2c0-2.4-1.1-4.2-2.4-5.6-.3 1-1 1.7-1.8 1.9C10.6 5.4 11 2.7 8 0Z"/></svg>';
   if(s.current===0&&s.best===0){ el.innerHTML=flame+'<span class="bs-lbl">Read 15 min to start a streak</span>'; return; }
   var mins=Math.floor(s.todaySec/60);
-  var today=s.todayMet?'<span class="bs-today met">Today '+ICONS.check+'</span>':'<span class="bs-today">'+mins+'/15 min today</span>';
+  var today=s.todayMet?'<span class="bs-today met">Today '+ICONS.check+'</span>':'<span class="bs-today">'+mins+'/'+babelGoalMin+' min today</span>';
   el.innerHTML=flame+'<span class="bs-num">'+s.current+'</span><span class="bs-lbl">day streak</span>'
     +(s.best?'<span class="bs-sep"></span><span class="bs-best">Best '+s.best+'</span>':'')
     +'<span class="bs-sep"></span>'+today;
