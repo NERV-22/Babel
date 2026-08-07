@@ -4340,6 +4340,17 @@ function loadHearth(){
     for(var _k in babelHearth.unlocked) babelHearth.claimedAch[_k]=1;
     babelHearth.achMigrated=1;
   }
+  // One-time: 1 August 2026 was frozen, and the mark was lost when a stale
+  // cloud copy replaced the hearth wholesale. The ledger still held the day so
+  // the streak never broke, but the calendar drew it blank. Put the real entry
+  // back. Idempotent, so it is harmless if the flag is ever lost to a sync.
+  // Only where the ledger still remembers the day — that is the evidence it was
+  // protected before the mark was lost. A hearth without it never had the
+  // freeze, so this must not invent one.
+  if(!babelHearth.aug1FreezeRestore){
+    if(babelHearth.metEver['2026-8-1']) babelHearth.frozen['2026-8-1']=1;
+    babelHearth.aug1FreezeRestore=1;
+  }
   // Make-good for a freeze lost to the sync bug above, plus the three spent
   // defending a streak that the de-duplication fix then erased.
   var _hMig=false;
