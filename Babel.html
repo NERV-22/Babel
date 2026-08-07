@@ -1847,7 +1847,8 @@ function loadListData(id){
     // Backfill defaults for fields added in later versions, so old data
     // saved before those fields existed still loads cleanly.
     books.forEach(function(b){
-      stampFormats(b);
+      stampFormats(b);          // stamp the medium BEFORE any re-homing
+      adoptOrphanSessions(b);
       if(b.summary===undefined)     b.summary="";
       if(b.myRating===undefined)    b.myRating=0;
       if(b.optional===undefined)    b.optional=false;
@@ -3275,6 +3276,26 @@ function sessionFmt(b,x){
   return readFormat(readById(b,x&&x.readId));
 }
 function sessionIsAudio(b,x){ return sessionFmt(b,x)==='audio'; }
+// A session whose read-through no longer exists counts toward nothing: progress
+// reads 0% while the session list plainly shows the pages. Re-home those onto
+// the book's current read. Only same-medium sessions move, so minutes can never
+// be adopted into a page count.
+function adoptOrphanSessions(b){
+  if(!b || !b.timerSessions || !b.timerSessions.length) return b;
+  var ss=b.sessions||[]; if(!ss.length) return b;
+  var ids={}, i;
+  for(i=0;i<ss.length;i++) if(ss[i] && ss[i].id) ids[ss[i].id]=1;
+  var cur=curReadOf(b); if(!cur || !cur.id) return b;
+  var curFmt=readFormat(cur), moved=0;
+  for(i=0;i<b.timerSessions.length;i++){
+    var x=b.timerSessions[i];
+    if(!x || !x.readId || ids[x.readId]) continue;      // untagged, or its read is intact
+    var xf=(x.fmt==='audio'||x.fmt==='print')?x.fmt:curFmt;
+    if(xf!==curFmt) continue;                            // never mix minutes with pages
+    x.readId=cur.id; moved++;
+  }
+  return b;
+}
 // Fill in any missing stamp from the read that still holds it. Never overwrites
 // one, so it is safe to call on every load, sync and fan-out.
 function stampFormats(b){
@@ -4348,7 +4369,13 @@ function loadHearth(){
   // protected before the mark was lost. A hearth without it never had the
   // freeze, so this must not invent one.
   if(!babelHearth.aug1FreezeRestore){
-    if(babelHearth.metEver['2026-8-1']) babelHearth.frozen['2026-8-1']=1;
+    // Either the ledger still remembers the day, or the reading either side of
+    // it does: a met 31 July and a met 2 August leave Aug 1 as a hole that was
+    // demonstrably covered. A hearth matching neither never had the freeze.
+    var _a1m=_gatherSecByDay(), _a1g=babelGoalMin*60;
+    if(babelHearth.metEver['2026-8-1'] ||
+       ((_a1m['2026-7-31']||0)>=_a1g && (_a1m['2026-8-2']||0)>=_a1g))
+      babelHearth.frozen['2026-8-1']=1;
     babelHearth.aug1FreezeRestore=1;
   }
   // Make-good for a freeze lost to the sync bug above, plus the three spent
@@ -4586,6 +4613,16 @@ function hearthInit(){
   babelHearth.logins[_hDay()]=1;
   applyStreakFreezes();
   hearthCheckUnlocks();
+  // One-time: the sync bug wiped claimedAch while `unlocked` rebuilt itself
+  // from the stats, so every badge already earned went back to being payable.
+  // Mark what is currently unlocked as claimed, without paying out — he had
+  // these already. Runs after the unlock pass so nothing is missed, and the
+  // flag rides the sync merge so a pull cannot make it fire twice and swallow
+  // badges he has genuinely not claimed yet.
+  if(!babelHearth.achReclaim){
+    for(var _rk in babelHearth.unlocked) babelHearth.claimedAch[_rk]=1;
+    babelHearth.achReclaim=1;
+  }
   saveHearth();
 }
 // Today's / this week's claimable rewards.
@@ -5799,6 +5836,7 @@ window.BabelCloud = (function(){
           // ...but a copy that carries no counter at all is not "the newest value
           // is zero", it is a copy with nothing to say. Fall back rather than
           // leaving embers undefined, which renders as "undefined" on the Hearth.
+          if(_localH.achReclaim) babelHearth.achReclaim=1;
           if(typeof babelHearth.embers !=='number') babelHearth.embers =_localH.embers ||0;
           if(typeof babelHearth.freezes!=='number') babelHearth.freezes=_localH.freezes||0;
           if(_localH.freezeFrom && !babelHearth.freezeFrom) babelHearth.freezeFrom=_localH.freezeFrom;
