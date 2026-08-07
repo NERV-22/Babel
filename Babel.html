@@ -1560,22 +1560,6 @@ function computeStreak(){
   times.forEach(function(t){if(prev!==null&&Math.round((t-prev)/86400000)===1)run++;else run=1;best=Math.max(best,run);prev=t;});
   return {current:cur,best:best,todayMet:!!met[_dayKey(today)],todaySec:map[_dayKey(today)]||0};
 }
-function renderStreak(){
-  var el=document.getElementById("babel-streak");if(!el)return;
-  var s=computeStreak();
-  var flame='<svg class="bs-flame" viewBox="0 0 16 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 0c.4 3.2-1.6 4.6-3 6.2C3.4 8 2 9.6 2 12.4 2 16.6 5 19.6 8 19.6s6-3 6-7.2c0-2.4-1.1-4.2-2.4-5.6-.3 1-1 1.7-1.8 1.9C10.6 5.4 11 2.7 8 0Z"/></svg>';
-  if(s.current===0&&s.best===0){
-    el.innerHTML=flame+'<span class="bs-lbl">Read 15 min to start a streak</span>';
-    return;
-  }
-  var mins=Math.floor(s.todaySec/60);
-  var today=s.todayMet?'<span class="bs-today met">Today '+ICONS.check+'</span>':'<span class="bs-today">'+mins+'/15 min today</span>';
-  el.innerHTML=flame
-    +'<span class="bs-num">'+s.current+'</span>'
-    +'<span class="bs-lbl">day streak</span>'
-    +(s.best?'<span class="bs-sep"></span><span class="bs-best">Best '+s.best+'</span>':'')
-    +'<span class="bs-sep"></span>'+today;
-}
 
 
 // ── Genre config ─────────────────────────────────────────────────────────────
@@ -1973,20 +1957,6 @@ function deleteList(id){
 }
 
 // ── Render top bar ────────────────────────────────────────────────────────────
-function renderTopBar(){
-  var html="";
-  lists.forEach(function(l){
-    var active=l.id===activeId;
-    html+='<div class="list-tab'+(active?' active':'')+'" onclick="switchList(\''+l.id+'\')" role="button" tabindex="0">'
-      +'<span>'+esc(l.name)+'</span>'
-      +(lists.length>1?'<button class="list-tab-del" onclick="event.stopPropagation();deleteList(\''+l.id+'\')" title="Delete list">✕</button>':'')
-      +'</div>';
-  });
-  html+='<button class="new-list-btn" onclick="createList()" title="New list">＋</button>';
-  html+='<button class="theme-btn" onclick="toggleThemePanel()" title="Customise theme" aria-label="Customise theme">'+ICONS.palette+'</button>';
-  html+='<button class="update-btn" onclick="downloadUpdate()" title="Download latest version">&#8681;</button>';
-  document.getElementById("top-bar").innerHTML=html;
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
@@ -2376,7 +2346,8 @@ function filteredBooks(){
       case 'pages-d':   return (b.pages||0)-(a.pages||0);
       case 'pages':     return (a.pages||0)-(b.pages||0);
       case 'progress-d':{
-        var pa=a.pages?(currentPageFor(a)||0)/a.pages:0, pb=b.pages?(currentPageFor(b)||0)/b.pages:0;
+        var ta=curTotalOf(a), tb=curTotalOf(b);
+        var pa=ta?(currentPageFor(a)||0)/ta:0, pb=tb?(currentPageFor(b)||0)/tb:0;
         return pb-pa;
       }
       case 'recent':    return _lastReadAt(b)-_lastReadAt(a);
@@ -2475,33 +2446,12 @@ function toggleTT(idx, el){
 // floats a book to/from the top, or changing myRating while sorted by it).
 
 // Find the <tr> for a given books-array index in the current view.
-function findRow(idx){
-  if(currentTab!=="list") return null;
-  return document.querySelector('#book-tbody tr[data-bidx="'+idx+'"]');
-}
 
 // Refresh a row's read/reading classes and its checkbox visual state.
-function patchRowReadState(idx){
-  var tr=findRow(idx); if(!tr) return;
-  var isRead=readSet.has(idx), isReading=books[idx].isReading;
-  tr.className=(isRead?'is-read':'')+(isReading?' is-reading':'');
-  var chk=tr.querySelector('button.chk');
-  if(chk) chk.classList.toggle('checked', isRead);
-}
 
 // Refresh the favourite-button styling on a row.
-function patchRowFav(idx){
-  var tr=findRow(idx); if(!tr) return;
-  var btn=tr.querySelector('button.fav-btn');
-  if(btn) btn.classList.toggle('on', !!books[idx].isFav);
-}
 
 // Refresh the rating cell on a row (re-renders the 5 stars).
-function patchRowRating(idx){
-  var tr=findRow(idx); if(!tr) return;
-  var cell=tr.children[4]; // 5th td is My Rating
-  if(cell) cell.innerHTML = myStarsHTML(idx, books[idx].myRating || 0);
-}
 
 function toggleRead(idx){
   var wasReading = books[idx].isReading;
@@ -2593,13 +2543,6 @@ function switchTab(tab){
 }
 
 // ── Add form ──────────────────────────────────────────────────────────────────
-function toggleAddForm(){
-  var form=document.getElementById("add-form"),vis=!form.classList.contains("hidden");
-  form.classList.toggle("hidden",vis);
-  document.getElementById("add-icon").textContent=vis?"+":"−";
-  document.getElementById("add-label").textContent=vis?"Add a book":"Cancel";
-  clearFormError();
-}
 function renderGenrePickPills(){
   try{ renderFilterOptions(); }catch(e){}
   document.getElementById("genre-pick-pills").innerHTML=allGenres().map(function(g){
@@ -2631,7 +2574,8 @@ function submitBook(){
 
   if(!title)                   return showFormError("Title is required.");
   if(!author)                  return showFormError("Author is required.");
-  if(isNaN(pages) || pages<1)  return showFormError("Enter a valid page count.");
+  if((isNaN(pages)||pages<1) && !(runtimeMin>0))
+    return showFormError("Enter a page count or an audiobook length.");
   if(!genre)                   return showFormError("Please select or type a genre.");
 
   if(!confirmDuplicate(title,author,-1)) return;
@@ -2819,7 +2763,8 @@ function saveDetailsModal(){
 
   if(!title)                  return showDetailsError("Title is required.");
   if(!author)                 return showDetailsError("Author is required.");
-  if(isNaN(pages) || pages<1) return showDetailsError("Enter a valid page count.");
+  if((isNaN(pages)||pages<1) && !(runtimeMin>0))
+    return showDetailsError("Enter a page count or an audiobook length.");
   if(!genre)                  return showDetailsError("Please select or type a genre.");
 
   // Mutate in place — preserves myRating, isFav, isReading, sessions, and
@@ -3292,6 +3237,15 @@ function hmSet(pfx,total){
   if(h) h.value=total?Math.floor(total/60):'';
   if(m) m.value=total?(total%60):'';
 }
+// Total for whichever read-through is current — runtime for an audio read,
+// page count for a print one. Used anywhere a book's progress is shown
+// without a specific read in hand.
+function curReadOf(b){ var i=currentReadIdx(b); return (i>=0&&b.sessions)?b.sessions[i]:null; }
+function curTotalOf(b){
+  var t=readTotal(b,curReadOf(b));
+  return t || b.pages || b.runtimeMin || 0;      // fall back to whatever exists
+}
+function curUnitStr(b,n){ return unitStr(curReadOf(b), n); }
 function currentPageFor(b){
   if(!b || !b.timerSessions || !b.timerSessions.length) return 0;
   // Progress means "how far into the read I'm on now". Sessions belonging to
@@ -3550,10 +3504,11 @@ function renderRLModal(){
   document.getElementById("rl-book-author").textContent = (_rlst ? _rlst+" · " : "by ") + b.author;
   // Progress bar
   var curPage = currentPageFor(b);
-  var pct = b.pages ? Math.min(100, Math.round(curPage/b.pages*100)) : 0;
+  var _rlTot = curTotalOf(b);
+  var pct = _rlTot ? Math.min(100, Math.round(curPage/_rlTot*100)) : 0;
   document.getElementById("rl-progress-fill").style.width = pct + "%";
   document.getElementById("rl-progress-label").textContent =
-    curPage.toLocaleString() + " of " + b.pages.toLocaleString() + " pages (" + pct + "%)";
+    curUnitStr(b,curPage) + " of " + curUnitStr(b,_rlTot) + " (" + pct + "%)";
   // Reading-time summary — this modal is a read-only log viewer; live timing lives in the Timer tab.
   var _ts0 = b.timerSessions || [];
   var _totSec=0, _totPages=0;
@@ -3563,7 +3518,7 @@ function renderRLModal(){
   // (_totPages) exceeds the book length, the user has re-read at least part;
   // surface that as a small accent-colored subtext under the PAGES label.
   var _curPage = currentPageFor(b);
-  var _bookPages = b.pages || 0;
+  var _bookPages = curTotalOf(b);
   var _progress = _bookPages > 0 ? Math.min(_curPage, _bookPages) : _curPage;
   var _hasReread = _bookPages > 0 && _totPages > _bookPages;
   var display = document.getElementById("rl-stats");
@@ -3729,7 +3684,8 @@ function renderSM(){
   b.sessions=b.sessions||[];
   document.getElementById("sm-booktitle").textContent=b.title||'Book';
   document.getElementById("sm-subtitle").textContent=
-    [b.author,(b.translator?'trans. '+b.translator:''),seriesText(b),b.genre,(b.pages?b.pages+'p':'')]
+    [b.author,(b.translator?'trans. '+b.translator:''),seriesText(b),b.genre,
+     (b.pages?b.pages+'p':''),(b.runtimeMin?fmtMins(b.runtimeMin)+' audio':'')]
     .filter(Boolean).join(' \u00b7 ');
 
   var ss=b.sessions, n=ss.length;
@@ -3837,7 +3793,7 @@ function tmrPickIdx(){
   for(var i=0;i<books.length;i++){ if(books[i].isReading) return i; }
   return books.length?0:-1;
 }
-function tmrFmtPagesLine(b){ var cur=currentPageFor(b)||0,total=b.pages||0; return {cur:cur,total:total,pct:total?Math.round(cur/total*100):0}; }
+function tmrFmtPagesLine(b){ var cur=currentPageFor(b)||0,total=curTotalOf(b); return {cur:cur,total:total,pct:total?Math.round(cur/total*100):0}; }
 
 // ── Timer book carousel ──────────────────────────────────────────────────────
 // The pool of books the ‹ › arrows / swipe cycle through: if 2+ books are
@@ -4083,8 +4039,10 @@ function pushWidgetSnapshot(){
         if(!b||!b.isReading) return;
         var cur=currentPageFor(b)||0, last=0;
         (b.timerSessions||[]).forEach(function(x){ if(x&&x.startTime>last) last=x.startTime; });
-        reading.push({title:b.title||'',author:b.author||'',cur:cur,total:b.pages||0,
-                      pct:b.pages?Math.round(cur/b.pages*100):0,last:last});
+        var _wt=curTotalOf(b);
+        reading.push({title:b.title||'',author:b.author||'',cur:cur,total:_wt,
+                      audio:isAudioRead(curReadOf(b)),
+                      pct:_wt?Math.round(cur/_wt*100):0,last:last});
       });}
       _scanReading(books);
       lists.forEach(function(l){
@@ -4217,7 +4175,7 @@ function renderReadingScreen(){
     return '<div class="rd-card" onclick="openRL('+b.idx+')"><div class="rd-info"><div class="rd-title">'+esc(b.title)+'</div>'
       +(_rst?'<div class="rd-series">'+esc(_rst)+'</div>':'')
       +'<div class="rd-by">'+esc(b.author)+'</div>'
-      +'<div class="rd-pages">'+_rcur+' / '+(b.pages||0)+' pages</div></div></div>';
+      +'<div class="rd-pages">'+curUnitStr(b,_rcur)+' / '+curUnitStr(b,curTotalOf(b))+'</div></div></div>';
   }).join('');
   body.innerHTML=head+'<div class="rd-list">'+cards+'</div>';
 }
@@ -4667,7 +4625,7 @@ function rollDice(){
   var i2=pool[Math.floor(Math.random()*pool.length)], b=books[i2];
   el.innerHTML='<div class="dice-book" onclick="closeDice();openSM('+i2+')">'
     +'<div class="dice-t">'+esc(b.title)+'</div>'
-    +'<div class="dice-a">'+esc(b.author||'')+(b.pages?' \u00b7 '+b.pages+'p':'')+'</div>'
+    +'<div class="dice-a">'+esc(b.author||'')+(b.pages?' \u00b7 '+b.pages+'p':(b.runtimeMin?' \u00b7 '+fmtMins(b.runtimeMin):''))+'</div>'
     +(b.genre?'<div class="dice-g">'+esc(b.genre)+'</div>':'')
   +'</div>';
 }
@@ -5045,7 +5003,7 @@ function showYearBooks(){
   document.getElementById('yb-count').textContent=rows.length+' of '+babelYearlyGoal;
   document.getElementById('yb-list').innerHTML = rows.length
     ? rows.map(function(r){
-        var meta=[r.b.author,(r.b.pages?r.b.pages+'p':''),r.fin].filter(Boolean).join(' \u00b7 ');
+        var meta=[r.b.author,(r.b.pages?r.b.pages+'p':(r.b.runtimeMin?fmtMins(r.b.runtimeMin):'')),r.fin].filter(Boolean).join(' \u00b7 ');
         return '<button type="button" class="yb-item" onclick="closeYearBooks();openSM('+r.i+')">'
           +'<span class="yb-t">'+esc(r.b.title||'')+'</span>'
           +'<span class="yb-m">'+esc(meta)+'</span></button>';
