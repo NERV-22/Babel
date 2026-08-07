@@ -1,6 +1,6 @@
 /* Babel service worker — offline app shell.
    Bump CACHE on every release so clients pull the new files. */
-const CACHE = 'babel-v56';
+const CACHE = 'babel-v62';
 const ASSETS = [
   'Babel.html',
   'index.html',
@@ -40,7 +40,7 @@ self.addEventListener('fetch', (e) => {
   if (isNav) {
     e.respondWith(
       fetch(req)
-        .then((res) => { caches.open(CACHE).then((c) => c.put(req, res.clone())); return res; })
+        .then((res) => { if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); } return res; })
         .catch(() => caches.match(req).then((r) => r || caches.match('Babel.html')))
     );
     return;
@@ -48,9 +48,9 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(req).then((cached) => {
       const net = fetch(req).then((res) => {
-        caches.open(CACHE).then((c) => c.put(req, res.clone()));
+        if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
         return res;
-      }).catch(() => cached);
+      }).catch(() => cached || Response.error());
       return cached || net;
     })
   );

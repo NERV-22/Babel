@@ -899,6 +899,12 @@ body{padding:0}
 .tmr-pageform{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
 .tmr-pageform label{display:block;font-family:sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:9px}
 .tmr-pageform input{width:100%;padding:12px 14px;font-family:Georgia,serif;font-size:20px;font-weight:700;border:1px solid var(--border);border-radius:10px;background:var(--bg1);color:var(--text);outline:none}
+.tmr-hm{display:flex;align-items:center;gap:8px}
+.tmr-hm input{width:auto;flex:1;min-width:0;text-align:center}
+.tmr-hm-s{flex:none;font-family:sans-serif;font-size:12px;color:var(--text-muted)}
+.tmr-longnote{margin-top:12px;padding:9px 11px;border:1px solid var(--accent);border-radius:10px;
+  font-family:sans-serif;font-size:11.5px;line-height:1.45;color:var(--accent)}
+.tmr-pageform label.tmr-l2{margin-top:12px}
 .tmr-pf-btns{display:flex;gap:10px;margin-top:12px}
 .tmr-pf-btns .tmr-primary,.tmr-pf-btns .tmr-ghost{flex:1;width:auto;padding:13px}
 #timer-pick .sheet{max-height:82vh}
@@ -1771,6 +1777,30 @@ function fanOutSession(bookId, session, skipListId){
     }catch(e){}
   });
 }
+// Title, author, length and the rest describe the BOOK, so a correction made
+// in one list reaches every copy of it. Deliberately NOT part of fanOutBookMeta:
+// that runs on every rating tap and session delete, and a stray call must never
+// quietly rewrite another list's details. Only an actual edit calls this.
+var BOOK_DETAIL_FIELDS=['title','author','translator','pages','runtimeMin','genre','seriesOrder','seriesName','summary'];
+function fanOutBookDetails(idx){
+  var b=books[idx]; if(!b||!b.bookId) return;
+  lists.forEach(function(l){
+    if(l.id===activeId) return;
+    try{
+      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+      var arr=JSON.parse(raw), hit=false;
+      arr.forEach(function(x){
+        if(!x || x.bookId!==b.bookId) return;
+        BOOK_DETAIL_FIELDS.forEach(function(k){ x[k]=b[k]; });
+        hit=true;
+      });
+      if(hit){
+        storage.setItem(listKey(l.id), JSON.stringify(arr));
+        try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(l.id); }catch(e){}
+      }
+    }catch(e){}
+  });
+}
 // Read-throughs, ratings and finish dates belong to the BOOK, not the list —
 // push them to every other copy so a review written in one list shows up in
 // the others. (Timer sessions travel via fanOutSession.)
@@ -1785,6 +1815,7 @@ function fanOutBookMeta(idx){
       var arr=JSON.parse(raw), hit=false;
       arr.forEach(function(x){
         if(x.bookId!==b.bookId) return;
+        stampFormats(x);                 // this copy's reads are about to be replaced
         x.sessions=JSON.parse(JSON.stringify(sess));
         x.myRating=rating;
         if(fin) x.finishedAt=fin;
@@ -1816,6 +1847,7 @@ function loadListData(id){
     // Backfill defaults for fields added in later versions, so old data
     // saved before those fields existed still loads cleanly.
     books.forEach(function(b){
+      stampFormats(b);
       if(b.summary===undefined)     b.summary="";
       if(b.myRating===undefined)    b.myRating=0;
       if(b.optional===undefined)    b.optional=false;
@@ -1960,6 +1992,12 @@ function deleteList(id){
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+// For a value going inside a JS string inside an HTML attribute. A genre like
+// Sci"Fi ended the attribute early and killed its own button.
+function escArg(s){
+  return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")
+    .replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/[\r\n]/g,' ');
+}
 // Format a book's series info for display. Returns "" if no series,
 // "Foundation Series" if there's a name but no order, or
 // "Foundation Series · #1" / "Robot Series · Stories" depending on
@@ -2168,7 +2206,7 @@ function renderFilterPills(){
   html+='<button class="pill" onclick="setGenreFilter(\'\')" style="background:'+(activeGenreFilter?'var(--border)':'var(--text)')+';color:'+(activeGenreFilter?'var(--text-muted)':'var(--surface)')+';border-color:transparent">All</button>';
   genres.forEach(function(g){
     var c=genreColor(g),on=activeGenreFilter===g;
-    html+='<button class="pill" onclick="setGenreFilter(\''+g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\') " style="background:'+(on?c:c+'1a')+';color:'+(on?'#fff':c)+';border-color:'+c+'55">'+esc(g)+'</button>';
+    html+='<button class="pill" onclick="setGenreFilter(\''+escArg(g)+'\') " style="background:'+(on?c:c+'1a')+';color:'+(on?'#fff':c)+';border-color:'+c+'55">'+esc(g)+'</button>';
   });
   var _fp=document.getElementById("filter-pills"); if(_fp) _fp.innerHTML=html;
 }
@@ -2529,7 +2567,11 @@ function renderGenreTab(){
       +'</div><div class="genre-prog-track"><div class="genre-prog-fill" style="width:'+pct+'%;background:'+c+'"></div></div>'
       +'<div class="genre-books">'+rows+'</div></div>';
   });
-  document.getElementById("genre-grid").innerHTML=html||'<p style="color:var(--text-muted);font-family:sans-serif;font-size:13px;padding:32px 0">No books yet.</p>';
+  // The By Genre tab has no markup any more — nothing calls switchTab('genre'),
+  // so this never runs. Guarded rather than deleted: if the tab comes back it
+  // should render, and meanwhile an accidental call must not throw mid-save.
+  var _gg=document.getElementById("genre-grid"); if(!_gg) return;
+  _gg.innerHTML=html||'<p style="color:var(--text-muted);font-family:sans-serif;font-size:13px;padding:32px 0">No books yet.</p>';
 }
 
 // ── Tab switch (All Books / By Genre) ─────────────────────────────────────────
@@ -2537,8 +2579,8 @@ function switchTab(tab){
   var _gts=document.getElementById("global-tooltip");if(_gts)_gts.classList.remove("visible");
   currentTab=tab;
   document.querySelectorAll(".tab-btn").forEach(function(btn,i){btn.classList.toggle("active",(i===0&&tab==="list")||(i===1&&tab==="genre"));});
-  document.getElementById("tab-list").classList.toggle("hidden",tab!=="list");
-  document.getElementById("tab-genre").classList.toggle("hidden",tab!=="genre");
+  var _tl=document.getElementById("tab-list"); if(_tl) _tl.classList.toggle("hidden",tab!=="list");
+  var _tg=document.getElementById("tab-genre"); if(_tg) _tg.classList.toggle("hidden",tab!=="genre");
   if(tab==="genre")renderGenreTab();
 }
 
@@ -2547,7 +2589,7 @@ function renderGenrePickPills(){
   try{ renderFilterOptions(); }catch(e){}
   document.getElementById("genre-pick-pills").innerHTML=allGenres().map(function(g){
     var c=genreColor(g),on=selectedFormGenre===g;
-    return '<button type="button" class="genre-pick-pill" onclick="selectFormGenre(\''+g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\') " style="background:'+(on?c:c+'1a')+';color:'+(on?'#fff':c)+';border-color:'+c+'55">'+esc(g)+'</button>';
+    return '<button type="button" class="genre-pick-pill" onclick="selectFormGenre(\''+escArg(g)+'\') " style="background:'+(on?c:c+'1a')+';color:'+(on?'#fff':c)+';border-color:'+c+'55">'+esc(g)+'</button>';
   }).join("");
 }
 function selectFormGenre(g){selectedFormGenre=g;document.getElementById("f-custom-genre").value="";renderGenrePickPills();updateGenrePreview();clearFormError();}
@@ -2719,7 +2761,7 @@ function closeDetailsModal(){
 function renderDetailsGenrePills(){
   document.getElementById("d-genre-pills").innerHTML=allGenres().map(function(g){
     var c=genreColor(g), on=detailsSelectedGenre===g;
-    return '<button type="button" class="genre-pick-pill" onclick="selectDetailsGenre(\''+g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" style="background:'+(on?c:c+'1a')+';color:'+(on?'#fff':c)+';border-color:'+c+'55">'+esc(g)+'</button>';
+    return '<button type="button" class="genre-pick-pill" onclick="selectDetailsGenre(\''+escArg(g)+'\')" style="background:'+(on?c:c+'1a')+';color:'+(on?'#fff':c)+';border-color:'+c+'55">'+esc(g)+'</button>';
   }).join("");
 }
 function selectDetailsGenre(g){
@@ -2774,6 +2816,7 @@ function saveDetailsModal(){
   b.seriesOrder=seriesOrder; b.seriesName=seriesName; b.summary=summary;
 
   saveCurrentList();
+  fanOutBookDetails(detailsIdx);   // the same book in another list is the same book
   closeDetailsModal();
   updateStats();
   renderFilterPills();
@@ -3202,6 +3245,7 @@ function pagesForRead(b,readId){
 function tagSessionRead(b,session){
   if(!b||!session) return;
   if(!session.readId) session.readId=ensureCurrentRead(b);
+  if(session.fmt!=='audio' && session.fmt!=='print') session.fmt=readFormat(readById(b,session.readId));
 }
 // ── Audiobooks ──────────────────────────────────────────────────────────────
 // Format lives on the READ-THROUGH, not the book: Read #1 is print or audio
@@ -3223,7 +3267,24 @@ function readById(b,id){
   for(var i=0;i<ss.length;i++) if(ss[i].id===id) return ss[i];
   return null;
 }
-function sessionIsAudio(b,x){ return isAudioRead(readById(b,x&&x.readId)); }
+// A session's medium is read off its read-through, which works only while that
+// read exists. Delete the read and an audio session silently reclassifies as
+// print, turning 255 minutes into 255 pages. So stamp it on the session.
+function sessionFmt(b,x){
+  if(x && (x.fmt==='audio'||x.fmt==='print')) return x.fmt;
+  return readFormat(readById(b,x&&x.readId));
+}
+function sessionIsAudio(b,x){ return sessionFmt(b,x)==='audio'; }
+// Fill in any missing stamp from the read that still holds it. Never overwrites
+// one, so it is safe to call on every load, sync and fan-out.
+function stampFormats(b){
+  if(!b || !b.timerSessions) return b;
+  for(var i=0;i<b.timerSessions.length;i++){
+    var x=b.timerSessions[i];
+    if(x && x.fmt!=='audio' && x.fmt!=='print') x.fmt=readFormat(readById(b,x.readId));
+  }
+  return b;
+}
 function bookHasAudio(b){ return ((b&&b.sessions)||[]).some(isAudioRead); }
 // Two-box hh/mm entry — one hh:mm field is painful on a phone keypad.
 function hmGet(pfx){
@@ -3243,7 +3304,7 @@ function hmSet(pfx,total){
 function curReadOf(b){ var i=currentReadIdx(b); return (i>=0&&b.sessions)?b.sessions[i]:null; }
 function curTotalOf(b){
   var t=readTotal(b,curReadOf(b));
-  return t || b.pages || b.runtimeMin || 0;      // fall back to whatever exists
+  return t || (b&&b.pages) || (b&&b.runtimeMin) || 0;   // fall back to whatever exists
 }
 function curUnitStr(b,n){ return unitStr(curReadOf(b), n); }
 function currentPageFor(b){
@@ -3512,7 +3573,12 @@ function renderRLModal(){
   // Reading-time summary — this modal is a read-only log viewer; live timing lives in the Timer tab.
   var _ts0 = b.timerSessions || [];
   var _totSec=0, _totPages=0;
-  _ts0.forEach(function(s){ _totSec += (s.durationSec||0); _totPages += Math.max(0,(s.endPage||0)-(s.startPage||0)); });
+  // Pages turned counts print sessions only. On a book he has both read and
+  // listened to, adding the audio minutes in produced totals like "645 pages".
+  _ts0.forEach(function(s){
+    _totSec += (s.durationSec||0);
+    if(!sessionIsAudio(b,s)) _totPages += Math.max(0,(s.endPage||0)-(s.startPage||0));
+  });
   // Current progress in the book (highest endPage), capped at the book's total
   // pages — this is what the PAGES stat shows. If lifetime pages-turned
   // (_totPages) exceeds the book length, the user has re-read at least part;
@@ -3539,14 +3605,20 @@ function renderRLModal(){
   var rows = ts.map(function(s,i){return {s:s, i:i};}).sort(function(a,b){return (b.s.startTime||0) - (a.s.startTime||0);});
   list.innerHTML = rows.map(function(r){
     var s = r.s;
+    var _sa = sessionIsAudio(b,s);
     var pages = Math.max(0,(s.endPage||0) - (s.startPage||0));
+    // An audio session's positions are minutes. Printing them as "p.0–255"
+    // was wrong on both counts — wrong unit and a page number he never read.
+    var _posStr = _sa ? (fmtMins(s.startPage||0)+'\u2013'+fmtMins(s.endPage||0))
+                      : ('p.'+(s.startPage||0)+'\u2013'+(s.endPage||0));
+    var _amtStr = _sa ? (fmtMins(pages)+' listened') : (pages+' '+(pages===1?'page':'pages'));
     var d = s.startTime ? new Date(s.startTime) : null;
     var dateStr = d ? d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : '—';
     var timeStr = d ? d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}) : '';
     return '<div class="rl-log-row">'
       + '<div class="rl-log-row-main">'
         + '<div class="rl-log-row-top"><span class="rl-log-row-date">'+esc(dateStr)+'</span><span class="rl-log-row-dur">'+formatHMS(s.durationSec||0)+'</span></div>'
-        + '<div class="rl-log-row-sub">'+esc(timeStr)+'<span class="rl-log-dot">·</span>p.'+(s.startPage||0)+'–'+(s.endPage||0)+'<span class="rl-log-dot">·</span>'+pages+' '+(pages===1?'page':'pages')+'</div>'
+        + '<div class="rl-log-row-sub">'+esc(timeStr)+'<span class="rl-log-dot">·</span>'+_posStr+'<span class="rl-log-dot">·</span>'+_amtStr+'</div>'
       + '</div>'
       + '<button class="rl-log-row-del" title="Delete session" onclick="deleteRLSession('+r.i+')">'+ICONS.close+'</button>'
     + '</div>';
@@ -3736,6 +3808,7 @@ function addSession(){
 }
 function delS(i){
   if(smIdx<0)return;
+  stampFormats(books[smIdx]);          // before the read holding the medium goes
   books[smIdx].sessions.splice(i,1);
   syncHeadlineRating(smIdx);
   saveCurrentList();fanOutBookMeta(smIdx);renderSM();renderTable();updateStats();
@@ -3793,7 +3866,13 @@ function tmrPickIdx(){
   for(var i=0;i<books.length;i++){ if(books[i].isReading) return i; }
   return books.length?0:-1;
 }
-function tmrFmtPagesLine(b){ var cur=currentPageFor(b)||0,total=curTotalOf(b); return {cur:cur,total:total,pct:total?Math.round(cur/total*100):0}; }
+// Shortening a book after logging against it must not read "480 of 300 pages
+// (160%)". The stored sessions are untouched; only the display clamps.
+function tmrFmtPagesLine(b){
+  var cur=currentPageFor(b)||0, total=curTotalOf(b);
+  if(total>0 && cur>total) cur=total;
+  return {cur:cur,total:total,pct:total?Math.round(cur/total*100):0};
+}
 
 // ── Timer book carousel ──────────────────────────────────────────────────────
 // The pool of books the ‹ › arrows / swipe cycle through: if 2+ books are
@@ -3832,6 +3911,35 @@ function tmrPaint(){
   if(arc){ arc.setAttribute('stroke-dasharray', C.toFixed(1)); arc.setAttribute('stroke', activeTimer?tmrLapColor(lap):'transparent'); arc.setAttribute('stroke-dashoffset', (C*(1-(activeTimer?frac:0))).toFixed(1)); }
   if(base){ base.setAttribute('stroke', (activeTimer&&lap>=1)?tmrLapColor(lap-1):'transparent'); }
 }
+// The book the running timer belongs to — which is NOT always books[bookIdx],
+// because the timer can be running against a book in another list.
+function tmrTimerBook(){
+  if(!activeTimer) return null;
+  if(activeTimer.listId===activeId) return books[activeTimer.bookIdx]||null;
+  try{ var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[]; return arr[activeTimer.bookIdx]||null; }catch(e){ return null; }
+}
+// A position box. Print reads get one page number; audio reads get [hr] [min],
+// because typing 255 for 4h 15m on a phone is miserable.
+// Past this, the finish prompt asks him to confirm the duration.
+var TMR_LONG_SEC=24*3600;
+function tmrPosField(id,audio,val,max){
+  val=Math.max(0,Math.round(val||0));
+  if(!audio) return '<input type="number" id="'+id+'" min="0"'+(max?' max="'+max+'"':'')+' value="'+val+'"/>';
+  return '<div class="tmr-hm">'
+    +'<input type="number" id="'+id+'-h" min="0" placeholder="hr" value="'+(val?Math.floor(val/60):'')+'"/><span class="tmr-hm-s">hr</span>'
+    +'<input type="number" id="'+id+'-m" min="0" max="59" placeholder="min" value="'+(val?(val%60):'')+'"/><span class="tmr-hm-s">min</span>'
+    +'</div>';
+}
+// Read a position back out of whichever shape was rendered. Both audio boxes
+// left blank means "no answer" — NaN, exactly like an empty page box — so the
+// finish prompt still falls back to Keep reading instead of logging 0.
+function tmrPosRead(id,audio){
+  if(!audio) return parseInt((document.getElementById(id)||{}).value,10);
+  var h=document.getElementById(id+'-h'), m=document.getElementById(id+'-m');
+  var hv=h?String(h.value==null?'':h.value).trim():'', mv=m?String(m.value==null?'':m.value).trim():'';
+  if(hv===''&&mv==='') return NaN;
+  return hmGet(id);
+}
 function renderTimerTab(){
   var body=document.getElementById('timer-body'); if(!body) return;
   tmrSyncMode();
@@ -3868,13 +3976,24 @@ function renderTimerTab(){
   var controls='';
   if(tmrMode==='idle'){ controls=(idx>=0)?'<button class="tmr-primary" onclick="tmrStart()">Start reading</button>':'<button class="tmr-primary disabled" disabled>Add a book first</button>'; }
   else if(tmrMode==='startprompt'){
-    var _sa=b?isAudioRead(readById(b,ensureCurrentRead(b))):false;
+    var _sa=b?isAudioRead(curReadOf(b)):false;
     var _smax=b?curTotalOf(b):0;
-    controls='<div class="tmr-pageform"><label>'+(_sa?'Starting minute':'Starting page')+'</label><input type="number" id="tmr-startpage" min="0"'+(_smax?' max="'+_smax+'"':'')+' value="'+(b?(currentPageFor(b)||0):0)+'"/><div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrBegin()">Begin</button><button class="tmr-ghost" onclick="tmrCancelStart()">Cancel</button></div></div>'; }
+    controls='<div class="tmr-pageform"><label>'+(_sa?'Starting position':'Starting page')+'</label>'+tmrPosField('tmr-startpage',_sa,b?(currentPageFor(b)||0):0,_smax)+'<div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrBegin()">Begin</button><button class="tmr-ghost" onclick="tmrCancelStart()">Cancel</button></div></div>'; }
   else if(tmrMode==='running'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Pause</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
   else if(tmrMode==='paused'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Resume</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
-  else if(tmrMode==='finishprompt'){ var sug=b?Math.max(activeTimer.startPage||0,currentPageFor(b)):(activeTimer?activeTimer.startPage:0); var _fa=b?isAudioRead(readById(b,ensureCurrentRead(b))):false;
-    controls='<div class="tmr-pageform"><label>'+(_fa?'Stopped at minute':'Finish at page')+'</label><input type="number" id="tmr-endpage" min="0" value="'+sug+'"/><div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrConfirmFinish()">Save session</button><button class="tmr-ghost" onclick="tmrKeepReading()">Keep reading</button></div></div>'; }
+  else if(tmrMode==='finishprompt'){
+    // Resolve the timer's OWN book — the card above may be showing a different
+    // one when the timer is running against another list.
+    var _fb=tmrTimerBook(), _fa=isAudioRead(curReadOf(_fb));
+    var sug=_fb?Math.max(activeTimer.startPage||0,currentPageFor(_fb)||0):((activeTimer&&activeTimer.startPage)||0);
+    var _fmax=_fb?curTotalOf(_fb):0;
+    // A timer left running overnight would otherwise bank its whole run. Past a
+    // day, show what it recorded and let him put in what he actually read.
+    var _elapsed=tmrElapsedDisplaySec(), _longRun=_elapsed>=TMR_LONG_SEC;
+    controls='<div class="tmr-pageform"><label>'+(_fa?'Stopped at':'Finish at page')+'</label>'+tmrPosField('tmr-endpage',_fa,sug,_fmax)
+      +(_longRun?('<div class="tmr-longnote">This ran for '+formatHMS(_elapsed)+'. If the timer was left going, correct the time below \u2014 it saves exactly what you enter.</div>'
+                 +'<label class="tmr-l2">Time read</label>'+tmrPosField('tmr-dur',true,Math.round(_elapsed/60),0)):'')
+      +'<div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrConfirmFinish()">Save session</button><button class="tmr-ghost" onclick="tmrKeepReading()">Keep reading</button></div></div>'; }
   body.innerHTML=card+circle+'<div class="tmr-controls">'+controls+'</div>';
   tmrPaint();
 }
@@ -3900,14 +4019,15 @@ function tmrRenderPickList(){
 }
 function tmrClosePicker(){ var s=document.getElementById('timer-pick'); if(s) s.classList.add('hidden'); document.body.style.overflow=''; }
 function tmrSelectBook(i){ tmrSelIdx=i; tmrClosePicker(); renderTimerTab(); }
-function tmrStart(){ var idx=tmrPickIdx(); if(idx<0){ showToast('Add a book first'); return; } tmrSelIdx=idx; tmrMode='startprompt'; renderTimerTab(); var inp=document.getElementById('tmr-startpage'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
+function tmrStart(){ var idx=tmrPickIdx(); if(idx<0){ showToast('Add a book first'); return; } tmrSelIdx=idx; tmrMode='startprompt'; renderTimerTab(); var inp=document.getElementById('tmr-startpage')||document.getElementById('tmr-startpage-h'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
 function tmrCancelStart(){ tmrMode='idle'; renderTimerTab(); }
 function tmrBegin(){
   var idx=tmrPickIdx(); if(idx<0) return; var b=books[idx];
-  var page=parseInt((document.getElementById('tmr-startpage')||{}).value,10); if(isNaN(page)||page<0) page=0;
+  var page=tmrPosRead('tmr-startpage',isAudioRead(curReadOf(b))); if(isNaN(page)||page<0) page=0;
   // Never allow a position past the book's own length — that is what produced
-  // readings like "990 of 508 pages (195%)".
-  var _capS=curTotalOf(books[tmrSelIdx]); if(_capS>0 && page>_capS) page=_capS;
+  // readings like "990 of 508 pages (195%)". Clamp against the book the timer
+  // is actually starting on, not books[tmrSelIdx], which is -1 until he picks.
+  var _capS=curTotalOf(b); if(_capS>0 && page>_capS) page=_capS;
   activeTimer={ listId:activeId, bookIdx:idx, bookTitle:b.title, bookAuthor:b.author, bookPages:b.pages, startTime:Date.now(), startPage:page, accumulatedSec:0, pausedAt:null, finishing:false };
   if(!b.isReading){ b.isReading=true; saveCurrentList(); if(currentTab==='list') renderTable(); }
   saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState();
@@ -3917,15 +4037,22 @@ function tmrPauseResume(){
   if(activeTimer.pausedAt){ activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((activeTimer.pausedAt-activeTimer.startTime)/1000)); activeTimer.startTime=Date.now(); activeTimer.pausedAt=null; saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState(); }
   else { activeTimer.pausedAt=Date.now(); saveActiveTimer(); tmrStopTick(); tmrMode='paused'; renderTimerTab(); pushTimerState(); }
 }
-function tmrFinish(){ if(!activeTimer) return; _tmrFrozenSec=timerElapsedSec(); activeTimer.finishing=true; saveActiveTimer(); tmrStopTick(); tmrMode='finishprompt'; renderTimerTab(); pushTimerState(); var inp=document.getElementById('tmr-endpage'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
+function tmrFinish(){ if(!activeTimer) return; _tmrFrozenSec=timerElapsedSec(); activeTimer.finishing=true; saveActiveTimer(); tmrStopTick(); tmrMode='finishprompt'; renderTimerTab(); pushTimerState(); var inp=document.getElementById('tmr-endpage')||document.getElementById('tmr-endpage-h'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
 function tmrKeepReading(){ if(!activeTimer) return; activeTimer.finishing=false; activeTimer.accumulatedSec=_tmrFrozenSec; activeTimer.startTime=Date.now(); activeTimer.pausedAt=null; saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState(); }
 function tmrConfirmFinish(){
   if(!activeTimer) return;
-  var endPage=parseInt((document.getElementById('tmr-endpage')||{}).value,10);
+  var _fb=tmrTimerBook();
+  var endPage=tmrPosRead('tmr-endpage',isAudioRead(curReadOf(_fb)));
   if(isNaN(endPage)){ tmrKeepReading(); return; }
   if(endPage<0) endPage=0;
-  var _capE=curTotalOf(books[activeTimer.bookIdx]); if(_capE>0 && endPage>_capE) endPage=_capE;
+  var _capE=curTotalOf(_fb); if(_capE>0 && endPage>_capE) endPage=_capE;
   var sec=_tmrFrozenSec, idx=activeTimer.bookIdx, startPage=activeTimer.startPage;
+  // A corrected duration on a marathon session. Blank boxes mean "leave it as
+  // recorded"; anything longer than the timer actually ran is not accepted.
+  if(sec>=TMR_LONG_SEC){
+    var _corr=tmrPosRead('tmr-dur',true);
+    if(!isNaN(_corr)){ _corr=Math.max(0,_corr)*60; sec=Math.min(_corr,sec); }
+  }
   var startTime=activeTimer.startTime-(activeTimer.accumulatedSec||0)*1000;
   var session={ startTime:startTime, endTime:startTime+sec*1000, durationSec:sec, startPage:startPage, endPage:endPage };
   if(activeTimer.listId===activeId){ var b=books[idx]; if(b){ b.timerSessions=b.timerSessions||[]; tagSessionRead(b,session); b.timerSessions.push(session); saveCurrentList(); fanOutSession(b.bookId, session, activeId); } }
@@ -4334,6 +4461,7 @@ function _hearthBooks(){
   var seen={}, out=[];
   function add(b,isRead){
     if(!b) return;
+    stampFormats(b);          // other lists come straight off storage unstamped
     // Tag each session with its read's medium before the book identity is
     // merged away, so audio and print stay distinguishable downstream.
     (b.timerSessions||[]).forEach(function(x){ if(x) x.audio=sessionIsAudio(b,x); });
@@ -4406,15 +4534,31 @@ function applyStreakFreezes(){
   if(babelHearth.freezes<=0) return;
   var map=_gatherSecByDay(), met={};
   Object.keys(map).forEach(function(k){ if(map[k]>=babelGoalMin*60) met[k]=true; });
+  // A day banked in the ledger is met, full stop — the streak already counts it.
+  // Without this, raising the goal made yesterday look missed and burnt a
+  // 50-ember freeze covering a day that never needed covering.
+  try{ Object.keys(babelHearth.metEver||{}).forEach(function(k){ met[k]=true; }); }catch(e){}
   var today=new Date(); today.setHours(0,0,0,0);
   var d=new Date(today); d.setDate(d.getDate()-1);
+  // The earliest day that ever counted. The gap has to sit directly after a met
+  // day to be worth covering, so there is nothing to find behind this point —
+  // it is what stops the walk when there is no streak to protect at all.
+  var floorT=Infinity;
+  Object.keys(met).forEach(function(k){
+    var p=k.split('-'), t=new Date(+p[0],+p[1]-1,+p[2]).getTime();
+    if(t<floorT) floorT=t;
+  });
+  // No ceiling on how long an absence can be: a fortnight away with a fortnight
+  // of freezes banked should cost the freezes, not the streak. The guard is a
+  // decade, purely so a corrupt ledger cannot spin forever.
   var gap=[], guard=0;
-  while(guard++<7){
+  while(guard++<3700){
     var k=_dayKey(d);
     if(met[k]||babelHearth.frozen[k]) break;
     // Days before the freeze was acquired are not coverable. Compared as
     // timestamps: day-key strings are unpadded and sort incorrectly.
     if(babelHearth.freezeFrom && d.getTime()<babelHearth.freezeFrom) break;
+    if(d.getTime()<floorT) break;
     gap.push(k); d.setDate(d.getDate()-1);
   }
   // Only spend if a streak actually existed before the gap.
@@ -5731,6 +5875,9 @@ window.BabelCloud = (function(){
     init:init, signUp:signUp, signIn:signIn, signOut:signOut,
     backupAll:backupAll, pull:pull, syncNow:function(){ pushDirty(); pull(); },
     saveConfig:saveConfig, touchSettings:touchSettings, touch:touch,
+    // Exposed so the merge can be regression-tested offline. The two worst bugs
+    // this app has had were both in here and both invisible until a real pull.
+    _applyRow:applyRow,
     state:function(){ return {status:status, user:user, configured:configured(), cfg:cfg, lastSync:lastSync, dirty:Object.keys(dirty).length}; }
   };
 })();
