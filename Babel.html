@@ -4289,21 +4289,40 @@ function loadHearth(){
   // protecting every recent day on which any reading happened, back to the
   // last completely inactive day. This errs toward keeping the streak, which
   // is the correct bias: a streak must never be lost to a defect.
-  if(!babelHearth.streakRebuild){
+  if(babelHearth.streakRebuild!==2){
     try{
       var m2=_gatherSecByDay(), goal2=babelGoalMin*60;
       var d2=new Date(); d2.setHours(0,0,0,0);
       d2.setDate(d2.getDate()-1);                 // today must still be earned
+      // Zero-minute days inside the run were covered by freezes whose marks
+      // the sync bug destroyed, leaving them indistinguishable from days that
+      // were simply skipped. Allow a limited number of them to be bridged so
+      // the run isn't truncated at the exact point the evidence was lost.
+      // Walk back collecting candidate days, allowing a few zero-minute days
+      // to be bridged (their freeze marks were destroyed). Afterwards trim any
+      // bridged days that trail past the last day with real activity, so the
+      // run ends where the evidence ends rather than drifting into the past.
+      var scan=[], bridge=3;
       for(var i2=0;i2<21;i2++){
         var k2=_dayKey(d2);
-        if(!(m2[k2]>0) && !babelHearth.frozen[k2]) break;   // genuinely idle day
-        if((m2[k2]||0)<goal2) babelHearth.frozen[k2]=1;
-        babelHearth.metEver=babelHearth.metEver||{};
-        babelHearth.metEver[k2]=1;
+        var active=(m2[k2]>0)||!!babelHearth.frozen[k2];
+        if(!active){
+          if(bridge<=0) break;
+          bridge--;
+        }
+        scan.push({k:k2,active:active});
         d2.setDate(d2.getDate()-1);
       }
+      var lastActive=-1;
+      for(var j2=0;j2<scan.length;j2++) if(scan[j2].active) lastActive=j2;
+      babelHearth.metEver=babelHearth.metEver||{};
+      for(var j3=0;j3<=lastActive;j3++){
+        var kk=scan[j3].k;
+        if((m2[kk]||0)<goal2) babelHearth.frozen[kk]=1;
+        babelHearth.metEver[kk]=1;
+      }
     }catch(e){}
-    babelHearth.streakRebuild=1;
+    babelHearth.streakRebuild=2;
     _hMig=true;
   }
   // Persist immediately: a one-time grant that isn't written is a grant that
