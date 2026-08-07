@@ -2092,6 +2092,27 @@ function pagesReadFor(b,isRead){
   }
   return total;
 }
+// The audio twin of pagesReadFor. Progress through an audiobook is measured in
+// the book's own running time, NOT in wall-clock listening: at 1.5x a 30-hour
+// book is 30 hours of book and 20 hours of his evening. This counts the book.
+// Time actually spent still drives the goal, the streak and the Today cards.
+function _audioMinsFrom(run,reads,sessions,isRead){
+  var total=0, i;
+  for(i=0;i<(reads||[]).length;i++){
+    var r=reads[i]; if(!r || !isAudioRead(r)) continue;
+    var f=0;
+    (sessions||[]).forEach(function(x){          // audio positions are minutes
+      if(x && x.readId===r.id && (x.endPage||0)>f) f=x.endPage||0;
+    });
+    if(f>0){ total += (run>0?Math.min(f,run):f); continue; }
+    if((r.end||'').trim() || isRead) total += run;
+  }
+  return total;
+}
+function minsListenedFor(b,isRead){
+  if(!b || !(b.sessions||[]).length) return 0;
+  return _audioMinsFrom(b.runtimeMin||0, b.sessions, b.timerSessions, isRead);
+}
 function updateStats(){
   var total=books.length, read=0, pages=0, pagesRead=0;
   for(var i=0;i<books.length;i++){
@@ -2108,13 +2129,9 @@ function updateStats(){
   // Listening time comes only from audio read-throughs; pages come only from
   // print ones. Neither is ever converted into the other.
   var _lis=0;
-  books.forEach(function(b){
-    (b.timerSessions||[]).forEach(function(x){
-      if(x && sessionIsAudio(b,x)) _lis+=(x.durationSec||0);
-    });
-  });
+  for(var _li=0;_li<books.length;_li++) _lis+=minsListenedFor(books[_li], readSet.has(_li));
   var _le=document.getElementById("stat-listened");
-  if(_le) _le.textContent=_lis?fmtMins(_lis/60):'0';
+  if(_le) _le.textContent=_lis?fmtMins(_lis):'0m';
   document.getElementById("pct-label").textContent=pct+"%";
   document.getElementById("progress-fill").style.width=pct+"%";
   updateStorageBar();
@@ -3654,8 +3671,10 @@ function renderRLModal(){
   var _progress = _bookPages > 0 ? Math.min(_curPage, _bookPages) : _curPage;
   var _hasReread = _bookPages > 0 && _totPages > _bookPages;
   var display = document.getElementById("rl-stats");
-  var _hrs=Math.floor(_totSec/3600), _mins=Math.round((_totSec%3600)/60);
-  var _totTimeStr = _hrs>0 ? (_hrs+'h '+_mins+'m') : (_mins+'m');
+  // Rounding to whole minutes printed "0m" for anything under 30 seconds, so a
+  // session that had just been logged looked like it had not registered at all.
+  // formatStatTime is what the Today card already uses; match it.
+  var _totTimeStr = formatStatTime(_totSec);
   display.innerHTML =
       '<div class="rl-stat"><div class="rl-stat-n">'+_totTimeStr+'</div><div class="rl-stat-l">time read</div></div>'
     + '<div class="rl-stat"><div class="rl-stat-n">'+_ts0.length+'</div><div class="rl-stat-l">session'+(_ts0.length!==1?'s':'')+'</div></div>'
@@ -4534,7 +4553,8 @@ var HEARTH_TRACKS=[
   {k:'sess',  name:'Sessions logged', suf:'',  tiers:mkTiers(5,5000,26)},
   {k:'rate',  name:'Ratings given',   suf:'',  tiers:mkTiers(5,1000,22)},
   {k:'rev',   name:'Reviews written', suf:'',  tiers:mkTiers(1,500,20)},
-  {k:'listen',name:'Listening time',   suf:'h', tiers:mkTiers(1,3000,30)},
+  {k:'listen',name:'Time spent listening', suf:'h', tiers:mkTiers(1,3000,30)},
+  {k:'abook', name:'Audiobook progress',    suf:'h', tiers:mkTiers(1,3000,30)},
   {k:'streak',name:'Day streak',      suf:'d', tiers:[3,5,7,10,14,21,30,45,60,90,120,160,210,270,340,420,510,610,730,900,1100,1400,1800,2400,3650]},
   {k:'long',  name:'Longest session', suf:'m', tiers:[30,45,60,90,120,180,240,300]}
 ];
@@ -4550,7 +4570,8 @@ function _hearthBooks(){
     (b.timerSessions||[]).forEach(function(x){ if(x) x.audio=sessionIsAudio(b,x); });
     var id=b.bookId||((b.title||'')+'|'+(b.author||''));
     var e=seen[id];
-    if(!e){ seen[id]={pages:b.pages||0,myRating:b.myRating||0,ts:b.timerSessions||[],rt:b.sessions||[],isRead:!!isRead}; out.push(seen[id]); return; }
+    if(!e){ seen[id]={run:b.runtimeMin||0,pages:b.pages||0,myRating:b.myRating||0,ts:b.timerSessions||[],rt:b.sessions||[],isRead:!!isRead}; out.push(seen[id]); return; }
+    if((b.runtimeMin||0)>e.run) e.run=b.runtimeMin||0;
     if((b.timerSessions||[]).length>e.ts.length) e.ts=b.timerSessions;
     if((b.sessions||[]).length>e.rt.length) e.rt=b.sessions;
     if((b.myRating||0)>e.myRating) e.myRating=b.myRating||0;
@@ -4569,7 +4590,7 @@ function _hearthBooks(){
   return out;
 }
 function hearthStats(){
-  var bs=_hearthBooks(), sec=0,pages=0,sess=0,fin=0,rate=0,rev=0,longest=0,owl=false,bird=false,lis=0;
+  var bs=_hearthBooks(), sec=0,pages=0,sess=0,fin=0,rate=0,rev=0,longest=0,owl=false,bird=false,lis=0,abk=0;
   bs.forEach(function(b){
     sess+=b.ts.length;
     b.ts.forEach(function(x){
@@ -4586,12 +4607,15 @@ function hearthStats(){
       if(h>=4 && h<9) bird=true;
     });
     // Each completed read-through is a finish; a checked book counts as one.
+    // How much audiobook he has got through, in the books' own running time —
+    // a separate question from the hours he spent doing it.
+    abk += _audioMinsFrom(b.run, b.rt, b.ts, b.isRead);
     fin  += Math.max(b.rt.filter(function(x){return x.end;}).length, b.isRead?1:0);
     rate += Math.max(b.rt.filter(function(x){return x.rating>0;}).length, b.myRating>0?1:0);
     rev  += b.rt.filter(function(x){return (x.note||'').trim();}).length;
   });
   var st=computeStreak();
-  return {time:sec/3600,listen:lis/3600,pages:pages,sess:sess,fin:fin,add:bs.length,rate:rate,rev:rev,
+  return {time:sec/3600,listen:lis/3600,abook:abk/60,pages:pages,sess:sess,fin:fin,add:bs.length,rate:rate,rev:rev,
           streak:Math.max(st.best||0,st.current||0),long:longest/60,owl:owl,bird:bird};
 }
 // Unlock every tier the numbers have passed, paying 3 embers each. On first
