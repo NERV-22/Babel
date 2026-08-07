@@ -5329,6 +5329,13 @@ function renderCalendar(){
       cls='part';
       svg='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-dasharray="'+(pct*C).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 20 20)"/>';
     }
+    else if(babelHearth.metEver&&babelHearth.metEver[key]){
+      // Banked in the ledger with no minutes recorded — a day protected by a
+      // freeze whose mark was lost, or one that counted under an older rule.
+      // Drawing it blank made the calendar contradict the streak.
+      cls='frozen';
+      svg='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="3 3"/>';
+    }
     else if(babelHearth.frozen&&babelHearth.frozen[key]){
       cls='frozen';
       svg='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="3 3"/>';
@@ -5760,7 +5767,30 @@ window.BabelCloud = (function(){
                            frozen:(babelHearth&&babelHearth.frozen)||{},
                            metEver:(babelHearth&&babelHearth.metEver)||{},
                            freezes:(babelHearth&&babelHearth.freezes)||0};
+          // The whole local hearth, kept so nothing is lost to the swap below.
+          // Replacing it wholesale is what wiped frozen days, claimed badges and
+          // embers on every pull from a device holding an older copy. Worse,
+          // `unlocked` rebuilds itself from the stats while `claimedAch` cannot,
+          // so any loss turned into every badge becoming claimable again.
+          var _localH=babelHearth||{};
           babelHearth=row.theme.hearth;
+          // These maps only ever grow in meaning: a day that was frozen stays
+          // frozen, a badge once claimed is never payable again. Union them.
+          ['frozen','unlocked','claimedAch','claims','logins','metEver'].forEach(function(_k){
+            babelHearth[_k]=babelHearth[_k]||{};
+            var _src=_localH[_k]||{};
+            for(var _kk in _src) if(!babelHearth[_k][_kk]) babelHearth[_k][_kk]=_src[_kk];
+          });
+          // Counters follow the most recent device, by Patrick's call: a pull only
+          // lands when the cloud row is newer, so its numbers win. The trade-off
+          // is that embers earned here but not yet pushed can be lost — the sets
+          // above are unioned precisely so nothing else goes with them.
+          // ...but a copy that carries no counter at all is not "the newest value
+          // is zero", it is a copy with nothing to say. Fall back rather than
+          // leaving embers undefined, which renders as "undefined" on the Hearth.
+          if(typeof babelHearth.embers !=='number') babelHearth.embers =_localH.embers ||0;
+          if(typeof babelHearth.freezes!=='number') babelHearth.freezes=_localH.freezes||0;
+          if(_localH.freezeFrom && !babelHearth.freezeFrom) babelHearth.freezeFrom=_localH.freezeFrom;
           if(_keepNote && !babelHearth.freezeNote) babelHearth.freezeNote=_keepNote;
           if(_keepGrants.g2 && !babelHearth.freezeGrant2){
             babelHearth.freezeGrant1=1; babelHearth.freezeGrant2=1;
