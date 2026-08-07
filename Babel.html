@@ -2566,7 +2566,7 @@ function submitBook(){
   var author      = document.getElementById("f-author").value.trim();
   var translator  = (document.getElementById("f-translator")||{value:''}).value.trim();
   var runtimeMin  = hmGet('f-rt');
-  var pages       = parseInt(document.getElementById("f-pages").value);
+  var pages       = parseInt(document.getElementById("f-pages").value)||0;
   var seriesOrder = document.getElementById("f-series").value.trim();
   var seriesName  = document.getElementById("f-series-name").value.trim();
   var summary     = document.getElementById("f-summary").value.trim();
@@ -2755,7 +2755,7 @@ function saveDetailsModal(){
   var author      = document.getElementById("d-author").value.trim();
   var translator  = (document.getElementById("d-translator")||{value:''}).value.trim();
   var runtimeMin  = hmGet('d-rt');
-  var pages       = parseInt(document.getElementById("d-pages").value);
+  var pages       = parseInt(document.getElementById("d-pages").value)||0;
   var seriesOrder = document.getElementById("d-series").value.trim();
   var seriesName  = document.getElementById("d-series-name").value.trim();
   var summary     = document.getElementById("d-summary").value.trim();
@@ -3527,7 +3527,7 @@ function renderRLModal(){
   display.innerHTML =
       '<div class="rl-stat"><div class="rl-stat-n">'+_totTimeStr+'</div><div class="rl-stat-l">time read</div></div>'
     + '<div class="rl-stat"><div class="rl-stat-n">'+_ts0.length+'</div><div class="rl-stat-l">session'+(_ts0.length!==1?'s':'')+'</div></div>'
-    + '<div class="rl-stat"><div class="rl-stat-n">'+_progress.toLocaleString()+'</div><div class="rl-stat-l">pages'+(_hasReread?'<span class="rl-stat-sub">'+_totPages.toLocaleString()+' turned</span>':'')+'</div></div>';
+    + '<div class="rl-stat"><div class="rl-stat-n">'+(isAudioRead(curReadOf(b))?fmtMins(_progress):_progress.toLocaleString())+'</div><div class="rl-stat-l">'+(isAudioRead(curReadOf(b))?'listened':'pages')+(_hasReread?'<span class="rl-stat-sub">'+(isAudioRead(curReadOf(b))?fmtMins(_totPages):_totPages.toLocaleString())+' total</span>':'')+'</div></div>';
   // Session log list
   var list = document.getElementById("rl-log-list");
   var ts = b.timerSessions || [];
@@ -3844,7 +3844,7 @@ function renderTimerTab(){
     card='<div class="tmr-book'+(locked?' locked':'')+'"'+(locked?'':' onclick="tmrOpenPicker()"')+'>'
       +'<div class="tmr-book-main"><div class="tmr-book-title">'+esc(b.title)+'</div>'+(seriesText(b)?'<div class="tmr-book-series">'+esc(seriesText(b))+'</div>':'')+'<div class="tmr-book-by">by '+esc(b.author)+'</div>'
       +'<div class="tmr-prog"><div class="tmr-prog-fill" style="width:'+pg.pct+'%"></div></div>'
-      +'<div class="tmr-prog-txt">'+pg.cur+' of '+pg.total+' pages ('+pg.pct+'%)</div></div>'
+      +'<div class="tmr-prog-txt">'+curUnitStr(b,pg.cur)+' of '+curUnitStr(b,pg.total)+' ('+pg.pct+'%)</div></div>'
       +'</div>';
   } else {
     card='<div class="tmr-book empty" onclick="tmrOpenPicker()"><div class="tmr-book-main"><div class="tmr-book-title">Select a book</div><div class="tmr-book-by">Tap to choose</div></div></div>';
@@ -3867,7 +3867,10 @@ function renderTimerTab(){
     +'</svg><div class="tmr-center"><div id="tmr-time" class="tmr-time">'+formatHMS(sec)+'</div><div class="tmr-sub">'+sub+'</div></div></div>';
   var controls='';
   if(tmrMode==='idle'){ controls=(idx>=0)?'<button class="tmr-primary" onclick="tmrStart()">Start reading</button>':'<button class="tmr-primary disabled" disabled>Add a book first</button>'; }
-  else if(tmrMode==='startprompt'){ controls='<div class="tmr-pageform"><label>Starting page</label><input type="number" id="tmr-startpage" min="0" value="'+(b?(currentPageFor(b)||0):0)+'"/><div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrBegin()">Begin</button><button class="tmr-ghost" onclick="tmrCancelStart()">Cancel</button></div></div>'; }
+  else if(tmrMode==='startprompt'){
+    var _sa=b?isAudioRead(readById(b,ensureCurrentRead(b))):false;
+    var _smax=b?curTotalOf(b):0;
+    controls='<div class="tmr-pageform"><label>'+(_sa?'Starting minute':'Starting page')+'</label><input type="number" id="tmr-startpage" min="0"'+(_smax?' max="'+_smax+'"':'')+' value="'+(b?(currentPageFor(b)||0):0)+'"/><div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrBegin()">Begin</button><button class="tmr-ghost" onclick="tmrCancelStart()">Cancel</button></div></div>'; }
   else if(tmrMode==='running'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Pause</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
   else if(tmrMode==='paused'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Resume</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
   else if(tmrMode==='finishprompt'){ var sug=b?Math.max(activeTimer.startPage||0,currentPageFor(b)):(activeTimer?activeTimer.startPage:0); var _fa=b?isAudioRead(readById(b,ensureCurrentRead(b))):false;
@@ -3891,7 +3894,7 @@ function tmrRenderPickList(){
     var b=books[i];
     if(q && (b.title||'').toLowerCase().indexOf(q)<0 && (b.author||'').toLowerCase().indexOf(q)<0 && (b.genre||'').toLowerCase().indexOf(q)<0 && (b.seriesName||'').toLowerCase().indexOf(q)<0) continue;
     var pg=tmrFmtPagesLine(b);
-    rows.push('<button class="tp-item" onclick="tmrSelectBook('+i+')"><span class="tp-i-main"><span class="tp-i-title">'+esc(b.title)+(b.isReading?' <span class="tp-i-badge">reading</span>':'')+'</span><span class="tp-i-by">'+(seriesText(b)?esc(seriesText(b))+' \u00b7 ':'')+esc(b.author)+' \u00b7 '+pg.cur+'/'+pg.total+'p</span></span></button>');
+    rows.push('<button class="tp-item" onclick="tmrSelectBook('+i+')"><span class="tp-i-main"><span class="tp-i-title">'+esc(b.title)+(b.isReading?' <span class="tp-i-badge">reading</span>':'')+'</span><span class="tp-i-by">'+(seriesText(b)?esc(seriesText(b))+' \u00b7 ':'')+esc(b.author)+' \u00b7 '+curUnitStr(b,pg.cur)+'/'+curUnitStr(b,pg.total)+'</span></span></button>');
   }
   document.getElementById('timer-pick-list').innerHTML = rows.join('') || '<p style="color:var(--text-muted);font-family:sans-serif;font-size:13px;padding:22px;text-align:center">No matches.</p>';
 }
@@ -3902,6 +3905,9 @@ function tmrCancelStart(){ tmrMode='idle'; renderTimerTab(); }
 function tmrBegin(){
   var idx=tmrPickIdx(); if(idx<0) return; var b=books[idx];
   var page=parseInt((document.getElementById('tmr-startpage')||{}).value,10); if(isNaN(page)||page<0) page=0;
+  // Never allow a position past the book's own length — that is what produced
+  // readings like "990 of 508 pages (195%)".
+  var _capS=curTotalOf(books[tmrSelIdx]); if(_capS>0 && page>_capS) page=_capS;
   activeTimer={ listId:activeId, bookIdx:idx, bookTitle:b.title, bookAuthor:b.author, bookPages:b.pages, startTime:Date.now(), startPage:page, accumulatedSec:0, pausedAt:null, finishing:false };
   if(!b.isReading){ b.isReading=true; saveCurrentList(); if(currentTab==='list') renderTable(); }
   saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState();
@@ -3917,6 +3923,8 @@ function tmrConfirmFinish(){
   if(!activeTimer) return;
   var endPage=parseInt((document.getElementById('tmr-endpage')||{}).value,10);
   if(isNaN(endPage)){ tmrKeepReading(); return; }
+  if(endPage<0) endPage=0;
+  var _capE=curTotalOf(books[activeTimer.bookIdx]); if(_capE>0 && endPage>_capE) endPage=_capE;
   var sec=_tmrFrozenSec, idx=activeTimer.bookIdx, startPage=activeTimer.startPage;
   var startTime=activeTimer.startTime-(activeTimer.accumulatedSec||0)*1000;
   var session={ startTime:startTime, endTime:startTime+sec*1000, durationSec:sec, startPage:startPage, endPage:endPage };
@@ -4132,7 +4140,7 @@ function renderTable(){
         +'<div class="bk-id" onclick="openSM('+b.idx+')" title="Open book">'
           +'<div class="bk-title">'+esc(b.title)+inlineSeriesTag+(b.optional?'<span class="optional-tag">(optional)</span>':'')+sBadge+'</div>'
           +seriesLine
-          +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+(b.translator?' &middot; <span class="bk-trans">trans. '+esc(b.translator)+'</span>':'')+' &middot; '+b.pages+'p'+(b.runtimeMin?' <span class="bk-audio">'+fmtMins(b.runtimeMin)+' audio</span>':'')+'</div>'
+          +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+(b.translator?' &middot; <span class="bk-trans">trans. '+esc(b.translator)+'</span>':'')+(b.pages>0?' &middot; '+b.pages+'p':'')+(b.runtimeMin?' <span class="bk-audio">'+fmtMins(b.runtimeMin)+' audio</span>':'')+'</div>'
         +'</div>'
         +'<button class="fav-btn'+(b.isFav?' on':'')+'" onclick="toggleFav('+b.idx+')" title="Favourite">'+ICONS.heart+'</button>'
       +'</div>'
