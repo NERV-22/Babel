@@ -1848,6 +1848,7 @@ function loadListData(id){
     // saved before those fields existed still loads cleanly.
     books.forEach(function(b){
       stampFormats(b);          // stamp the medium BEFORE any re-homing
+      mergeGhostReads(b);
       adoptOrphanSessions(b);
       if(b.summary===undefined)     b.summary="";
       if(b.myRating===undefined)    b.myRating=0;
@@ -2073,14 +2074,30 @@ function setMyRating(idx,val){
 }
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
+// Pages read, per read-through. A read the timer followed counts the furthest
+// page it actually reached — the Odyssey is 541 pages but its last 56 are an
+// outro and resources, so finishing it is 485, not 541. A read with no timer
+// data at all falls back to the book's length, which is the only estimate
+// available for anything finished before the timer existed. Audio reads are
+// skipped: minutes are not pages, and they feed the listening total instead.
+function pagesReadFor(b,isRead){
+  if(!b) return 0;
+  var pages=b.pages||0, ss=b.sessions||[], total=0, i;
+  if(!ss.length) return isRead?pages:0;
+  for(i=0;i<ss.length;i++){
+    var r=ss[i]; if(!r || isAudioRead(r)) continue;
+    var f=pagesForRead(b,r.id);
+    if(f>0){ total += (pages>0?Math.min(f,pages):f); continue; }
+    if((r.end||'').trim() || isRead) total += pages;
+  }
+  return total;
+}
 function updateStats(){
   var total=books.length, read=0, pages=0, pagesRead=0;
   for(var i=0;i<books.length;i++){
     pages += books[i].pages;
-    if(readSet.has(i)){
-      read++;
-      pagesRead += books[i].pages;
-    }
+    if(readSet.has(i)) read++;
+    pagesRead += pagesReadFor(books[i], readSet.has(i));
   }
   var pct=total?Math.round(read/total*100):0;
   document.getElementById("stat-total").textContent=total;
@@ -3293,6 +3310,34 @@ function adoptOrphanSessions(b){
     var xf=(x.fmt==='audio'||x.fmt==='print')?x.fmt:curFmt;
     if(xf!==curFmt) continue;                            // never mix minutes with pages
     x.readId=cur.id; moved++;
+  }
+  return b;
+}
+// Two read-throughs finishing on the same day, one of them holding no sessions
+// at all, is not a reread — it is the duplicate the orphaned-session bug left
+// behind. Fold it into the real one: keep whichever carries the rating or the
+// review, move any sessions onto it, drop the other. Reads that finish on
+// different days are genuine rereads and are never touched.
+function mergeGhostReads(b){
+  if(!b) return b;
+  var ss=b.sessions||[]; if(ss.length<2) return b;
+  function has(r){ return (b.timerSessions||[]).some(function(x){ return x && x.readId===r.id; }); }
+  function weight(r){ return ((r.note||'').trim()?2:0)+((r.rating||0)>0?1:0); }
+  for(var i=ss.length-1;i>=0;i--){
+    var dup=ss[i], end=(dup.end||'').trim(); if(!end || has(dup)) continue;
+    for(var j=0;j<ss.length;j++){
+      if(j===i) continue;
+      var keep=ss[j];
+      if((keep.end||'').trim()!==end || !has(keep)) continue;
+      // The survivor is whichever holds more of his writing.
+      var winner=weight(dup)>weight(keep)?dup:keep, loser=winner===dup?keep:dup;
+      (b.timerSessions||[]).forEach(function(x){ if(x && x.readId===loser.id) x.readId=winner.id; });
+      if(!(winner.note||'').trim() && (loser.note||'').trim()) winner.note=loser.note;
+      if(!(winner.rating||0) && (loser.rating||0)) winner.rating=loser.rating;
+      if(!(winner.start||'') || (loser.start||'') < (winner.start||'')) winner.start=loser.start||winner.start;
+      ss.splice(ss.indexOf(loser),1);
+      break;
+    }
   }
   return b;
 }
