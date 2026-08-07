@@ -1539,6 +1539,18 @@ function computeStreak(){
   var met={};
   Object.keys(map).forEach(function(k){if(map[k]>=babelGoalMin*60)met[k]=true;});
   try{ Object.keys(babelHearth.frozen).forEach(function(k){ met[k]=true; }); }catch(e){}
+  // A day that has ever counted as met stays met permanently. Corrections to
+  // how minutes are recorded, goal changes, and sync overwrites must never
+  // retroactively take a day off the streak — only today has to be earned.
+  try{
+    var _t=_dayKey(new Date()), _new=false;
+    babelHearth.metEver=babelHearth.metEver||{};
+    Object.keys(met).forEach(function(k){
+      if(k!==_t && !babelHearth.metEver[k]){ babelHearth.metEver[k]=1; _new=true; }
+    });
+    Object.keys(babelHearth.metEver).forEach(function(k){ met[k]=true; });
+    if(_new) saveHearth();
+  }catch(e){}
   var today=new Date();today.setHours(0,0,0,0);
   var cur=0,d=new Date(today);
   if(!met[_dayKey(today)])d.setDate(d.getDate()-1);
@@ -4228,7 +4240,7 @@ function _hWeek(d){
 }
 function loadHearth(){
   try{ var r=storage.getItem('rl_hearth'); if(r){ var o=JSON.parse(r); for(var k in o) babelHearth[k]=o[k]; } }catch(e){}
-  ['frozen','claims','unlocked','logins','claimedAch'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
+  ['frozen','claims','unlocked','logins','claimedAch','metEver'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
   // One-time: tiers unlocked before achievements became claimable were paid
   // on unlock, so mark them claimed rather than paying the embers twice.
   if(!babelHearth.achMigrated){
@@ -4270,6 +4282,28 @@ function loadHearth(){
       });
     }catch(e){}
     babelHearth.streakRepair=1;
+    _hMig=true;
+  }
+  // The frozen days that were carrying the streak were wiped by the sync bug,
+  // and a frozen day leaves no session data to recover it from. Rebuild by
+  // protecting every recent day on which any reading happened, back to the
+  // last completely inactive day. This errs toward keeping the streak, which
+  // is the correct bias: a streak must never be lost to a defect.
+  if(!babelHearth.streakRebuild){
+    try{
+      var m2=_gatherSecByDay(), goal2=babelGoalMin*60;
+      var d2=new Date(); d2.setHours(0,0,0,0);
+      d2.setDate(d2.getDate()-1);                 // today must still be earned
+      for(var i2=0;i2<21;i2++){
+        var k2=_dayKey(d2);
+        if(!(m2[k2]>0) && !babelHearth.frozen[k2]) break;   // genuinely idle day
+        if((m2[k2]||0)<goal2) babelHearth.frozen[k2]=1;
+        babelHearth.metEver=babelHearth.metEver||{};
+        babelHearth.metEver[k2]=1;
+        d2.setDate(d2.getDate()-1);
+      }
+    }catch(e){}
+    babelHearth.streakRebuild=1;
     _hMig=true;
   }
   // Persist immediately: a one-time grant that isn't written is a grant that
@@ -5592,6 +5626,7 @@ window.BabelCloud = (function(){
                            g2:babelHearth&&babelHearth.freezeGrant2,
                            sr:babelHearth&&babelHearth.streakRepair,
                            frozen:(babelHearth&&babelHearth.frozen)||{},
+                           metEver:(babelHearth&&babelHearth.metEver)||{},
                            freezes:(babelHearth&&babelHearth.freezes)||0};
           babelHearth=row.theme.hearth;
           if(_keepNote && !babelHearth.freezeNote) babelHearth.freezeNote=_keepNote;
@@ -5599,12 +5634,15 @@ window.BabelCloud = (function(){
             babelHearth.freezeGrant1=1; babelHearth.freezeGrant2=1;
             babelHearth.freezes=Math.max(babelHearth.freezes||0,_keepGrants.freezes);
           }
+          // The met-day ledger is additive and must never shrink on sync.
+          babelHearth.metEver=babelHearth.metEver||{};
+          for(var _mk in (_keepGrants.metEver||{})) babelHearth.metEver[_mk]=1;
           if(_keepGrants.sr && !babelHearth.streakRepair){
             babelHearth.streakRepair=1;
             babelHearth.frozen=babelHearth.frozen||{};
             for(var _fk in _keepGrants.frozen) babelHearth.frozen[_fk]=1;
           }
-          ['frozen','claims','unlocked','logins','claimedAch'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
+          ['frozen','claims','unlocked','logins','claimedAch','metEver'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
           // A hearth synced from a device that predates claimable achievements
           // has unlocked tiers that were already paid on unlock. Without this
           // they would all become claimable again and pay out a second time.
