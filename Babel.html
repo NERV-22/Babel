@@ -934,6 +934,8 @@ body{padding:0}
 .rl-log-row-date{font-family:sans-serif;font-size:13px;font-weight:600;color:var(--text)}
 .rl-log-row-dur{font-family:Georgia,serif;font-size:14px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
 .rl-log-row-sub{font-family:sans-serif;font-size:11.5px;color:var(--text-muted)}
+.rl-log-row.detached{opacity:.5}
+.rl-log-det{display:block;margin-top:3px;font-size:10.5px;font-style:italic;color:var(--text-muted)}
 .rl-log-dot{margin:0 6px;opacity:.6}
 .rl-log-row-del{flex:none;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border:none;background:none;color:var(--text-muted);opacity:.5;cursor:pointer;border-radius:7px}
 .rl-log-row-del:hover{opacity:1;color:#e05c5c;background:color-mix(in srgb,#e05c5c 12%,transparent)}
@@ -1530,7 +1532,7 @@ function _gatherSecByDay(){
   // A book in two lists holds the SAME session in both copies (fan-out), so
   // count each session once — keyed on its start moment, which is unique.
   function addTS(arr){(arr||[]).forEach(function(s){
-    if(!s||!s.startTime)return;
+    if(!s||!s.startTime||s.detached)return;
     if(seen[s.startTime])return; seen[s.startTime]=1;
     var k=_dayKey(new Date(s.startTime));map[k]=(map[k]||0)+(s.durationSec||0);});}
   books.forEach(function(b){addTS(b.timerSessions);});
@@ -1816,6 +1818,12 @@ function fanOutBookMeta(idx){
       arr.forEach(function(x){
         if(x.bookId!==b.bookId) return;
         stampFormats(x);                 // this copy's reads are about to be replaced
+        var _had={}, _now={};
+        (x.sessions||[]).forEach(function(r){ if(r&&r.id) _had[r.id]=1; });
+        sess.forEach(function(r){ if(r&&r.id) _now[r.id]=1; });
+        (x.timerSessions||[]).forEach(function(t){
+          if(t && t.readId && _had[t.readId] && !_now[t.readId]) t.detached=1;
+        });
         x.sessions=JSON.parse(JSON.stringify(sess));
         x.myRating=rating;
         if(fin) x.finishedAt=fin;
@@ -2157,7 +2165,7 @@ function updateReadTimeStats(){
     var ts = books[i].timerSessions || [];
     for(var j=0;j<ts.length;j++){
       var s = ts[j];
-      if(!s.startTime) continue;
+      if(!s.startTime || s.detached) continue;
       // Pages read in this session (can be zero if user just opened a session
       // without page changes — still count time but not pages).
       var pages = Math.max(0, (s.endPage||0) - (s.startPage||0));
@@ -2340,7 +2348,7 @@ function _lastReadAt(b){
   var t=0; (b.timerSessions||[]).forEach(function(x){ if(x&&x.startTime>t) t=x.startTime; }); return t;
 }
 function _totalSec(b){
-  var t=0; (b.timerSessions||[]).forEach(function(x){ t+=(x&&x.durationSec)||0; }); return t;
+  var t=0; (b.timerSessions||[]).forEach(function(x){ if(x&&!x.detached) t+=(x.durationSec)||0; }); return t;
 }
 function _finishedAtStr(b){
   var f=''; (b.sessions||[]).forEach(function(x){ if(x.end && x.end>f) f=x.end; });
@@ -3271,7 +3279,7 @@ function ensureCurrentRead(b){
 function pagesForRead(b,readId){
   var max=0;
   ((b&&b.timerSessions)||[]).forEach(function(x){
-    if(!x || x.readId!==readId) return;
+    if(!x || x.detached || x.readId!==readId) return;
     if((x.endPage||0)>max) max=x.endPage||0;
   });
   return max;
@@ -3323,7 +3331,8 @@ function adoptOrphanSessions(b){
   var curFmt=readFormat(cur), moved=0;
   for(i=0;i<b.timerSessions.length;i++){
     var x=b.timerSessions[i];
-    if(!x || !x.readId || ids[x.readId]) continue;      // untagged, or its read is intact
+    if(!x || x.detached) continue;                       // he deleted its read on purpose
+    if(!x.readId || ids[x.readId]) continue;             // untagged, or its read is intact
     var xf=(x.fmt==='audio'||x.fmt==='print')?x.fmt:curFmt;
     if(xf!==curFmt) continue;                            // never mix minutes with pages
     x.readId=cur.id; moved++;
@@ -3658,9 +3667,12 @@ function renderRLModal(){
   var _totSec=0, _totPages=0;
   // Pages turned counts print sessions only. On a book he has both read and
   // listened to, adding the audio minutes in produced totals like "645 pages".
+  var _liveCount=0;
   _ts0.forEach(function(s){
+    if(s && s.detached) return;              // listed in the log, counted nowhere
+    _liveCount++;
     _totSec += (s.durationSec||0);
-    if(!sessionIsAudio(b,s)) _totPages += Math.max(0,(s.endPage||0)-(s.startPage||0));
+    if(!sessionIsAudio(b,s) && !s.detached) _totPages += Math.max(0,(s.endPage||0)-(s.startPage||0));
   });
   // Current progress in the book (highest endPage), capped at the book's total
   // pages — this is what the PAGES stat shows. If lifetime pages-turned
@@ -3677,7 +3689,7 @@ function renderRLModal(){
   var _totTimeStr = formatStatTime(_totSec);
   display.innerHTML =
       '<div class="rl-stat"><div class="rl-stat-n">'+_totTimeStr+'</div><div class="rl-stat-l">time read</div></div>'
-    + '<div class="rl-stat"><div class="rl-stat-n">'+_ts0.length+'</div><div class="rl-stat-l">session'+(_ts0.length!==1?'s':'')+'</div></div>'
+    + '<div class="rl-stat"><div class="rl-stat-n">'+_liveCount+'</div><div class="rl-stat-l">session'+(_liveCount!==1?'s':'')+'</div></div>'
     + '<div class="rl-stat"><div class="rl-stat-n">'+(isAudioRead(curReadOf(b))?fmtMins(_progress):_progress.toLocaleString())+'</div><div class="rl-stat-l">'+(isAudioRead(curReadOf(b))?'listened':'pages')+(_hasReread?'<span class="rl-stat-sub">'+(isAudioRead(curReadOf(b))?fmtMins(_totPages):_totPages.toLocaleString())+' total</span>':'')+'</div></div>';
   // Session log list
   var list = document.getElementById("rl-log-list");
@@ -3694,16 +3706,18 @@ function renderRLModal(){
     var pages = Math.max(0,(s.endPage||0) - (s.startPage||0));
     // An audio session's positions are minutes. Printing them as "p.0–255"
     // was wrong on both counts — wrong unit and a page number he never read.
+    var _det = !!s.detached;
     var _posStr = _sa ? (fmtMins(s.startPage||0)+'\u2013'+fmtMins(s.endPage||0))
                       : ('p.'+(s.startPage||0)+'\u2013'+(s.endPage||0));
     var _amtStr = _sa ? (fmtMins(pages)+' listened') : (pages+' '+(pages===1?'page':'pages'));
     var d = s.startTime ? new Date(s.startTime) : null;
     var dateStr = d ? d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : '—';
     var timeStr = d ? d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}) : '';
-    return '<div class="rl-log-row">'
+    return '<div class="rl-log-row'+(_det?' detached':'')+'">'
       + '<div class="rl-log-row-main">'
         + '<div class="rl-log-row-top"><span class="rl-log-row-date">'+esc(dateStr)+'</span><span class="rl-log-row-dur">'+formatHMS(s.durationSec||0)+'</span></div>'
-        + '<div class="rl-log-row-sub">'+esc(timeStr)+'<span class="rl-log-dot">·</span>'+_posStr+'<span class="rl-log-dot">·</span>'+_amtStr+'</div>'
+        + '<div class="rl-log-row-sub">'+esc(timeStr)+'<span class="rl-log-dot">·</span>'+_posStr+'<span class="rl-log-dot">·</span>'+_amtStr
+        +(_det?'<span class="rl-log-det">read deleted \u00b7 not counted</span>':'')+'</div>'
       + '</div>'
       + '<button class="rl-log-row-del" title="Delete session" onclick="deleteRLSession('+r.i+')">'+ICONS.close+'</button>'
     + '</div>';
@@ -3893,8 +3907,17 @@ function addSession(){
 }
 function delS(i){
   if(smIdx<0)return;
-  stampFormats(books[smIdx]);          // before the read holding the medium goes
-  books[smIdx].sessions.splice(i,1);
+  var _b=books[smIdx];
+  stampFormats(_b);                    // before the read holding the medium goes
+  // Mark this read's sessions as deliberately detached. Without it they are
+  // indistinguishable from sessions orphaned by a bug, and adoptOrphanSessions
+  // would quietly re-home them onto the current read at the next reload —
+  // making the same session count or not depending on whether he had reloaded.
+  var _gone=(_b.sessions||[])[i];
+  if(_gone && _gone.id) (_b.timerSessions||[]).forEach(function(x){
+    if(x && x.readId===_gone.id) x.detached=1;
+  });
+  _b.sessions.splice(i,1);
   syncHeadlineRating(smIdx);
   saveCurrentList();fanOutBookMeta(smIdx);renderSM();renderTable();updateStats();
 }
@@ -4594,11 +4617,14 @@ function hearthStats(){
   bs.forEach(function(b){
     sess+=b.ts.length;
     b.ts.forEach(function(x){
+      if(x && x.detached){ sess--; return; }   // its read was deleted: counts for nothing
       sec+=(x.durationSec||0);
       // Audio positions are minutes, not pages — they must never inflate a
       // page count. They feed the listening ladder instead.
+      // A session whose read he deleted keeps its time — it really happened, and
+      // the streak must never be rewritten — but stops counting as pages read.
       if(x.audio){ lis+=(x.durationSec||0); }
-      else pages+=Math.max(0,(x.endPage||0)-(x.startPage||0));
+      else if(!x.detached) pages+=Math.max(0,(x.endPage||0)-(x.startPage||0));
       if((x.durationSec||0)>longest) longest=x.durationSec||0;
       var h=new Date(x.startTime).getHours();
       // Night owl: started at 10pm or later, or after midnight.
@@ -5288,7 +5314,7 @@ function closeYearBooks(){ document.getElementById('yearbooks-sheet').classList.
 // ratings) use the active list, matching the counters above them.
 function _allTimerSessions(){
   var out=[];
-  function grab(arr){(arr||[]).forEach(function(x){ if(x&&x.startTime&&x.durationSec) out.push(x); });}
+  function grab(arr){(arr||[]).forEach(function(x){ if(x&&x.startTime&&x.durationSec&&!x.detached) out.push(x); });}
   books.forEach(function(b){ grab(b.timerSessions); });
   lists.forEach(function(l){
     if(l.id===activeId) return;
@@ -5347,7 +5373,7 @@ function renderDeepStats(){
 
   // Author leaderboard (active list)
   var auth={};
-  books.forEach(function(b){ var a=(b.author||'').trim(); if(!a) return; if(!auth[a]) auth[a]={n:0,sec:0}; auth[a].n++; (b.timerSessions||[]).forEach(function(x){ auth[a].sec+=(x.durationSec||0); }); });
+  books.forEach(function(b){ var a=(b.author||'').trim(); if(!a) return; if(!auth[a]) auth[a]={n:0,sec:0}; auth[a].n++; (b.timerSessions||[]).forEach(function(x){ if(x&&!x.detached) auth[a].sec+=(x.durationSec||0); }); });
   var arr=[]; for(var key in auth) arr.push({a:key,n:auth[key].n,sec:auth[key].sec});
   arr.sort(function(x,y){ return (y.sec-x.sec)||(y.n-x.n); });
   arr=arr.slice(0,5);
@@ -5394,7 +5420,7 @@ function _gatherDayStats(){
   var map={}, seen={};
   // Same de-duplication as _gatherSecByDay — shared books must not double-count.
   function addTS(arr){(arr||[]).forEach(function(s){
-    if(!s||!s.startTime)return;
+    if(!s||!s.startTime||s.detached)return;
     if(seen[s.startTime])return; seen[s.startTime]=1;
     var k=_dayKey(new Date(s.startTime));
     if(!map[k])map[k]={sec:0,pages:0};
@@ -5499,7 +5525,7 @@ function _sessionsForDay(key){
   function scan(arr,listId){
     (arr||[]).forEach(function(b){
       (b.timerSessions||[]).forEach(function(x){
-        if(!x||!x.startTime) return;
+        if(!x||!x.startTime||x.detached) return;
         if(_dayKey(new Date(x.startTime))!==key) return;
         if(seen[x.startTime]) return; seen[x.startTime]=1;
         out.push({s:x,title:b.title||'',bookId:b.bookId||'',listId:listId,audio:sessionIsAudio(b,x)});
