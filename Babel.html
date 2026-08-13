@@ -1120,6 +1120,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
           <div class="set-group-h">Updates</div>
           <button class="set-row" onclick="babelCheckUpdate()"><span>Update Babel</span><span class="set-chev">&#8635;</span></button>
           <div class="set-row" style="cursor:default"><span>Version</span><span class="set-chev" id="set-version" style="font-size:.8em;opacity:.75">&hellip;</span></div>
+          <button class="set-row" onclick="babelShowStorage(1)"><span>Storage</span><span class="set-chev" id="set-storage" style="font-size:.8em;opacity:.75">&hellip;</span></button>
+          <div id="storage-alarm" style="display:none;margin:8px 2px 0;padding:10px 12px;border-radius:10px;background:#5a1d1d;color:#ffd9d9;font-size:.82em;line-height:1.4"></div>
         </div>
         <div class="set-group" id="signout-group" style="display:none">
           <button class="set-row" onclick="BabelCloud.signOut()"><span>Sign out</span><span class="set-chev">&rsaquo;</span></button>
@@ -1432,12 +1434,27 @@ var storage = (function(){
       req.onerror=function(){reject(req.error);};
     });
   }
+  // A write that fails here used to report NOTHING: the in-memory cache still
+  // served the new value all session, so the app looked correct until a reload
+  // rebuilt the cache from a disk that never got the write. Quota exhaustion
+  // does exactly this. Every failure is now recorded and surfaced.
+  var lastErr=null, lsErr=null, pending=0;
   function writeKey(k,v){
-    if(!db) return;
+    if(!db){ lastErr='database not open'; return; }
     try{
       var tx=db.transaction(STORE,"readwrite");
+      pending++;
+      tx.oncomplete=function(){ pending--; };
+      tx.onerror=tx.onabort=function(){
+        pending--;
+        lastErr=((tx.error&&(tx.error.name||tx.error.message))||'write failed')+' ('+k+')';
+        try{ if(window.babelStorageFailed) window.babelStorageFailed(lastErr); }catch(e){}
+      };
       tx.objectStore(STORE).put(v,k);
-    }catch(e){ /* swallow — cache is the source of truth for this session */ }
+    }catch(e){
+      lastErr=(e&&(e.name||e.message)||'write threw')+' ('+k+')';
+      try{ if(window.babelStorageFailed) window.babelStorageFailed(lastErr); }catch(e2){}
+    }
   }
   function deleteKey(k){
     if(!db) return;
@@ -1483,13 +1500,29 @@ var storage = (function(){
         });
     },
     getItem: function(k){ return cache.hasOwnProperty(k) ? cache[k] : null; },
+    // Diagnostics: what the DISK actually holds, as opposed to the session cache.
+    lastError: function(){ return lastErr; },
+    mirrorError: function(){ return lsErr; },
+    pending: function(){ return pending; },
+    dbOpen: function(){ return !!db; },
+    readDisk: function(k){
+      return new Promise(function(res){
+        if(!db) return res(null);
+        try{
+          var r=db.transaction(STORE,"readonly").objectStore(STORE).get(k);
+          r.onsuccess=function(){ res(r.result===undefined?null:r.result); };
+          r.onerror=function(){ res(null); };
+        }catch(e){ res(null); }
+      });
+    },
     setItem: function(k,v){
       v=String(v);
       cache[k]=v;
       writeKey(k,v);
       // Belt-and-suspenders fallback for users who clear IndexedDB but not
       // localStorage: keep a small mirror until storage pressure builds up.
-      try{ localStorage.setItem(k,v); }catch(e){ /* quota — ignore */ }
+      try{ localStorage.setItem(k,v); lsErr=null; }
+      catch(e){ lsErr=(e&&(e.name||e.message))||'localStorage full'; }
     },
     removeItem: function(k){
       delete cache[k];
@@ -4283,7 +4316,7 @@ function switchScreen(name){
   if(name==='stats') updateStats();
   if(name==='reading') renderReadingScreen();
   if(name==='hearth'){ renderHearth(); }
-  if(name==='settings'){ babelShowVersion(); }
+  if(name==='settings'){ babelShowVersion(); babelShowStorage(0); }
   if(name==='timer') renderTimerTab();
   if(name==='library' && currentTab==='genre') renderGenreTab();
   try{ window.scrollTo(0,0); }catch(e){}
@@ -4618,7 +4651,40 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v80';
+var BABEL_VERSION='babel-v1';
+// A save that does not reach the disk is the one failure that looks exactly
+// like success until the next reload, so it gets said out loud immediately.
+window.babelStorageFailed=function(msg){
+  try{ showToast('Save failed \u2014 '+msg); }catch(e){}
+  try{
+    var b=document.getElementById('storage-alarm');
+    if(b){ b.style.display='block'; b.textContent='SAVE FAILING: '+msg+' \u2014 changes will be lost on reload.'; }
+  }catch(e){}
+};
+// Compares the session cache against what is actually on disk. If a save is
+// being dropped, this is where it shows up.
+function babelShowStorage(verbose){
+  var el=document.getElementById('set-storage'); if(!el) return;
+  var err=storage.lastError(), mirr=storage.mirrorError();
+  if(!storage.dbOpen()){ el.textContent='no database'; return; }
+  if(err){ el.textContent='FAILING: '+err; if(window.babelStorageFailed) window.babelStorageFailed(err); return; }
+  storage.readDisk('rl_hearth').then(function(onDisk){
+    var inMem=storage.getItem('rl_hearth');
+    var match=(String(onDisk)===String(inMem));
+    var em='?';
+    try{ em=JSON.parse(inMem||'{}').embers; }catch(e){}
+    var dm='?';
+    try{ dm=JSON.parse(onDisk||'{}').embers; }catch(e){}
+    el.textContent = match ? ('on disk \u00b7 '+em+' embers')
+                           : ('MISMATCH app '+em+' / disk '+dm);
+    if(!match && verbose){
+      var b=document.getElementById('storage-alarm');
+      if(b){ b.style.display='block';
+        b.textContent='The app shows '+em+' embers but the disk holds '+dm+'. Saves are not landing'+
+          (mirr?(' (mirror: '+mirr+')'):'')+'.'; }
+    }
+  });
+}
 function babelShowVersion(){
   var el=document.getElementById('set-version'); if(!el) return;
   el.textContent=BABEL_VERSION.replace('babel-','');
