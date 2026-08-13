@@ -5989,6 +5989,19 @@ window.BabelCloud = (function(){
             var _src=_localH[_k]||{};
             for(var _kk in _src) if(!babelHearth[_k][_kk]) babelHearth[_k][_kk]=_src[_kk];
           });
+          // claims is the one map above whose VALUE carries the meaning: the day
+          // or week a task was last claimed. Filling only absent keys kept the
+          // OLDER date whenever both copies had the key, so a task claimed today
+          // came back claimable — and with embers now surviving the merge, that
+          // paid out again on every reload. A claim made in the current period
+          // wins; neither copy can un-claim it.
+          try{
+            var _cD=_hDay(), _cW=_hWeek();
+            for(var _ck in (_localH.claims||{})){
+              var _cv=_localH.claims[_ck];
+              if(_cv===_cD||_cv===_cW) babelHearth.claims[_ck]=_cv;
+            }
+          }catch(e){}
           // Counters follow the most recent device, by Patrick's call: a pull only
           // lands when the cloud row is newer, so its numbers win. The trade-off
           // is that embers earned here but not yet pushed can be lost — the sets
