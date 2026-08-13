@@ -1119,6 +1119,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <div class="set-group">
           <div class="set-group-h">Updates</div>
           <button class="set-row" onclick="babelCheckUpdate()"><span>Update Babel</span><span class="set-chev">&#8635;</span></button>
+          <div class="set-row" style="cursor:default"><span>Version</span><span class="set-chev" id="set-version" style="font-size:.8em;opacity:.75">&hellip;</span></div>
         </div>
         <div class="set-group" id="signout-group" style="display:none">
           <button class="set-row" onclick="BabelCloud.signOut()"><span>Sign out</span><span class="set-chev">&rsaquo;</span></button>
@@ -4282,6 +4283,7 @@ function switchScreen(name){
   if(name==='stats') updateStats();
   if(name==='reading') renderReadingScreen();
   if(name==='hearth'){ renderHearth(); }
+  if(name==='settings'){ babelShowVersion(); }
   if(name==='timer') renderTimerTab();
   if(name==='library' && currentTab==='genre') renderGenreTab();
   try{ window.scrollTo(0,0); }catch(e){}
@@ -4613,6 +4615,30 @@ function emBal(){
 }
 function emGain(n){ emBal(); babelHearth.emEarned+=Math.max(0,Math.round(n||0)); return emBal(); }
 function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0)); return emBal(); }
+// The build the PAGE is running, compared against the build the SERVICE WORKER
+// is serving. When they disagree the phone is running a file nobody intended,
+// which is invisible without this and impossible to debug.
+var BABEL_VERSION='babel-v80';
+function babelShowVersion(){
+  var el=document.getElementById('set-version'); if(!el) return;
+  el.textContent=BABEL_VERSION.replace('babel-','');
+  try{
+    if(!navigator.serviceWorker||!navigator.serviceWorker.controller){
+      el.textContent=BABEL_VERSION.replace('babel-','')+' \u00b7 no worker'; return;
+    }
+    var ch=new MessageChannel();
+    var done=false;
+    ch.port1.onmessage=function(ev){
+      done=true;
+      var d=ev.data||{}, sw=String(d.cache||'?');
+      if(d.entries===0) el.textContent=BABEL_VERSION.replace('babel-','')+' \u00b7 cache EMPTY';
+      else if(sw!==BABEL_VERSION) el.textContent=BABEL_VERSION.replace('babel-','')+' \u00b7 worker '+sw.replace('babel-','');
+      else el.textContent=BABEL_VERSION.replace('babel-','')+' \u00b7 '+d.entries+' cached';
+    };
+    navigator.serviceWorker.controller.postMessage('VERSION',[ch.port2]);
+    setTimeout(function(){ if(!done) el.textContent=BABEL_VERSION.replace('babel-','')+' \u00b7 worker silent'; },1500);
+  }catch(e){ el.textContent=BABEL_VERSION.replace('babel-','')+' \u00b7 '+e.message; }
+}
 function saveHearth(){
   try{ storage.setItem('rl_hearth',JSON.stringify(babelHearth)); }catch(e){}
   try{ if(window.BabelCloud&&window.BabelCloud.touchSettings) window.BabelCloud.touchSettings(); }catch(e){}
