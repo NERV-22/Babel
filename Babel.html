@@ -4652,7 +4652,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v2';
+var BABEL_VERSION='babel-v3';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -5589,7 +5589,9 @@ function _gatherDayStats(){
     var k=_dayKey(new Date(s.startTime));
     if(!map[k])map[k]={sec:0,pages:0};
     map[k].sec+=(s.durationSec||0);
-    map[k].pages+=Math.max(0,(s.endPage||0)-(s.startPage||0));
+    // startPage/endPage hold MINUTES on an audio session, so counting the
+    // delta as pages turned 19 minutes of audiobook into "19 pages".
+    if(s.fmt!=='audio') map[k].pages+=Math.max(0,(s.endPage||0)-(s.startPage||0));
   });}
   books.forEach(function(b){addTS(b.timerSessions);});
   lists.forEach(function(l){
@@ -5773,6 +5775,7 @@ function setYearlyGoal(n){
 function setYearlyGoalFromInput(){ setYearlyGoal(document.getElementById('ygoal-input').value); }
 function setGoal(min){
   babelGoalMin=min;
+  window.babelSettingsAreDefaults=false;   // an explicit choice: safe to push
   try{ storage.setItem('rl_dailyGoalMin', String(min)); }catch(e){}
   try{ if(window.BabelCloud && window.BabelCloud.touchSettings) window.BabelCloud.touchSettings(); }catch(e){}
   renderGoalSeg(); renderGoalBar(); renderStreak();
@@ -5838,7 +5841,12 @@ function renderStreak(){
 storage.init().then(function(){
   loadP();
   loadAll();
-  babelGoalMin = parseInt(storage.getItem('rl_dailyGoalMin'),10) || 10;
+  // A fresh profile has no stored goal, so it falls back to 10. Pushing that
+  // default up as authoritative is how a real 30-minute goal became 10
+  // everywhere. Until this device has a goal of its own, it defers to the cloud.
+  var _sg=storage.getItem('rl_dailyGoalMin');
+  window.babelSettingsAreDefaults = (_sg===null);
+  babelGoalMin = parseInt(_sg,10) || 10;
   babelYearlyGoal = parseInt(storage.getItem('rl_yearlyGoal'),10) || 12;
   // Synchronous and BEFORE updateStats: computeStreak saves the hearth, so the
   // hearth must be read from disk first or that save writes over it.
@@ -5947,6 +5955,8 @@ window.BabelCloud = (function(){
     // the CLOUD's timestamp here, so if that ever lands ahead of this device's
     // clock, a plain Date.now() stamps BEHIND it and the same stale row wins
     // every pull from then on — which is how claims kept getting reverted.
+    // Never let a device that has no settings of its own outrank one that does.
+    if(window.babelSettingsAreDefaults) return;
     try{ storage.setItem('rl_settingsUpdatedAt', String(Math.max(Date.now(), settingsUpdatedAt()+1))); }catch(e){}
     if(user){ dirty[SETTINGS_ID]=true; schedulePush(); }
   }
@@ -6060,6 +6070,7 @@ window.BabelCloud = (function(){
       var sT=Date.parse(row.updated_at)||0;
       if(!row.deleted && row.theme && typeof row.theme.goalMin==='number' && sT>settingsUpdatedAt()){
         babelGoalMin=row.theme.goalMin;
+        window.babelSettingsAreDefaults=false;   // now we hold a real value
         try{ storage.setItem('rl_dailyGoalMin',String(babelGoalMin)); storage.setItem('rl_settingsUpdatedAt',String(sT)); }catch(e){}
         if(typeof row.theme.yearlyGoal==='number'){
           babelYearlyGoal=row.theme.yearlyGoal;
