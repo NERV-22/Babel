@@ -3304,6 +3304,14 @@ function fmtMins(n){
   return h>0?(h+'h'+(m?' '+m+'m':'')):(m+'m');
 }
 function unitStr(r,n){ return isAudioRead(r)?fmtMins(n):(n+' page'+(n===1?'':'s')); }
+// A read measured in a unit the book never had a figure for. Borrowing the
+// OTHER unit is what turned an 11h 18m runtime into "678 pages", so say plainly
+// that nothing was entered instead of inventing a denominator.
+function noTotalText(r){ return isAudioRead(r)?'No runtime set':'No page count set'; }
+function progText(r,cur,total){
+  if(total>0) return unitStr(r,cur)+' of '+unitStr(r,total)+' ('+Math.min(100,Math.round(cur/total*100))+'%)';
+  return (cur>0) ? (unitStr(r,cur)+' \u00b7 '+noTotalText(r).toLowerCase()) : noTotalText(r);
+}
 function unitShort(r,n){ return isAudioRead(r)?fmtMins(n):(n+'p'); }
 function readById(b,id){
   var ss=(b&&b.sessions)||[];
@@ -3395,8 +3403,10 @@ function hmSet(pfx,total){
 // without a specific read in hand.
 function curReadOf(b){ var i=currentReadIdx(b); return (i>=0&&b.sessions)?b.sessions[i]:null; }
 function curTotalOf(b){
-  var t=readTotal(b,curReadOf(b));
-  return t || (b&&b.pages) || (b&&b.runtimeMin) || 0;   // fall back to whatever exists
+  // NEVER fall back to the other unit. A print read with no page count has no
+  // denominator; substituting runtimeMin printed the runtime under a "pages"
+  // label and then fed the entry box's max and the saved-position clamp.
+  return readTotal(b,curReadOf(b));
 }
 function curUnitStr(b,n){ return unitStr(curReadOf(b), n); }
 function currentPageFor(b){
@@ -3661,7 +3671,7 @@ function renderRLModal(){
   var pct = _rlTot ? Math.min(100, Math.round(curPage/_rlTot*100)) : 0;
   document.getElementById("rl-progress-fill").style.width = pct + "%";
   document.getElementById("rl-progress-label").textContent =
-    curUnitStr(b,curPage) + " of " + curUnitStr(b,_rlTot) + " (" + pct + "%)";
+    progText(curReadOf(b), curPage, _rlTot);
   // Reading-time summary — this modal is a read-only log viewer; live timing lives in the Timer tab.
   var _ts0 = b.timerSessions || [];
   var _totSec=0, _totPages=0;
@@ -3866,7 +3876,7 @@ function renderSM(){
   var curPct=tot?Math.round(curPages/tot*100):0;
   // Header tracks the read you're on now.
   var head='<div class="bp-prog"><div class="bp-bar"><div class="bp-fill" style="width:'+curPct+'%"></div></div>'
-    +'<div class="bp-progl">'+unitStr(curIdx>=0?ss[curIdx]:null,curPages)+' of '+unitStr(curIdx>=0?ss[curIdx]:null,tot)+' ('+curPct+'%)</div></div>';
+    +'<div class="bp-progl">'+progText(curIdx>=0?ss[curIdx]:null,curPages,tot)+'</div></div>';
 
   document.getElementById("sm-count").textContent=n?(n+' read'+(n!==1?'s':'')):'';
   var body;
@@ -3884,7 +3894,7 @@ function renderSM(){
         +'<div class="rt-head"><span class="rt-n">Read #'+(n-pos)+'</span>'
           +'<button class="sdel" onclick="delS('+i+')" title="Remove this read">'+ICONS.close+'</button></div>'
         +'<div class="rt-bar"><div class="rt-fill" style="width:'+rpct+'%"></div></div>'
-        +'<div class="rt-pages">'+unitStr(x,rp)+' of '+unitStr(x,rtot)+' ('+rpct+'%)</div>'
+        +'<div class="rt-pages">'+progText(x,rp,rtot)+'</div>'
         +'<div class="rt-fmt"><button class="'+(!isAudioRead(x)?'on':'')+'" onclick="setReadFormat('+i+',\'print\')">Print</button>'
           +'<button class="'+(isAudioRead(x)?'on':'')+'" onclick="setReadFormat('+i+',\'audio\')">Audio</button></div>'
         +'<div class="rt-dates">'
@@ -4030,6 +4040,17 @@ function tmrTimerBook(){
 // because typing 255 for 4h 15m on a phone is miserable.
 // Past this, the finish prompt asks him to confirm the duration.
 var TMR_LONG_SEC=24*3600;
+// The medium a RUNNING timer began in. A session is measured in the unit it
+// started with: flipping the read's format mid-run must not change the question
+// asked at Finish, or one session ends up holding a start in minutes and an end
+// in pages. A timer already in flight when this shipped carries no stamp, so it
+// falls back to the read and finishes exactly as it would have.
+function tmrSessionFmt(b){
+  if(activeTimer && (activeTimer.fmt==='audio'||activeTimer.fmt==='print')) return activeTimer.fmt;
+  return readFormat(curReadOf(b));
+}
+function tmrSessionAudio(b){ return tmrSessionFmt(b)==='audio'; }
+function fmtTotal(b,fmt){ return readTotal(b,{format:fmt}); }
 function tmrPosField(id,audio,val,max){
   val=Math.max(0,Math.round(val||0));
   if(!audio) return '<input type="number" id="'+id+'" min="0"'+(max?' max="'+max+'"':'')+' value="'+val+'"/>';
@@ -4060,7 +4081,7 @@ function renderTimerTab(){
     card='<div class="tmr-book'+(locked?' locked':'')+'"'+(locked?'':' onclick="tmrOpenPicker()"')+'>'
       +'<div class="tmr-book-main"><div class="tmr-book-title">'+esc(b.title)+'</div>'+(seriesText(b)?'<div class="tmr-book-series">'+esc(seriesText(b))+'</div>':'')+'<div class="tmr-book-by">by '+esc(b.author)+'</div>'
       +'<div class="tmr-prog"><div class="tmr-prog-fill" style="width:'+pg.pct+'%"></div></div>'
-      +'<div class="tmr-prog-txt">'+curUnitStr(b,pg.cur)+' of '+curUnitStr(b,pg.total)+' ('+pg.pct+'%)</div></div>'
+      +'<div class="tmr-prog-txt">'+progText(curReadOf(b),pg.cur,pg.total)+'</div></div>'
       +'</div>';
   } else {
     card='<div class="tmr-book empty" onclick="tmrOpenPicker()"><div class="tmr-book-main"><div class="tmr-book-title">Select a book</div><div class="tmr-book-by">Tap to choose</div></div></div>';
@@ -4092,13 +4113,17 @@ function renderTimerTab(){
   else if(tmrMode==='finishprompt'){
     // Resolve the timer's OWN book — the card above may be showing a different
     // one when the timer is running against another list.
-    var _fb=tmrTimerBook(), _fa=isAudioRead(curReadOf(_fb));
-    var sug=_fb?Math.max(activeTimer.startPage||0,currentPageFor(_fb)||0):((activeTimer&&activeTimer.startPage)||0);
-    var _fmax=_fb?curTotalOf(_fb):0;
+    var _fb=tmrTimerBook(), _ffmt=tmrSessionFmt(_fb), _fa=(_ffmt==='audio');
+    // Read's format changed mid-session: its recorded position is in the OTHER
+    // unit now, so suggesting it would mix them. Fall back to where we started.
+    var _switched=!!_fb && readFormat(curReadOf(_fb))!==_ffmt;
+    var sug=(_fb&&!_switched)?Math.max(activeTimer.startPage||0,currentPageFor(_fb)||0):((activeTimer&&activeTimer.startPage)||0);
+    var _fmax=_fb?fmtTotal(_fb,_ffmt):0;
     // A timer left running overnight would otherwise bank its whole run. Past a
     // day, show what it recorded and let him put in what he actually read.
     var _elapsed=tmrElapsedDisplaySec(), _longRun=_elapsed>=TMR_LONG_SEC;
     controls='<div class="tmr-pageform"><label>'+(_fa?'Stopped at':'Finish at page')+'</label>'+tmrPosField('tmr-endpage',_fa,sug,_fmax)
+      +(_switched?'<div class="tmr-longnote">This session started as '+(_fa?'audio':'print')+', so it finishes in '+(_fa?'hours and minutes':'pages')+'. The format you just picked applies to the next one.</div>':'')
       +(_longRun?('<div class="tmr-longnote">This ran for '+formatHMS(_elapsed)+'. If the timer was left going, correct the time below \u2014 it saves exactly what you enter.</div>'
                  +'<label class="tmr-l2">Time read</label>'+tmrPosField('tmr-dur',true,Math.round(_elapsed/60),0)):'')
       +'<div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrConfirmFinish()">Save session</button><button class="tmr-ghost" onclick="tmrKeepReading()">Keep reading</button></div></div>'; }
@@ -4136,7 +4161,7 @@ function tmrBegin(){
   // readings like "990 of 508 pages (195%)". Clamp against the book the timer
   // is actually starting on, not books[tmrSelIdx], which is -1 until he picks.
   var _capS=curTotalOf(b); if(_capS>0 && page>_capS) page=_capS;
-  activeTimer={ listId:activeId, bookIdx:idx, bookTitle:b.title, bookAuthor:b.author, bookPages:b.pages, startTime:Date.now(), startPage:page, accumulatedSec:0, pausedAt:null, finishing:false };
+  activeTimer={ listId:activeId, bookIdx:idx, bookTitle:b.title, bookAuthor:b.author, bookPages:b.pages, fmt:readFormat(curReadOf(b)), startTime:Date.now(), startPage:page, accumulatedSec:0, pausedAt:null, finishing:false };
   if(!b.isReading){ b.isReading=true; saveCurrentList(); if(currentTab==='list') renderTable(); }
   saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState();
 }
@@ -4150,10 +4175,11 @@ function tmrKeepReading(){ if(!activeTimer) return; activeTimer.finishing=false;
 function tmrConfirmFinish(){
   if(!activeTimer) return;
   var _fb=tmrTimerBook();
-  var endPage=tmrPosRead('tmr-endpage',isAudioRead(curReadOf(_fb)));
+  var _cfmt=tmrSessionFmt(_fb);
+  var endPage=tmrPosRead('tmr-endpage',_cfmt==='audio');
   if(isNaN(endPage)){ tmrKeepReading(); return; }
   if(endPage<0) endPage=0;
-  var _capE=curTotalOf(_fb); if(_capE>0 && endPage>_capE) endPage=_capE;
+  var _capE=fmtTotal(_fb,_cfmt); if(_capE>0 && endPage>_capE) endPage=_capE;
   var sec=_tmrFrozenSec, idx=activeTimer.bookIdx, startPage=activeTimer.startPage;
   // A corrected duration on a marathon session. Blank boxes mean "leave it as
   // recorded"; anything longer than the timer actually ran is not accepted.
@@ -4162,7 +4188,9 @@ function tmrConfirmFinish(){
     if(!isNaN(_corr)){ _corr=Math.max(0,_corr)*60; sec=Math.min(_corr,sec); }
   }
   var startTime=activeTimer.startTime-(activeTimer.accumulatedSec||0)*1000;
-  var session={ startTime:startTime, endTime:startTime+sec*1000, durationSec:sec, startPage:startPage, endPage:endPage };
+  // Stamped here, so tagSessionRead and stampFormats both leave it alone: the
+  // session keeps the medium it was actually recorded in.
+  var session={ startTime:startTime, endTime:startTime+sec*1000, durationSec:sec, startPage:startPage, endPage:endPage, fmt:_cfmt };
   if(activeTimer.listId===activeId){ var b=books[idx]; if(b){ b.timerSessions=b.timerSessions||[]; tagSessionRead(b,session); b.timerSessions.push(session); saveCurrentList(); fanOutSession(b.bookId, session, activeId); } }
   else { try{ var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[]; if(arr[idx]){ arr[idx].timerSessions=arr[idx].timerSessions||[]; tagSessionRead(arr[idx],session); arr[idx].timerSessions.push(session); storage.setItem(listKey(activeTimer.listId), JSON.stringify(arr)); fanOutSession(arr[idx].bookId, session, activeTimer.listId); } }catch(e){} }
   activeTimer=null; saveActiveTimer(); tmrStopTick(); _tmrFrozenSec=0; tmrMode='idle'; pushTimerState(); pushWidgetSnapshot();
@@ -4418,7 +4446,7 @@ function renderReadingScreen(){
     return '<div class="rd-card" onclick="openRL('+b.idx+')"><div class="rd-info"><div class="rd-title">'+esc(b.title)+'</div>'
       +(_rst?'<div class="rd-series">'+esc(_rst)+'</div>':'')
       +'<div class="rd-by">'+esc(b.author)+'</div>'
-      +'<div class="rd-pages">'+curUnitStr(b,_rcur)+' / '+curUnitStr(b,curTotalOf(b))+'</div></div></div>';
+      +'<div class="rd-pages">'+(curTotalOf(b)>0?(curUnitStr(b,_rcur)+' / '+curUnitStr(b,curTotalOf(b))):noTotalText(curReadOf(b)))+'</div></div></div>';
   }).join('');
   body.innerHTML=head+'<div class="rd-list">'+cards+'</div>';
 }
@@ -4465,9 +4493,23 @@ function loadHearth(){
       babelHearth.frozen['2026-8-1']=1;
     babelHearth.aug1FreezeRestore=1;
   }
+  // Adopt whatever balance this device is holding into the ledger.
+  if(typeof babelHearth.emEarned!=='number' || typeof babelHearth.emSpent!=='number'){
+    babelHearth.emSpent=babelHearth.emSpent||0;
+    babelHearth.emEarned=babelHearth.emSpent+Math.max(0,babelHearth.embers||0);
+  }
+  // Make-good for the embers the counter bug destroyed: a week of daily and
+  // achievement claims that were recorded but reverted on the next pull. Tops
+  // the balance up to the agreed figure without ever reducing it.
+  var _hMig=false;
+  if(!babelHearth.emberMakeGood){
+    var _owed=120-emBal();
+    if(_owed>0){ emGain(_owed); _hMig=true; }
+    babelHearth.emberMakeGood=1;
+  }
+  emBal();
   // Make-good for a freeze lost to the sync bug above, plus the three spent
   // defending a streak that the de-duplication fix then erased.
-  var _hMig=false;
   if(!babelHearth.freezeGrant2){
     babelHearth.freezes=(babelHearth.freezes||0)+(babelHearth.freezeGrant1?3:4);
     babelHearth.freezeGrant1=1;
@@ -4552,9 +4594,28 @@ function loadHearth(){
     qd.setHours(0,0,0,0); babelHearth.freezeFrom=qd.getTime();
   }
 }
+// Embers are a LEDGER, not a number. A plain balance syncs as a counter, so it
+// follows whichever copy has the newer timestamp — while the claims that earned
+// it are unioned and never shrink. That let a claim be un-paid and then never
+// re-claimed, which is how a week of claiming settled back to 6. Lifetime earned
+// and lifetime spent only ever grow, merge with max, and the balance is derived:
+// no copy of the hearth, however stale, can pull it down.
+function emBal(){
+  // A hearth that has not been through loadHearth — or one that arrived from a
+  // copy predating the ledger — carries only the old balance. Adopt it instead
+  // of reading the missing ledger as zero and wiping the embers.
+  if(typeof babelHearth.emEarned!=='number' || typeof babelHearth.emSpent!=='number'){
+    babelHearth.emSpent=babelHearth.emSpent||0;
+    babelHearth.emEarned=babelHearth.emSpent+Math.max(0,babelHearth.embers||0);
+  }
+  babelHearth.embers=Math.max(0,babelHearth.emEarned-babelHearth.emSpent);
+  return babelHearth.embers;
+}
+function emGain(n){ emBal(); babelHearth.emEarned+=Math.max(0,Math.round(n||0)); return emBal(); }
+function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0)); return emBal(); }
 function saveHearth(){
   try{ storage.setItem('rl_hearth',JSON.stringify(babelHearth)); }catch(e){}
-  try{ if(window.BabelCloud&&BabelCloud.touchSettings) BabelCloud.touchSettings(); }catch(e){}
+  try{ if(window.BabelCloud&&window.BabelCloud.touchSettings) window.BabelCloud.touchSettings(); }catch(e){}
 }
 // Tier ladders: gaps start at one unit and widen gradually, so the next
 // milestone is always "keep reading a while", never a cliff.
@@ -4757,7 +4818,7 @@ function claimAch(key){
   if(!babelHearth.unlocked[key] || achClaimed(key)) return;
   babelHearth.claimedAch=babelHearth.claimedAch||{};
   babelHearth.claimedAch[key]=1;
-  babelHearth.embers+=3;
+  emGain(3);
   saveHearth(); renderHearth();
 }
 function claimTrack(k){
@@ -4767,19 +4828,19 @@ function claimTrack(k){
     if(key.indexOf(k+':')!==0) continue;
     if(!achClaimed(key)){ babelHearth.claimedAch[key]=1; n++; }
   }
-  if(n){ babelHearth.embers+=n*3; saveHearth(); renderHearth(); }
+  if(n){ emGain(n*3); saveHearth(); renderHearth(); }
 }
 function claimAllAch(){
   babelHearth.claimedAch=babelHearth.claimedAch||{};
   var n=0;
   for(var k in babelHearth.unlocked) if(!achClaimed(k)){ babelHearth.claimedAch[k]=1; n++; }
-  if(n){ babelHearth.embers+=n*3; saveHearth(); renderHearth(); }
+  if(n){ emGain(n*3); saveHearth(); renderHearth(); }
 }
 function claimHearth(k){
   var it=null;
   hearthDaily().forEach(function(x){ if(x.k===k) it=x; });
   if(!it||!it.done||it.claimed) return;
-  babelHearth.embers+=it.em;
+  emGain(it.em);
   babelHearth.claims[k]= it.per==='week'?_hWeek():_hDay();
   saveHearth(); renderHearth();
 }
@@ -4880,8 +4941,8 @@ function renderShop(){
   note.textContent=why||'Buy as many as you like \u2014 they bank up.';
 }
 function buyFreeze(){
-  if(babelHearth.embers<50) return;
-  babelHearth.embers-=50; babelHearth.freezes++;
+  if(emBal()<50) return;
+  emSpend(50); babelHearth.freezes++;
   // A freeze covers days from the day you bought it onward — it must never be
   // eaten retroactively by a gap that already happened.
   if(!babelHearth.freezeFrom){ var _t=new Date(); _t.setHours(0,0,0,0); babelHearth.freezeFrom=_t.getTime(); }
@@ -5602,7 +5663,7 @@ function setYearlyGoal(n){
   n=parseInt(n,10); if(isNaN(n)||n<1) n=1; if(n>999) n=999;
   babelYearlyGoal=n;
   try{ storage.setItem('rl_yearlyGoal', String(n)); }catch(e){}
-  try{ if(window.BabelCloud && BabelCloud.touchSettings) BabelCloud.touchSettings(); }catch(e){}
+  try{ if(window.BabelCloud && window.BabelCloud.touchSettings) window.BabelCloud.touchSettings(); }catch(e){}
   var yi=document.getElementById('ygoal-input'); if(yi) yi.value=n;
   renderDeepStats();
 }
@@ -5610,7 +5671,7 @@ function setYearlyGoalFromInput(){ setYearlyGoal(document.getElementById('ygoal-
 function setGoal(min){
   babelGoalMin=min;
   try{ storage.setItem('rl_dailyGoalMin', String(min)); }catch(e){}
-  try{ if(window.BabelCloud && BabelCloud.touchSettings) BabelCloud.touchSettings(); }catch(e){}
+  try{ if(window.BabelCloud && window.BabelCloud.touchSettings) window.BabelCloud.touchSettings(); }catch(e){}
   renderGoalSeg(); renderGoalBar(); renderStreak();
   var rs=document.getElementById('screen-reading'); if(rs && !rs.classList.contains('hidden')) renderReadingScreen();
   showToast('Daily goal: '+(min>=60?(min/60)+' hour'+(min>=120?'s':''):min+' min'));
@@ -5777,7 +5838,11 @@ window.BabelCloud = (function(){
   // Called by setGoal — stamps the local settings time (even signed out, so a
   // later sign-in pushes it) and schedules a push when signed in.
   function touchSettings(){
-    try{ storage.setItem('rl_settingsUpdatedAt', String(Date.now())); }catch(e){}
+    // Strictly newer than the copy this change was made on top of. A pull writes
+    // the CLOUD's timestamp here, so if that ever lands ahead of this device's
+    // clock, a plain Date.now() stamps BEHIND it and the same stale row wins
+    // every pull from then on — which is how claims kept getting reverted.
+    try{ storage.setItem('rl_settingsUpdatedAt', String(Math.max(Date.now(), settingsUpdatedAt()+1))); }catch(e){}
     if(user){ dirty[SETTINGS_ID]=true; schedulePush(); }
   }
 
@@ -5932,7 +5997,16 @@ window.BabelCloud = (function(){
           // is zero", it is a copy with nothing to say. Fall back rather than
           // leaving embers undefined, which renders as "undefined" on the Hearth.
           if(_localH.achReclaim) babelHearth.achReclaim=1;
-          if(typeof babelHearth.embers !=='number') babelHearth.embers =_localH.embers ||0;
+          if(_localH.emberMakeGood) babelHearth.emberMakeGood=1;
+          // Lifetime totals only ever grow, so max is the whole merge — order
+          // and clock skew stop mattering. Only if NEITHER copy carries the
+          // ledger does the old counter rule still apply.
+          if(typeof babelHearth.emEarned==='number' || typeof _localH.emEarned==='number'){
+            babelHearth.emEarned=Math.max(babelHearth.emEarned||0,_localH.emEarned||0);
+            babelHearth.emSpent =Math.max(babelHearth.emSpent ||0,_localH.emSpent ||0);
+            babelHearth.embers  =Math.max(0,babelHearth.emEarned-babelHearth.emSpent);
+          }
+          else if(typeof babelHearth.embers !=='number') babelHearth.embers =_localH.embers ||0;
           if(typeof babelHearth.freezes!=='number') babelHearth.freezes=_localH.freezes||0;
           if(_localH.freezeFrom && !babelHearth.freezeFrom) babelHearth.freezeFrom=_localH.freezeFrom;
           if(_keepNote && !babelHearth.freezeNote) babelHearth.freezeNote=_keepNote;
