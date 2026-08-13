@@ -4504,6 +4504,7 @@ function _hWeek(d){
 }
 function loadHearth(){
   try{ var r=storage.getItem('rl_hearth'); if(r){ var o=JSON.parse(r); for(var k in o) babelHearth[k]=o[k]; } }catch(e){}
+  babelHearthLoaded=true;   // from here on, saving is safe
   ['frozen','claims','unlocked','logins','claimedAch','metEver'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
   // One-time: tiers unlocked before achievements became claimable were paid
   // on unlock, so mark them claimed rather than paying the embers twice.
@@ -4651,7 +4652,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v1';
+var BABEL_VERSION='babel-v2';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -4705,7 +4706,17 @@ function babelShowVersion(){
     setTimeout(function(){ if(!done) el.textContent=BABEL_VERSION.replace('babel-','')+' \u00b7 worker silent'; },1500);
   }catch(e){ el.textContent=BABEL_VERSION.replace('babel-','')+' \u00b7 '+e.message; }
 }
+var babelHearthLoaded=false;
 function saveHearth(){
+  // Boot deferred hearthInit with setTimeout while updateStats ran synchronously
+  // first, so computeStreak's metEver write called saveHearth on the module
+  // DEFAULT hearth and overwrote the stored one. loadHearth then read that empty
+  // hearth and re-applied the make-good, landing on exactly 120 every time.
+  // Refusing to write before the load makes the ordering impossible to get wrong.
+  if(!babelHearthLoaded){
+    try{ console.warn('[Babel] blocked a hearth save before load'); }catch(e){}
+    return;
+  }
   try{ storage.setItem('rl_hearth',JSON.stringify(babelHearth)); }catch(e){}
   try{ if(window.BabelCloud&&window.BabelCloud.touchSettings) window.BabelCloud.touchSettings(); }catch(e){}
 }
@@ -5829,7 +5840,9 @@ storage.init().then(function(){
   loadAll();
   babelGoalMin = parseInt(storage.getItem('rl_dailyGoalMin'),10) || 10;
   babelYearlyGoal = parseInt(storage.getItem('rl_yearlyGoal'),10) || 12;
-  setTimeout(function(){ try{ hearthInit(); }catch(e){} },0);
+  // Synchronous and BEFORE updateStats: computeStreak saves the hearth, so the
+  // hearth must be read from disk first or that save writes over it.
+  try{ hearthInit(); }catch(e){}
   try{ document.getElementById('fab-dice').innerHTML=ICONS.dice; }catch(e){}
   var _ygi=document.getElementById('ygoal-input'); if(_ygi) _ygi.value=babelYearlyGoal;
   renderTopBar();
