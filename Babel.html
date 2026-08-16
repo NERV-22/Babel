@@ -16,6 +16,9 @@
   --surface:#fff;--surface-glass:rgba(255,255,255,0.13);
   --accent:#2db88a;--accent-shadow:rgba(45,184,138,0.2);
   --text:#1a1a1a;--text-muted:rgba(26,26,26,0.52);--border:#ebe8e2;--star:#d4960a;
+  /* Frost is the one colour NOT derived from the theme. A freeze has to read as
+     cold on every palette, including the green and purple ones, so it is fixed. */
+  --frost:#7fb2cc;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{background:var(--bg1)}
@@ -800,6 +803,59 @@ body{padding:0}
 .goal-unit{font-family:sans-serif;font-size:13px;color:var(--text-muted)}
 
 .rd-cal-title{font-family:sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin:6px 0 12px}
+
+/* ── Reading: 14-day magnitude strip ─────────────────────────────────────────
+   Division of labour with the calendar below: the calendar answers "did this
+   day count", the strip answers "how much". Only one of them may encode
+   magnitude, or both become unreadable.
+
+   Bar heights are sqrt-scaled against the period max. Linear scaling flattened
+   every ordinary day to a stub as soon as one 9-hour day entered the window.
+   Above the goal, brightness and glow ride a continuous --i (0 at the goal, 1
+   at the period best) rather than thresholds — a 4x threshold rendered 3h, 5h
+   and 9h days identically, which defeated the point of having a strip.
+
+   Bar colours are NOT set here. They are computed per render in renderStrip()
+   from the live theme accent, because every list carries its own palette and a
+   hardcoded scheme would be wrong on all but one of them. */
+.rd-strip-head{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 9px;gap:10px}
+.rd-strip-tot{font-family:Georgia,serif;font-size:16px;font-weight:700;color:var(--text)}
+.rd-strip-sub{font-family:sans-serif;font-size:11.5px;color:var(--text-muted);text-align:right}
+.rd-strip{display:flex;align-items:flex-end;gap:5px;height:132px;padding:0 2px;position:relative;margin-bottom:22px}
+.rd-goalline{position:absolute;left:0;right:0;border-top:1px dashed var(--border);pointer-events:none;transform-origin:left;animation:rdGline 1s cubic-bezier(.3,.9,.3,1) backwards}
+.rd-goalline span{position:absolute;right:0;top:-14px;font-family:sans-serif;font-size:9.5px;color:var(--text-muted);letter-spacing:.04em}
+@keyframes rdGline{from{transform:scaleX(0);opacity:0}}
+.rd-bar{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .22s cubic-bezier(.3,.9,.3,1),opacity .12s}
+.rd-bar:active{opacity:.55}
+.rd-bar.sel{transform:translateY(-6px)}
+.rd-bar.sel .rd-bfill{outline:1.5px solid var(--accent);outline-offset:2px}
+/* Cap row reserves space above every fill so the best-day dot has somewhere to
+   sit without being clipped by the fill's own overflow:hidden. */
+.rd-bcap{height:7px;flex:none;display:flex;align-items:center;justify-content:center}
+.rd-bcap i{width:4px;height:4px;border-radius:50%;background:var(--accent);display:none}
+.rd-bar.best .rd-bcap i{display:block}
+.rd-bfill{width:100%;border-radius:4px 4px 2px 2px;position:relative;overflow:hidden;display:flex;flex-direction:column-reverse;gap:2px;justify-content:flex-start;transform-origin:bottom;transition:transform .55s cubic-bezier(.25,.9,.3,1)}
+.rd-bfill.grow{transform:scaleY(0)}
+/* Each session in the day is its own block, so a two-sitting day is legible
+   without tapping into it. */
+.rd-seg{width:100%;border-radius:2px;flex:none}
+.rd-blab{font-family:sans-serif;font-size:9.5px;color:var(--text-muted);line-height:12px;height:12px}
+.rd-bar.met .rd-blab{color:var(--text)}
+/* Today's bar breathes until the goal is cleared. Opacity on an overlay rather
+   than an animated box-shadow, so it stays on the compositor. */
+.rd-bfill::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;box-shadow:inset 0 0 12px 2px var(--accent-shadow)}
+.rd-bar.istoday.unmet .rd-bfill::after{animation:rdTodayBar 2.4s ease-in-out infinite}
+@keyframes rdTodayBar{0%,100%{opacity:0}50%{opacity:1}}
+/* The period's best bar catches a slow travelling highlight. */
+.rd-bar.best .rd-shim{position:absolute;left:0;right:0;bottom:-45%;height:45%;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(255,255,255,.38),transparent);
+  animation:rdShim 5s ease-in-out infinite}
+@keyframes rdShim{0%,62%{transform:translateY(0)}100%{transform:translateY(-330%)}}
+/* Clearing the goal surges today's bar past the line. */
+.rd-bfill.surge{animation:rdSurge .55s cubic-bezier(.3,1.4,.4,1)}
+@keyframes rdSurge{0%{transform:scaleY(1)}45%{transform:scaleY(1.12)}100%{transform:scaleY(1)}}
+.rd-strip-empty{font-family:sans-serif;font-size:12.5px;color:var(--text-muted);text-align:center;padding:34px 10px;margin-bottom:22px;border:1px dashed var(--border);border-radius:var(--radius,14px)}
+
 /* ── Reading calendar ────────────────────────────────────────────────────────
    Real month calendar. Each day carries a progress ring toward the daily
    goal; goal-met days get a filled accent disc. Replaces the old GitHub-
@@ -812,24 +868,61 @@ body{padding:0}
 .cal-nav button:disabled{opacity:.3;cursor:default}
 .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
 .cal-dow span{text-align:center;font-family:sans-serif;font-size:10px;letter-spacing:.05em;color:var(--text-muted)}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.cal-day{position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:9px 0}
+.cal-day{position:relative;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;animation:calPop .45s cubic-bezier(.2,.9,.3,1) backwards}
+@keyframes calPop{from{opacity:0;transform:translateY(7px)}}
+/* Fixed 30px, uniform glow. Dot size and glow must NEVER scale with minutes:
+   with both the calendar and the strip encoding magnitude, neither was
+   readable. Four states only — met, frozen, partial, missed. */
+.cal-dot{position:relative;z-index:2;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .14s}
+.cal-day:active .cal-dot{transform:scale(.85)}
 .cal-day svg{position:absolute;inset:0;width:100%;height:100%}
 .cal-num{position:relative;font-family:sans-serif;font-size:12px;color:var(--text);z-index:1}
+.cal-dot.met{background:var(--accent);box-shadow:0 0 10px var(--accent-shadow)}
+.cal-dot.met .cal-num{color:var(--surface);font-weight:700}
+.cal-dot.frozen{border:1.5px dashed var(--frost)}
+.cal-dot.frozen .cal-num{color:var(--frost)}
+.cal-dot.part{border:1.5px solid var(--border)}
+.cal-dot.part .cal-num{color:var(--text-muted)}
 .cal-day.zero .cal-num{color:var(--text-muted)}
-.cal-day.met .cal-num{color:var(--surface);font-weight:700}
 .cal-day.future .cal-num{color:var(--text-muted);opacity:.4}
-.cal-day.off{cursor:default}
+.cal-day.off{cursor:default;animation:none}
+/* Today breathes only while the goal is unmet. */
+.cal-dot.todaymark{border:1.5px solid var(--accent)}
+.cal-dot.todaymark::after{content:"";position:absolute;inset:-2px;border-radius:50%;box-shadow:0 0 14px 2px var(--accent-shadow);opacity:0;pointer-events:none;animation:calBreathe 3.4s ease-in-out infinite}
+@keyframes calBreathe{0%,100%{opacity:0}50%{opacity:1}}
+/* Chain joining consecutive counted days across a week row. */
+.cal-link{position:absolute;top:50%;right:50%;width:100%;height:2px;margin-top:-1px;background:var(--accent);opacity:0;z-index:1;transition:opacity .4s}
+.cal-day.ch .cal-link{opacity:.45}
+/* Goal cleared: the day ripples once. */
+.cal-ripple{position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);pointer-events:none;z-index:3;animation:calRipple .9s ease-out forwards}
+@keyframes calRipple{to{transform:scale(3.4);opacity:0}}
+.rd-ember{position:fixed;width:5px;height:5px;border-radius:50%;background:var(--accent);pointer-events:none;z-index:9999;animation:rdEmber 1.5s ease-out forwards}
+@keyframes rdEmber{to{transform:translate(var(--dx,0),-95px) scale(.2);opacity:0}}
 .cal-summary{margin-top:10px;font-family:sans-serif;font-size:12px;color:var(--text-muted);text-align:center}
 .cal-detail{margin-top:6px;font-family:sans-serif;font-size:12.5px;color:var(--text);text-align:center;min-height:17px}
 .cal-detail strong{color:var(--accent)}
-/* Goal-met days glow; intensity (--cal-glow) rises with overflow past the goal.
-   At 2x the goal the day "blazes" — a slow radiating pulse mixing accent + gold. */
-.cal-day.met svg{filter:drop-shadow(0 0 var(--cal-glow,2px) var(--accent))}
-.cal-day.met.blaze svg{animation:calBlaze 3.2s ease-in-out infinite}
-@keyframes calBlaze{
-  0%,100%{filter:drop-shadow(0 0 var(--cal-glow,7px) var(--accent)) drop-shadow(0 0 3px var(--star))}
-  50%{filter:drop-shadow(0 0 9px var(--accent)) drop-shadow(0 0 6px var(--star))}
+/* Superseded: --cal-glow scaled the glow from 2px to 7px by overflow past the
+   goal, and .blaze pulsed at 2x+. Both encoded magnitude in the calendar, which
+   is the strip's job now. Removed rather than tuned — see the note on .cal-dot. */
+
+/* Streak card motion. */
+.rd-streak-num{animation:rdStreakPulse 3s ease-in-out infinite}
+@keyframes rdStreakPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+.rd-streakcard{position:relative;overflow:hidden}
+.rd-streakcard::after{content:"";position:absolute;top:0;left:-60%;width:38%;height:100%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,var(--accent-shadow),transparent);
+  animation:rdSheen 7s ease-in-out infinite}
+@keyframes rdSheen{0%,74%{transform:translateX(0)}100%{transform:translateX(500%)}}
+
+/* Every effect above is decoration. None of it may run for someone who has
+   asked the platform for stillness. */
+@media (prefers-reduced-motion:reduce){
+  .rd-strip *,.rd-strip,.cal-wrap *,.cal-wrap,.rd-streakcard,.rd-streakcard::after,
+  .rd-streak-num,.rd-bfill,.rd-bfill::after,.rd-goalline,.cal-day,.cal-dot,.cal-dot::after{
+    animation:none!important;transition:none!important;transform:none!important}
+  .rd-bfill.grow{transform:none!important}
+  .rd-streakcard::after,.rd-bfill::after,.cal-dot.todaymark::after{display:none}
 }
 
 
@@ -4471,9 +4564,17 @@ function renderReadingScreen(){
     +'<span class="rd-fz-t">freeze'+(_fz!==1?'s':'')+' banked</span></div>'
     +'<button class="rd-fz-b" onclick="freezeToday()"'+((!_fz||_fzToday||s.todayMet)?' disabled':'')+'>'
     +ICONS.snow+(_fzToday?'Today frozen':'Freeze today')+'</button></div>';
+  head+=renderStrip();
   head+='<div class="rd-cal-title">Reading activity</div>'+renderCalendar();
+  // Was the goal just cleared? Compared against the last render, so the
+  // celebration fires once on the transition and never on a plain repaint.
+  var _fireGoal = (_rdLastTodayMet===false && s.todayMet===true);
+  _rdLastTodayMet = !!s.todayMet;
+  var _totalSec = _rdLastTotal;
   if(!reading.length){
     body.innerHTML=head+'<div class="rd-empty">No books in progress.<br>Mark a book as <b>reading</b> in your Library, or open its timer to start a session.</div>';
+    rdStripAnimate(_totalSec);
+    if(_fireGoal) rdGoalMoment();
     return;
   }
   var cards=reading.map(function(b){
@@ -4484,6 +4585,8 @@ function renderReadingScreen(){
       +'<div class="rd-pages">'+(curTotalOf(b)>0?(curUnitStr(b,_rcur)+' / '+curUnitStr(b,curTotalOf(b))):noTotalText(curReadOf(b)))+'</div></div></div>';
   }).join('');
   body.innerHTML=head+'<div class="rd-list">'+cards+'</div>';
+  rdStripAnimate(_totalSec);
+  if(_fireGoal) rdGoalMoment();
 }
 
 /* ---- status filter pills ---- */
@@ -4652,7 +4755,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v3';
+var BABEL_VERSION='babel-v4';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -5601,6 +5704,262 @@ function _gatherDayStats(){
   return map;
 }
 
+/* Per-day session lengths {key:[sec,sec,...]}, oldest first, across all lists.
+   The strip needs one entry per session to draw them as stacked blocks.
+   _sessionsForDay does the same job for a single day, but re-reads and re-parses
+   every non-active list from storage on each call — fine for one tap, ruinous
+   for the strip, which would pay that cost fourteen times per render. Same
+   de-duplication by startTime as _gatherDayStats: a book sitting in two lists
+   must not count twice. */
+function _gatherSessionsByDay(){
+  var map={}, seen={};
+  function addTS(arr){(arr||[]).forEach(function(s){
+    if(!s||!s.startTime||s.detached)return;
+    if(seen[s.startTime])return; seen[s.startTime]=1;
+    var k=_dayKey(new Date(s.startTime));
+    if(!map[k])map[k]=[];
+    map[k].push({t:s.startTime,sec:s.durationSec||0});
+  });}
+  books.forEach(function(b){addTS(b.timerSessions);});
+  lists.forEach(function(l){
+    if(l.id===activeId)return;
+    try{var raw=storage.getItem(listKey(l.id));if(!raw)return;JSON.parse(raw).forEach(function(b){addTS(b.timerSessions);});}catch(e){}
+  });
+  for(var k in map){
+    map[k].sort(function(a,b){return a.t-b.t;});
+    map[k]=map[k].map(function(x){return x.sec;});
+  }
+  return map;
+}
+
+/* ---- strip colour: derived from the live theme, never hardcoded ----
+   Each list carries its own palette (applyTheme writes --accent, --bg1 and the
+   rest at runtime), so a fixed scheme would be wrong on every theme but one.
+   The mixing is done here rather than with CSS color-mix, which is too new to
+   rely on in the Capacitor Android shell's WebView. */
+function _rdRGB(v){
+  v=String(v||'').trim();
+  var m=/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(v);
+  if(m){
+    var h=m[1];
+    if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];
+  }
+  m=/rgba?\(([^)]+)\)/i.exec(v);
+  if(m){
+    var p=m[1].split(',');
+    if(p.length>=3) return [parseInt(p[0],10)||0,parseInt(p[1],10)||0,parseInt(p[2],10)||0];
+  }
+  return null;
+}
+function _rdVar(name,fb){
+  try{
+    var v=getComputedStyle(document.documentElement).getPropertyValue(name);
+    var c=_rdRGB(v); if(c) return c;
+  }catch(e){}
+  return fb;
+}
+function _rdMix(a,b,t){
+  t=Math.max(0,Math.min(1,t||0));
+  return [Math.round(a[0]+(b[0]-a[0])*t),Math.round(a[1]+(b[1]-a[1])*t),Math.round(a[2]+(b[2]-a[2])*t)];
+}
+function _rdCss(c,a){
+  return (a==null) ? 'rgb('+c[0]+','+c[1]+','+c[2]+')'
+                   : 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')';
+}
+function _rdReduced(){
+  try{ return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  catch(e){ return false; }
+}
+
+/* ---- reading: 14-day magnitude strip ---- */
+var _rdSelKey='';          // which bar is currently lifted
+var _rdLastTodayMet=null;  // for spotting the moment the goal is cleared
+var _rdLastTotal=0;        // period total from the last renderStrip, for the count-up
+
+// Sqrt so that ordinary 45-90 minute days stay distinguishable from each other
+// even when a nine-hour day is setting the ceiling.
+function _rdBarH(sec,max,usable){
+  if(max<=0||sec<=0) return 3;
+  return Math.max(3, Math.round(Math.sqrt(sec/max)*usable));
+}
+function _rdFmt(sec){
+  var m=Math.round(sec/60);
+  return m>=60 ? (Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m') : (m+'m');
+}
+
+function renderStrip(){
+  var today=new Date(); today.setHours(0,0,0,0);
+  var stats=_gatherDayStats(), sess=_gatherSessionsByDay(), goalSec=babelGoalMin*60;
+  var USABLE=103;  // 132px box less the cap row, label row and their gaps
+
+  var days=[], maxSec=0, totalSec=0;
+  for(var i=13;i>=0;i--){
+    var d=new Date(today); d.setDate(d.getDate()-i);
+    var key=_dayKey(d), sec=(stats[key]||{sec:0}).sec;
+    // A day the ledger protects reads as banked even if it has some minutes on
+    // it — the ledger is what the streak is built from, so the strip must not
+    // contradict it by drawing the day short of the goal.
+    var banked = !!((babelHearth.frozen && babelHearth.frozen[key]) ||
+                    (babelHearth.metEver && babelHearth.metEver[key] && sec<goalSec));
+    days.push({key:key,num:d.getDate(),sec:sec,parts:(sess[key]||[]).slice(),
+               banked:banked,isToday:d.getTime()===today.getTime()});
+    if(!banked && sec>maxSec) maxSec=sec;
+    totalSec+=sec;
+  }
+  _rdLastTotal=totalSec;
+  // Keep the goal line inside the box even on a week where nothing reached it.
+  var max=Math.max(maxSec, goalSec*1.15, 1);
+
+  var accent=_rdVar('--accent',[45,184,138]);
+  var bg=_rdVar('--bg1',[250,249,247]);
+  var white=[255,255,255];
+  var dim=_rdMix(accent,bg,0.55);          // below-goal fill
+  var deep=_rdMix(accent,[0,0,0],0.28);    // foot of a met bar at the goal
+  var frost=_rdVar('--frost',[127,178,204]);
+  var hatch='repeating-linear-gradient(45deg,'+_rdCss(frost,0.55)+','+_rdCss(frost,0.55)+' 3px,'
+    +_rdCss(_rdMix(frost,bg,0.7),0.55)+' 3px,'+_rdCss(_rdMix(frost,bg,0.7),0.55)+' 6px)';
+
+  var bars='', bestTaken=false;
+  for(var j=0;j<days.length;j++){
+    var day=days[j], h, fillStyle='', segs='', cls='rd-bar';
+    if(day.banked){
+      h=_rdBarH(goalSec,max,USABLE);
+      fillStyle='background:'+hatch;
+      cls+=' frz';
+    } else if(day.sec<=0){
+      h=3;
+      fillStyle='background:var(--border)';
+      cls+=' zero';
+    } else {
+      h=_rdBarH(day.sec,max,USABLE);
+      var met=day.sec>=goalSec, bgCss, glow='';
+      if(met){
+        cls+=' met';
+        // Continuous, not tiered: i runs 0 at the goal to 1 at the period best.
+        var span=max-goalSec;
+        var i=span>0?Math.pow(Math.min(1,(day.sec-goalSec)/span),0.65):0;
+        bgCss='linear-gradient(180deg,'+_rdCss(_rdMix(accent,white,i*0.72))+','
+              +_rdCss(_rdMix(deep,accent,i*0.55))+')';
+        glow=';box-shadow:0 0 '+Math.round(i*20)+'px '+_rdCss(accent,(0.15+i*0.5).toFixed(2));
+        // Two days can tie for the period best. Only one may carry the marker,
+        // or the strip grows a second dot and a second travelling highlight.
+        if(!bestTaken && day.sec===maxSec && maxSec>=goalSec){ cls+=' best'; bestTaken=true; }
+      } else {
+        bgCss=_rdCss(dim);
+        cls+=' unmet';
+      }
+      // Sessions stack inside the bar, so a two-sitting day shows as two blocks.
+      var parts=day.parts.filter(function(p){return p>0;});
+      if(parts.length>1){
+        // Gaps come out of the bar, not on top of it, and a short bar drops the
+        // 3px floor rather than overflowing its own height into the clip.
+        var gaps=2*(parts.length-1), avail=h-gaps;
+        if(avail>=parts.length*3){
+          // Largest-remainder apportionment. Rounding each block independently
+          // overflowed the bar by a pixel or two on some splits, and the fill
+          // clips its overflow, so the error was invisible but real.
+          var raw=parts.map(function(p){ return avail*p/day.sec; });
+          var hs=raw.map(function(x){ return Math.max(3,Math.floor(x)); });
+          var sum=hs.reduce(function(a,b){ return a+b; },0);
+          var order=raw.map(function(_,i){ return i; }).sort(function(a,b){
+            return (raw[b]-Math.floor(raw[b]))-(raw[a]-Math.floor(raw[a]));
+          });
+          var guard=0;
+          while(sum<avail && guard++<400){ hs[order[(guard-1)%hs.length]]++; sum++; }
+          guard=0;
+          while(sum>avail && guard++<400){
+            var gi=order[order.length-1-((guard-1)%hs.length)];
+            if(hs[gi]>3){ hs[gi]--; sum--; }
+          }
+          segs=hs.map(function(hh){
+            return '<div class="rd-seg" style="height:'+hh+'px;background:'+bgCss+glow+'"></div>';
+          }).join('');
+        } else {
+          // Too short to split legibly — draw it solid rather than as slivers.
+          segs='';
+        }
+      }
+      fillStyle = segs ? '' : ('background:'+bgCss+glow);
+    }
+    if(day.isToday){
+      cls+=' istoday';
+      if(day.sec<goalSec && !day.banked && cls.indexOf(' unmet')<0) cls+=' unmet';
+    }
+    if(day.key===_rdSelKey) cls+=' sel';
+    bars+='<div class="'+cls+'" data-k="'+day.key+'" onclick="rdBarTap(\''+day.key+'\')">'
+      +'<div class="rd-bcap"><i></i></div>'
+      +'<div class="rd-bfill grow" style="height:'+h+'px;'+fillStyle+'">'+segs
+      +(cls.indexOf(' best')>=0?'<div class="rd-shim"></div>':'')+'</div>'
+      +'<div class="rd-blab">'+day.num+'</div></div>';
+  }
+
+  var goalH=_rdBarH(goalSec,max,USABLE)+17;  // +17 clears the label row and gap
+  var head='<div class="rd-strip-head"><span class="rd-strip-tot" id="rd-strip-tot">'+_rdFmt(totalSec)+'</span>'
+    +'<span class="rd-strip-sub">avg '+_rdFmt(totalSec/14)+' \u00b7 best '+_rdFmt(maxSec)+'</span></div>';
+  return '<div class="rd-cal-title">Last 14 days</div>'+head
+    +'<div class="rd-strip" id="rd-strip">'
+    +'<div class="rd-goalline" style="bottom:'+goalH+'px"><span>'+babelGoalMin+' min goal</span></div>'
+    +bars+'</div>';
+}
+
+// Called after the strip markup is in the DOM: releases the grow-in and runs
+// the header count-up. Both are skipped outright under reduced motion.
+function rdStripAnimate(totalSec){
+  var strip=document.getElementById('rd-strip'); if(!strip) return;
+  var fills=strip.querySelectorAll('.rd-bfill');
+  if(_rdReduced()){
+    Array.prototype.forEach.call(fills,function(f){f.classList.remove('grow');});
+    return;
+  }
+  Array.prototype.forEach.call(fills,function(f,i){
+    setTimeout(function(){ f.classList.remove('grow'); }, 60+i*55);
+  });
+  var el=document.getElementById('rd-strip-tot');
+  if(el && totalSec>0){
+    var t0=performance.now();
+    (function step(t){
+      var p=Math.min(1,(t-t0)/900), e=1-Math.pow(1-p,3);
+      el.textContent=_rdFmt(totalSec*e);
+      if(p<1) requestAnimationFrame(step);
+    })(t0);
+  }
+}
+
+// Bars open the existing day sheet. Deliberately not a second detail panel —
+// the day sheet already lists every session and can delete them.
+function rdBarTap(key){
+  _rdSelKey=key;
+  var strip=document.getElementById('rd-strip');
+  if(strip) Array.prototype.forEach.call(strip.querySelectorAll('.rd-bar'),function(b){
+    b.classList.toggle('sel', b.getAttribute('data-k')===key);
+  });
+  if(!_rdReduced()){ try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){} }
+  openDaySheet(key);
+}
+
+// Fired once on the render where today first clears the goal.
+function rdGoalMoment(){
+  if(_rdReduced()) return;
+  try{ if(navigator.vibrate) navigator.vibrate([12,40,22]); }catch(e){}
+  var bar=document.querySelector('#rd-strip .rd-bar.istoday .rd-bfill');
+  if(bar){ bar.classList.remove('surge'); void bar.offsetWidth; bar.classList.add('surge'); }
+  var dot=document.querySelector('.cal-day.istoday .cal-dot');
+  if(!dot) return;
+  var r=document.createElement('div'); r.className='cal-ripple';
+  dot.appendChild(r); setTimeout(function(){ if(r.parentNode) r.parentNode.removeChild(r); },900);
+  var box=dot.getBoundingClientRect();
+  for(var i=0;i<16;i++){
+    var e=document.createElement('div'); e.className='rd-ember';
+    e.style.left=(box.left+box.width/2)+'px';
+    e.style.top=(box.top+box.height/2)+'px';
+    e.style.setProperty('--dx',((Math.random()-0.5)*90|0)+'px');
+    e.style.animationDelay=(Math.random()*0.35).toFixed(2)+'s';
+    document.body.appendChild(e);
+    (function(node){ setTimeout(function(){ if(node.parentNode) node.parentNode.removeChild(node); },2000); })(e);
+  }
+}
+
 function renderCalendar(){
   var today=new Date(); today.setHours(0,0,0,0);
   if(_calY===null){_calY=today.getFullYear();_calM=today.getMonth();}
@@ -5610,51 +5969,49 @@ function renderCalendar(){
   var daysInMonth=new Date(_calY,_calM+1,0).getDate();
   var lead=first.getDay(); // 0=Sun — blanks before day 1
   var atCurrent=(_calY===today.getFullYear() && _calM===today.getMonth());
-  var C=2*Math.PI*16; // ring circumference (r=16 in a 40x40 viewBox)
+  var C=2*Math.PI*13.5; // ring circumference (r=13.5 in the 30x30 dot viewBox)
 
   var cells='';
   for(var i=0;i<lead;i++) cells+='<div class="cal-day off"></div>';
-  var metDays=0, monthSec=0;
+  var metDays=0, monthSec=0, prevCounted=false;
   for(var day=1;day<=daysInMonth;day++){
     var d=new Date(_calY,_calM,day);
     var key=_dayKey(d);
     var st=map[key]||{sec:0,pages:0};
     var isFuture=d>today, isToday=(d.getTime()===today.getTime());
     var pct=goalSec>0?Math.min(st.sec/goalSec,1):0;
-    var cls, svg='', sty='';
-    if(isFuture){ cls='future'; }
-    else if(pct>=1){
-      cls='met'; metDays++;
-      // Overflow past the goal fills a gold arc toward 2x goal (40 min on a
-      // 30-min goal = 33% gold ring). Glow intensity scales with overflow;
-      // at 2x+ the day earns a slow radiating pulse.
-      var over=Math.min((st.sec-goalSec)/goalSec,1);
-      svg='<circle cx="20" cy="20" r="16" fill="var(--accent)"/>';
-      if(over>0.01) svg+='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--star)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="'+(over*C).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 20 20)"/>';
-      if(over>=1) cls+=' blaze';
-      sty=' style="--cal-glow:'+(2+over*5).toFixed(1)+'px"';
+    // Four states, nothing scaled by minutes. The calendar answers "did this
+    // day count"; the strip above answers "how much".
+    var banked = !!((babelHearth.frozen && babelHearth.frozen[key]) ||
+                    (babelHearth.metEver && babelHearth.metEver[key]));
+    var cls, dotCls, svg='', counted=false;
+    if(isFuture){ cls='future'; dotCls=''; }
+    else if(pct>=1){ cls='met'; dotCls='met'; metDays++; counted=true; }
+    else if(banked){
+      // Protected by the ledger: a freeze, or a day that met the goal under an
+      // older rule. It outranks the partial arc — drawing it short of the goal
+      // would make the calendar contradict the streak it is built from.
+      cls='frozen'; dotCls='frozen'; counted=true;
     }
     else if(st.sec>0){
-      cls='part';
-      svg='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-dasharray="'+(pct*C).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 20 20)"/>';
+      cls='part'; dotCls='part';
+      svg='<circle cx="15" cy="15" r="13.5" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="'+(pct*C).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 15 15)"/>';
     }
-    else if(babelHearth.metEver&&babelHearth.metEver[key]){
-      // Banked in the ledger with no minutes recorded — a day protected by a
-      // freeze whose mark was lost, or one that counted under an older rule.
-      // Drawing it blank made the calendar contradict the streak.
-      cls='frozen';
-      svg='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="3 3"/>';
-    }
-    else if(babelHearth.frozen&&babelHearth.frozen[key]){
-      cls='frozen';
-      svg='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="3 3"/>';
-    }
-    else { cls='zero'; }
+    else { cls='zero'; dotCls=''; }
     if(!isFuture) monthSec+=st.sec;
-    if(isToday && cls!=='met')
-      svg+='<circle cx="20" cy="20" r="16" fill="none" stroke="var(--text-muted)" stroke-width="1" opacity="0.5"/>';
+    if(isToday){
+      cls+=' istoday';
+      if(dotCls!=='met') dotCls+=(dotCls?' ':'')+'todaymark';
+    }
+    // Chain: joins a counted day back to a counted day immediately before it,
+    // except across a week break where the link would have nowhere to go.
+    if(counted && prevCounted && (lead+day-1)%7!==0) cls+=' ch';
+    prevCounted=isFuture?false:counted;
     var tapFn = isFuture ? '' : ' onclick="calDayTap(\''+key+'\');openDaySheet(\''+key+'\')"';
-    cells+='<div class="cal-day '+cls+'"'+sty+tapFn+'><svg viewBox="0 0 40 40">'+svg+'</svg><span class="cal-num">'+day+'</span></div>';
+    cells+='<div class="cal-day '+cls+'" style="animation-delay:'+((lead+day)*18)+'ms"'+tapFn+'>'
+      +'<div class="cal-link"></div>'
+      +'<div class="cal-dot '+dotCls+'"><svg viewBox="0 0 30 30">'+svg+'</svg>'
+      +'<span class="cal-num">'+day+'</span></div></div>';
   }
 
   var h=Math.floor(monthSec/3600), m=Math.round((monthSec%3600)/60);
