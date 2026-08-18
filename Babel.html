@@ -150,11 +150,6 @@ tbody tr.is-read .title-series{opacity:.6}
 .chk.checked{background:var(--accent);border-color:var(--accent)}
 .chk.checked::after{content:"\2713";color:#fff;font-size:11px;font-weight:700}
 .showing-count{margin-top:10px;font-size:12px;color:var(--text-muted);font-family:sans-serif}
-#global-tooltip{position:fixed;z-index:99999;background:var(--surface)!important;border:1px solid var(--border);border-radius:10px;padding:12px 14px;width:320px;box-shadow:0 4px 24px rgba(0,0,0,.25);font-size:12px;line-height:1.65;color:var(--text);font-family:sans-serif;pointer-events:none;opacity:0;transition:opacity .15s;max-height:220px;overflow-y:auto;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-#global-tooltip.visible{opacity:1;pointer-events:auto}
-#global-tooltip .summary-tooltip-title{font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;font-family:sans-serif;text-transform:uppercase;letter-spacing:.5px}
-#global-tooltip .summary-tooltip-series{font-size:11px;color:var(--text-muted);margin-bottom:8px;margin-top:-2px;font-family:sans-serif;font-style:italic}
-#global-tooltip .summary-no-text{color:var(--text-muted);font-style:italic}
 .genre-grid{display:flex;flex-direction:column;gap:28px}
 .genre-header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:8px}
 .genre-name-row{display:flex;align-items:center;gap:8px}
@@ -549,6 +544,15 @@ body{padding:0}
 .sheet-overlay.hidden{display:none}
 .sheet{width:100%;max-width:600px;max-height:90vh;overflow-y:auto;background:var(--surface);border-radius:20px 20px 0 0;padding:6px 16px 26px}
 .sheet-grab{width:42px;height:4px;border-radius:99px;background:var(--border);margin:8px auto 4px;cursor:pointer}
+/* Description sheet. Replaces the old floating tooltip, which was anchored to
+   the tapped card and so got clipped by the viewport on long summaries and
+   covered the cards underneath it. A sheet has room for the whole text and
+   dismisses the same way as every other sheet in the app. */
+.desc-head{padding:4px 2px 0}
+.desc-title{font-family:Georgia,serif;font-size:18px;font-weight:700;color:var(--text);line-height:1.3}
+.desc-sub{font-family:sans-serif;font-size:12px;color:var(--text-muted);margin-top:4px}
+.desc-body{font-family:Georgia,serif;font-size:14.5px;line-height:1.7;color:var(--text);margin-top:14px;white-space:pre-wrap}
+.desc-body .desc-none{font-family:sans-serif;font-size:13px;color:var(--text-muted);font-style:italic}
 #add-sheet .add-toggle-btn{display:none!important}
 #add-sheet .add-section,#add-sheet .add-form{margin:0}
 #add-sheet .add-form{border:none;padding:6px 0 0}
@@ -1248,6 +1252,17 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     </div>
     <div class="shop-note" id="shop-note"></div>
     <div class="modal-btns" style="margin-top:12px"><button class="modal-cancel" onclick="closeShop()">Done</button></div>
+  </div>
+</div>
+<div class="sheet-overlay hidden" id="desc-sheet" onclick="if(event.target===this)closeDescSheet()">
+  <div class="sheet">
+    <div class="sheet-grab" onclick="closeDescSheet()"></div>
+    <div class="desc-head">
+      <div class="desc-title" id="desc-title">Book</div>
+      <div class="desc-sub" id="desc-sub"></div>
+    </div>
+    <div class="desc-body" id="desc-body"></div>
+    <div class="modal-btns" style="margin-top:14px"><button class="modal-cancel" onclick="closeDescSheet()">Done</button></div>
   </div>
 </div>
 <div class="sheet-overlay hidden" id="day-sheet" onclick="if(event.target===this)closeDaySheet()">
@@ -2064,7 +2079,7 @@ function switchList(id){
   activeGenreFilter="";sortKey="title";sortDir=1;currentTab="list";
   document.getElementById("search-input").value="";
   document.getElementById("read-select").value="";
-  var _gtsl=document.getElementById("global-tooltip");if(_gtsl)_gtsl.classList.remove("visible");
+  closeDescSheet();
   if(!document.getElementById("add-form").classList.contains("hidden"))toggleAddForm();
   ["f-title","f-author","f-pages","f-series","f-series-name","f-summary","f-custom-genre"].forEach(function(id){document.getElementById(id).value="";});
   document.getElementById("genre-preview").classList.add("hidden");
@@ -2580,79 +2595,28 @@ function filteredBooks(){
   return list;
 }
 
-// ── Tooltip ───────────────────────────────────────────────────────────────────
-var _ttTimer=null;
-function showTT(idx,span){
-  clearTimeout(_ttTimer);
-  var t=document.getElementById("global-tooltip");if(!t)return;
-  var b=books[idx];if(!b)return;
-  var sumText=b.summary?esc(b.summary):'<span class="summary-no-text">No summary added yet — open the ⋯ menu to add one.</span>';
+// Tap a book card to read its description. This used to be a tooltip anchored
+// to the card, which meant a long summary ran off the bottom of the screen and
+// sat on top of the surrounding rows. It is a sheet now, like the day and year
+// sheets: full width, scrolls on its own, dismissed by the grab handle, the
+// backdrop or Done. showTT/hideTT/toggleTT and their positioning maths are gone
+// with the tooltip they served.
+function openDescSheet(idx){
+  var b=books[idx]; if(!b) return;
   var st=seriesText(b);
-  var seriesHeader=st?'<div class="summary-tooltip-series">'+esc(st)+'</div>':'';
-  t.innerHTML='<div class="summary-tooltip-title">'+esc(b.title)+'</div>'+seriesHeader+sumText;
-
-  // Position the tooltip below the title cell. We anchor to the wrap's
-  // bottom rather than the title-text's, so the tooltip clears the
-  // series subtitle when one is present.
-  var r=span.getBoundingClientRect();
-  var wrap=span.parentElement;
-  var bottomY=wrap?wrap.getBoundingClientRect().bottom:r.bottom;
-  var top=bottomY+6, left=r.left;
-
-  // Clamp horizontally inside the viewport (tooltip is ~320px wide).
-  if(left+320>window.innerWidth-8) left=window.innerWidth-328;
-  if(left<8) left=8;
-  // If there isn't room below, flip above the title.
-  if(top+220>window.innerHeight-8) top=r.top-226;
-
-  t.style.top=top+"px"; t.style.left=left+"px";
-  t.classList.add("visible");
-  t.onmouseleave=function(){_ttTimer=setTimeout(function(){t.classList.remove("visible");},120);};
+  document.getElementById('desc-title').textContent=b.title||'Book';
+  document.getElementById('desc-sub').textContent=
+    [b.author,(b.translator?'trans. '+b.translator:''),st,b.genre,
+     (b.pages?b.pages+'p':''),(b.runtimeMin?fmtMins(b.runtimeMin)+' audio':'')]
+    .filter(Boolean).join(' \u00b7 ');
+  document.getElementById('desc-body').innerHTML = (b.summary||'').trim()
+    ? esc(b.summary)
+    : '<span class="desc-none">No description added yet \u2014 open the \u22ef menu and choose Edit book details to add one.</span>';
+  document.getElementById('desc-sheet').classList.remove('hidden');
 }
-function hideTT(idx){
-  var t=document.getElementById("global-tooltip");if(!t)return;
-  _ttTimer=setTimeout(function(){if(!t.matches(':hover'))t.classList.remove("visible");},120);
+function closeDescSheet(){
+  var el=document.getElementById('desc-sheet'); if(el) el.classList.add('hidden');
 }
-
-// Tap a book title (mobile card layout) to toggle a summary popup.
-// Reuses showTT for the actual render/positioning; this just handles
-// open/close state and tracks which book is currently displayed.
-function toggleTT(idx, el){
-  var t=document.getElementById("global-tooltip"); if(!t) return;
-  var visible = t.classList.contains("visible");
-  var sameTarget = (t._tappedIdx === idx);
-  if(visible && sameTarget){
-    t.classList.remove("visible");
-    t._tappedIdx = null;
-    return;
-  }
-  showTT(idx, el);
-  t._tappedIdx = idx;
-}
-// Tap anywhere outside the tooltip dismisses it. Attach the document
-// listener once — guard with a flag to survive any code paths that
-// might re-execute this section (e.g. dynamic reloads).
-(function(){
-  if(window._ttDismissAttached) return;
-  window._ttDismissAttached = true;
-  document.addEventListener("click", function(e){
-    var t=document.getElementById("global-tooltip"); if(!t) return;
-    if(!t.classList.contains("visible")) return;
-    // Don't dismiss when clicking the tooltip itself or the card's identity
-    // block (its own onclick toggles the popup instead). Matching only
-    // .bk-title was enough when the title text was the tap target; the whole
-    // .bk-id block is now tappable, so a tap on the byline would otherwise
-    // open the popup and have this listener close it in the same gesture.
-    var el = e.target;
-    while(el && el !== document.body){
-      if(el.id === "global-tooltip") return;
-      if(el.classList && (el.classList.contains("bk-title") || el.classList.contains("bk-id"))) return;
-      el = el.parentElement;
-    }
-    t.classList.remove("visible");
-    t._tappedIdx = null;
-  });
-})();
 
 // ── Toggle read ───────────────────────────────────────────────────────────────
 // ── Surgical row updates ──────────────────────────────────────────────────────
@@ -2696,7 +2660,7 @@ function toggleRead(idx){
 
 // ── Genre tab ─────────────────────────────────────────────────────────────────
 function renderGenreTab(){
-  var _gtg=document.getElementById("global-tooltip");if(_gtg)_gtg.classList.remove("visible");
+  closeDescSheet();
   var genres=allGenres(),html="";
   genres.forEach(function(genre){
     var gb=[];
@@ -2756,7 +2720,7 @@ function renderGenreTab(){
 
 // ── Tab switch (All Books / By Genre) ─────────────────────────────────────────
 function switchTab(tab){
-  var _gts=document.getElementById("global-tooltip");if(_gts)_gts.classList.remove("visible");
+  closeDescSheet();
   currentTab=tab;
   document.querySelectorAll(".tab-btn").forEach(function(btn,i){btn.classList.toggle("active",(i===0&&tab==="list")||(i===1&&tab==="genre"));});
   var _tl=document.getElementById("tab-list"); if(_tl) _tl.classList.toggle("hidden",tab!=="list");
@@ -4538,7 +4502,7 @@ function renderTable(){
     return '<div class="bk-card'+(isRead?' is-read':'')+(b.isReading?' is-reading':'')+'" data-bidx="'+b.idx+'">'
       +'<div class="bk-row1">'
         +'<button class="chk'+(isRead?' checked':'')+'" onclick="toggleRead('+b.idx+')" title="Mark read"></button>'
-        +'<div class="bk-id" onclick="toggleTT('+b.idx+',this)" title="Show description">'
+        +'<div class="bk-id" onclick="openDescSheet('+b.idx+')" title="Show description">'
           +'<div class="bk-title">'+esc(b.title)+inlineSeriesTag+(b.optional?'<span class="optional-tag">(optional)</span>':'')+sBadge+'</div>'
           +seriesLine
           +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+(b.translator?' &middot; <span class="bk-trans">trans. '+esc(b.translator)+'</span>':'')+(b.pages>0?' &middot; '+b.pages+'p':'')+(b.runtimeMin?' <span class="bk-audio">'+fmtMins(b.runtimeMin)+' audio</span>':'')+'</div>'
@@ -4766,7 +4730,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v6';
+var BABEL_VERSION='babel-v7';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -6274,7 +6238,6 @@ storage.init().then(function(){
   }
 })();
 </script>
-<div id="global-tooltip"></div>
 <script>
 /* ===================== Babel Cloud Sync (Supabase, offline-first) =====================
    Sync unit = a whole list (books + read set + theme). Last-write-wins per list by
