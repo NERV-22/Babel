@@ -641,6 +641,11 @@ body{padding:0}
 .reading-btn svg{width:13px;height:13px}
 .fav-btn.on svg{fill:currentColor}
 .bs-today svg,.rd-streak-sub svg{width:11px;height:11px;vertical-align:-1px}
+/* ICONS.check carries a viewBox but no width/height, so it has no intrinsic
+   size — without a rule the browser falls back to the 300x150 default box.
+   Every other injection site has one; this one was missed, and the goal-met
+   tick in #goal-detail rendered enormous on any day the goal was cleared. */
+.storage-detail svg{width:11px;height:11px;vertical-align:-1px}
 .mini-star{width:9px;height:9px;margin-left:2px;vertical-align:-1px}
 .h-row-e svg{width:13px;height:13px;vertical-align:-2px}
 .h-note svg{width:15px;height:15px;flex:none}
@@ -1748,6 +1753,9 @@ var ICONS = {
   calendar: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5 H13.5"/><path d="M5.5 2 V5 M10.5 2 V5"/><circle cx="5.5" cy="9" r=".6" fill="currentColor" stroke="none"/><circle cx="8" cy="9" r=".6" fill="currentColor" stroke="none"/><circle cx="10.5" cy="9" r=".6" fill="currentColor" stroke="none"/><circle cx="5.5" cy="11.2" r=".6" fill="currentColor" stroke="none"/><circle cx="8" cy="11.2" r=".6" fill="currentColor" stroke="none"/></svg>',
   palette: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M8 2 C4.5 2 2 4.5 2 8 c0 3 2.5 5 5 5 c.8 0 1.3-.4 1.3-1 c0-.4-.2-.6-.2-1 c0-.6.4-1 1-1 H10 c2 0 3.5-1.5 3.5-3.5 C13.5 4 11 2 8 2 Z"/><circle cx="5" cy="7" r=".8" fill="currentColor" stroke="none"/><circle cx="6.5" cy="4.5" r=".8" fill="currentColor" stroke="none"/><circle cx="9.5" cy="4.5" r=".8" fill="currentColor" stroke="none"/><circle cx="11.5" cy="7" r=".8" fill="currentColor" stroke="none"/></svg>',
   clock: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="5.8"/><path d="M8 4.8 V8 L10.3 9.5"/></svg>',
+  // Opens the book page (reads, progress, per-read notes). Drawn to match the
+  // clock beside it: same 16x16 box, same 1.4 stroke, no fill.
+  book: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M2.6 3.1 a1 1 0 0 1 1-1 H6.6 a1.7 1.7 0 0 1 1.4.8 a1.7 1.7 0 0 1 1.4-.8 H12.4 a1 1 0 0 1 1 1 V12 a1 1 0 0 1-1 1 H9.4 a1.7 1.7 0 0 0-1.4.8 a1.7 1.7 0 0 0-1.4-.8 H3.6 a1 1 0 0 1-1-1 Z"/><path d="M8 2.9 V13.8"/></svg>',
   play: '<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 2.5 L4 13.5 L13 8 Z"/></svg>',
   pause: '<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="3" width="3.2" height="10"/><rect x="8.8" y="3" width="3.2" height="10"/></svg>',
   finish: '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="3.5" y="3.5" width="9" height="9" rx="1"/></svg>'
@@ -2630,13 +2638,15 @@ function toggleTT(idx, el){
   document.addEventListener("click", function(e){
     var t=document.getElementById("global-tooltip"); if(!t) return;
     if(!t.classList.contains("visible")) return;
-    // Don't dismiss when clicking the tooltip itself or a book title
-    // (the title's own onclick handler will toggle it instead). Walk up
-    // the tree to check; stop at body to avoid infinite loops.
+    // Don't dismiss when clicking the tooltip itself or the card's identity
+    // block (its own onclick toggles the popup instead). Matching only
+    // .bk-title was enough when the title text was the tap target; the whole
+    // .bk-id block is now tappable, so a tap on the byline would otherwise
+    // open the popup and have this listener close it in the same gesture.
     var el = e.target;
     while(el && el !== document.body){
       if(el.id === "global-tooltip") return;
-      if(el.classList && el.classList.contains("bk-title")) return;
+      if(el.classList && (el.classList.contains("bk-title") || el.classList.contains("bk-id"))) return;
       el = el.parentElement;
     }
     t.classList.remove("visible");
@@ -4528,7 +4538,7 @@ function renderTable(){
     return '<div class="bk-card'+(isRead?' is-read':'')+(b.isReading?' is-reading':'')+'" data-bidx="'+b.idx+'">'
       +'<div class="bk-row1">'
         +'<button class="chk'+(isRead?' checked':'')+'" onclick="toggleRead('+b.idx+')" title="Mark read"></button>'
-        +'<div class="bk-id" onclick="openSM('+b.idx+')" title="Open book">'
+        +'<div class="bk-id" onclick="toggleTT('+b.idx+',this)" title="Show description">'
           +'<div class="bk-title">'+esc(b.title)+inlineSeriesTag+(b.optional?'<span class="optional-tag">(optional)</span>':'')+sBadge+'</div>'
           +seriesLine
           +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+(b.translator?' &middot; <span class="bk-trans">trans. '+esc(b.translator)+'</span>':'')+(b.pages>0?' &middot; '+b.pages+'p':'')+(b.runtimeMin?' <span class="bk-audio">'+fmtMins(b.runtimeMin)+' audio</span>':'')+'</div>'
@@ -4541,6 +4551,7 @@ function renderTable(){
         +'<span class="bk-actions">'
           +'<button class="reading-btn'+(b.isReading?' on':'')+'" onclick="toggleReading('+b.idx+')" title="Currently reading">'+ICONS.play+'</button>'
           +'<button class="icon-btn" title="Reading time log" onclick="openRL('+b.idx+')">'+ICONS.clock+'</button>'
+          +'<button class="icon-btn" title="Reads &amp; progress" onclick="openSM('+b.idx+')">'+ICONS.book+'</button>'
           +'<button class="icon-btn menu-btn" title="More" onclick="openRowMenu(event,'+b.idx+')">'+ICONS.dots+'</button>'
         +'</span>'
       +'</div>'
@@ -4755,7 +4766,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v4';
+var BABEL_VERSION='babel-v6';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
