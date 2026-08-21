@@ -4350,13 +4350,15 @@ function tmrBridgeSync(){
     P.remove({key:'babelTimerCmd'});
     if(activeTimer){
       if(stopAt){
-        // Fold elapsed up to the bubble's Stop moment, then run the normal
-        // finish flow — elapsed freezes exactly at stopAt, prompt included.
+        // Fold elapsed up to the Stop moment, then run the normal finish flow.
+        // Only do this if the timer was still running: if a pause command already
+        // came before the stop, activeTimer.pausedAt holds the real pause moment,
+        // so leave it — otherwise the paused gap gets counted as reading time.
         if(!activeTimer.pausedAt){
           activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((stopAt-activeTimer.startTime)/1000));
           activeTimer.startTime=stopAt;
+          activeTimer.pausedAt=stopAt;
         }
-        activeTimer.pausedAt=stopAt;
         saveActiveTimer();
         switchScreen('timer');
         tmrFinish();
