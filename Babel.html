@@ -1254,6 +1254,17 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div class="modal-btns" style="margin-top:12px"><button class="modal-cancel" onclick="closeShop()">Done</button></div>
   </div>
 </div>
+<div class="sheet-overlay hidden" id="runaway-sheet">
+  <div class="sheet">
+    <div class="desc-head"><div class="desc-title">Still running?</div></div>
+    <div class="desc-body" id="runaway-body"></div>
+    <div class="modal-btns" style="margin-top:16px;gap:8px;flex-wrap:wrap">
+      <button class="modal-cancel" onclick="runawayDiscard()">Discard</button>
+      <button class="modal-cancel" id="runaway-trim" onclick="runawayTrim()">Trim</button>
+      <button class="modal-save" onclick="runawayKeep()">Keep it</button>
+    </div>
+  </div>
+</div>
 <div class="sheet-overlay hidden" id="desc-sheet" onclick="if(event.target===this)closeDescSheet()">
   <div class="sheet">
     <div class="sheet-grab" onclick="closeDescSheet()"></div>
@@ -4301,6 +4312,54 @@ function tmrConfirmFinish(){
   showToast('Logged '+formatHMS(sec)+' \u00b7 '+unitStr(_tr,Math.max(0,endPage-startPage)));
 }
 function tmrStartFromReading(idx){ tmrSelIdx=idx; switchScreen('timer'); }
+/* A session running longer than this on reopening is treated as suspect rather
+   than banked silently. Change this one number to move the threshold. */
+var MAX_PLAUSIBLE_SESSION_HOURS = 3;
+
+/* Nothing above can help when the phone dies mid-session: the app is killed and
+   cannot write anything down. This is the net for that, and for any future bug
+   that strands a running timer. It is offered, never applied automatically —
+   a long session can be real.
+
+   Safe by construction with respect to the streak: an active timer has not been
+   written to timerSessions yet, so no already-counted day can be reduced by any
+   choice made here. Only the unsaved session in hand is affected. */
+function tmrCheckRunaway(){
+  if(!activeTimer || activeTimer.pausedAt || activeTimer.finishing) return;
+  var sec=timerElapsedSec();
+  if(sec < MAX_PLAUSIBLE_SESSION_HOURS*3600) return;
+  // Freeze it where it stands while the question is asked, so it stops growing.
+  activeTimer.pausedAt=Date.now();
+  saveActiveTimer(); tmrStopTick(); tmrSyncMode(); renderTimerTab(); pushTimerState();
+  var body=document.getElementById('runaway-body');
+  if(body) body.textContent='A session on "'+(activeTimer.bookTitle||'this book')+'" has been running for '
+    +formatHMS(sec)+'. If your phone died or the timer was left going, it will have counted that whole time.';
+  var t=document.getElementById('runaway-trim');
+  if(t) t.textContent='Trim to '+MAX_PLAUSIBLE_SESSION_HOURS+'h';
+  var el=document.getElementById('runaway-sheet'); if(el) el.classList.remove('hidden');
+}
+function runawayKeep(){
+  var el=document.getElementById('runaway-sheet'); if(el) el.classList.add('hidden');
+  // Leave it paused at the moment the question was asked; finish as normal.
+  switchScreen('timer');
+}
+function runawayTrim(){
+  if(activeTimer){
+    activeTimer.accumulatedSec=MAX_PLAUSIBLE_SESSION_HOURS*3600;
+    activeTimer.startTime=Date.now();
+    activeTimer.pausedAt=Date.now();
+    saveActiveTimer(); tmrSyncMode(); renderTimerTab(); pushTimerState();
+  }
+  var el=document.getElementById('runaway-sheet'); if(el) el.classList.add('hidden');
+  switchScreen('timer');
+}
+function runawayDiscard(){
+  activeTimer=null; saveActiveTimer(); tmrStopTick(); _tmrFrozenSec=0; tmrMode='idle';
+  renderTimerTab(); pushTimerState(); try{ pushWidgetSnapshot(); }catch(e){}
+  var el=document.getElementById('runaway-sheet'); if(el) el.classList.add('hidden');
+  showToast('Session discarded');
+}
+
 function tmrInit(){ if(activeTimer){ tmrSelIdx=(activeTimer.listId===activeId)?activeTimer.bookIdx:-1; tmrSyncMode(); if(tmrMode==='running') tmrStartTick(); } }
 
 /* ── Native timer bridge (floating bubble) ──────────────────────────────────
@@ -4334,45 +4393,84 @@ function pushTimerState(){
     })});
   }catch(e){}
 }
-function tmrBridgeSync(){
+// True once storage.init() has resolved and activeTimer has been loaded from
+// disk. Nothing may interpret bridge commands before this.
+var _bridgeReady=false;
+
+/* Consume pause/resume/stop left by the bubble or the lockscreen notification.
+
+   THE BUG THIS FIXES. This used to run on window 'load'. But activeTimer is
+   loaded inside storage.init().then(...), which opens IndexedDB and reads every
+   key before it resolves — on a cold start with a full library that finishes
+   well after 'load' fires. So the sequence was:
+
+     load fires -> tmrBridgeSync runs -> activeTimer is still null
+       -> every action skipped by the !activeTimer guard
+       -> P.remove deletes the commands anyway
+       -> storage finishes, loads the still-running timer, keeps ticking
+
+   A pause tapped on the bubble was silently destroyed and the session ran on.
+   It only bit on slow starts, which is why it looked intermittent.
+
+   Two rules now hold:
+     1. If we are not ready, touch nothing. Do not read, do not delete.
+     2. Only delete the exact actions that were applied. The old code cleared
+        the whole key, so anything native appended between the read and the
+        delete was destroyed unread. */
+function tmrBridgeSync(quiet){
+  if(!_bridgeReady) return Promise.resolve();
   var P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences;
-  if(!P) return;
-  P.get({key:'babelTimerCmd'}).then(function(r){
+  if(!P) return Promise.resolve();
+  return P.get({key:'babelTimerCmd'}).then(function(r){
     var acts=[]; try{ var c=r&&r.value?JSON.parse(r.value):null; acts=(c&&c.actions)||[]; }catch(e){}
-    if(!acts.length){ pushTimerState(); return; }
-    var stopAt=0;
+    if(!acts.length){ if(!quiet) pushTimerState(); return; }
+    var stopAt=0, consumed={};
     acts.forEach(function(a){
-      if(!activeTimer||!a) return;
+      if(!a) return;
+      // After boot, activeTimer being null means the timer genuinely ended.
+      // The action is stale; mark it consumed so it can't be replayed onto a
+      // later session, but apply nothing.
+      consumed[a.type+'@'+(a.at||0)]=1;
+      if(!activeTimer) return;
       if(a.type==='pause'){ if(!activeTimer.pausedAt) activeTimer.pausedAt=a.at||Date.now(); }
       else if(a.type==='resume'){ if(activeTimer.pausedAt){ activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((activeTimer.pausedAt-activeTimer.startTime)/1000)); activeTimer.startTime=a.at||Date.now(); activeTimer.pausedAt=null; } }
       else if(a.type==='stop'){ stopAt=a.at||Date.now(); }
     });
-    P.remove({key:'babelTimerCmd'});
-    if(activeTimer){
-      if(stopAt){
-        // Fold elapsed up to the Stop moment, then run the normal finish flow.
-        // Only do this if the timer was still running: if a pause command already
-        // came before the stop, activeTimer.pausedAt holds the real pause moment,
-        // so leave it — otherwise the paused gap gets counted as reading time.
-        if(!activeTimer.pausedAt){
-          activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((stopAt-activeTimer.startTime)/1000));
-          activeTimer.startTime=stopAt;
+    // Re-read before clearing, so anything native appended while we were
+    // applying survives instead of being wiped.
+    return P.get({key:'babelTimerCmd'}).then(function(r2){
+      var cur=[]; try{ var c2=r2&&r2.value?JSON.parse(r2.value):null; cur=(c2&&c2.actions)||[]; }catch(e){}
+      var keep=cur.filter(function(a){ return a && !consumed[a.type+'@'+(a.at||0)]; });
+      if(keep.length) return P.set({key:'babelTimerCmd',value:JSON.stringify({actions:keep})});
+      return P.remove({key:'babelTimerCmd'});
+    }).then(function(){
+      if(activeTimer){
+        if(stopAt){
+          // Fold elapsed up to the bubble's Stop moment, then run the normal
+          // finish flow — elapsed freezes exactly at stopAt, prompt included.
+          if(!activeTimer.pausedAt){
+            activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((stopAt-activeTimer.startTime)/1000));
+            activeTimer.startTime=stopAt;
+          }
           activeTimer.pausedAt=stopAt;
+          saveActiveTimer();
+          switchScreen('timer');
+          tmrFinish();
+          return; // tmrFinish's own hook rewrites babelTimer
         }
         saveActiveTimer();
-        switchScreen('timer');
-        tmrFinish();
-        return; // tmrFinish's own hook rewrites babelTimer
       }
-      saveActiveTimer();
-    }
-    tmrSyncMode(); renderTimerTab();
-    if(tmrMode==='running') tmrStartTick(); else tmrStopTick();
-    pushTimerState();
+      tmrSyncMode(); renderTimerTab();
+      if(tmrMode==='running') tmrStartTick(); else tmrStopTick();
+      pushTimerState();
+    });
   }).catch(function(){});
 }
 document.addEventListener('visibilitychange',function(){ if(!document.hidden) tmrBridgeSync(); });
-window.addEventListener('load',function(){ tmrBridgeSync(); });
+// Poll while a timer exists, so a pause can't sit unread for hours if neither
+// 'load' nor a visibility change happens to fire. Quiet: it only writes state
+// back when it actually found something, rather than every few seconds.
+setInterval(function(){ if(_bridgeReady && activeTimer) tmrBridgeSync(true); }, 4000);
 
 /* ===== Babel app shell logic ===== */
 function switchScreen(name){
@@ -6196,6 +6294,14 @@ storage.init().then(function(){
   // Timestamp math means it shows the correct elapsed time on first paint.
   loadActiveTimer();
   tmrInit();
+  // Storage is hydrated and activeTimer is loaded from disk: only now is it
+  // safe to interpret bridge commands. Anything the bubble or the notification
+  // left while the app was closed is applied here, against a real timer.
+  _bridgeReady=true;
+  // Must run in this order. A pending pause has to land before the runaway
+  // check looks at elapsed, or the check would freeze the timer at "now" and
+  // the real pause would then be ignored — turning a correct 1h into a wrong 8h.
+  Promise.resolve(tmrBridgeSync()).then(tmrCheckRunaway).catch(tmrCheckRunaway);
   switchScreen("library");
   if(window.BabelCloud){ try{ BabelCloud.init(); }catch(e){} }
 });
