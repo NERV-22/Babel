@@ -608,6 +608,16 @@ body{padding:0}
 
 .stats-hero{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin-bottom:16px}
 .sh-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:17px 8px;text-align:center}
+/* Streak is deliberately not tappable — there is no list behind it. */
+.sh-card.tappable{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s,border-color .12s}
+.sh-card.tappable:active{transform:scale(.97);border-color:var(--accent)}
+.stat-back{background:none;border:none;padding:2px 0 10px;font-family:sans-serif;font-size:12.5px;color:var(--accent);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.stat-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--border);border-radius:var(--radius,14px);background:var(--bg1);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.stat-row:active{border-color:var(--accent)}
+.stat-row .sr-l{flex:1;min-width:0}
+.stat-row .sr-t{font-family:sans-serif;font-size:13.5px;font-weight:600;color:var(--text)}
+.stat-row .sr-m{font-family:sans-serif;font-size:11.5px;color:var(--text-muted);margin-top:3px}
+.stat-row .sr-v{font-family:sans-serif;font-size:12.5px;color:var(--accent);flex:none}
 .sh-n{font-family:Georgia,serif;font-size:27px;font-weight:700;color:var(--text);line-height:1}
 .sh-l{font-family:sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:7px}
 #screen-stats .progress-wrap .storage-detail{text-align:left;margin-top:8px;font-size:11.5px}
@@ -1141,9 +1151,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <section class="screen hidden" id="screen-stats" data-screen-label="Stats">
       <div class="appbar"><div class="appbar-title">Stats</div></div>
   <div class="stats-hero">
-    <div class="sh-card"><div class="sh-n" id="stat-read">0</div><div class="sh-l">read</div></div>
-    <div class="sh-card"><div class="sh-n" id="stat-pages-read">0</div><div class="sh-l">pages read</div></div>
-    <div class="sh-card"><div class="sh-n" id="stat-listened">0</div><div class="sh-l">listened</div></div>
+    <div class="sh-card tappable" onclick="openStatSheet('read')"><div class="sh-n" id="stat-read">0</div><div class="sh-l">read</div></div>
+    <div class="sh-card tappable" onclick="openStatSheet('pages')"><div class="sh-n" id="stat-pages-read">0</div><div class="sh-l">pages read</div></div>
+    <div class="sh-card tappable" onclick="openStatSheet('listened')"><div class="sh-n" id="stat-listened">0</div><div class="sh-l">listened</div></div>
     <div class="sh-card"><div class="sh-n" id="stat-streak">0</div><div class="sh-l">streak</div></div>
   </div>
   <div class="progress-wrap">
@@ -1252,6 +1262,17 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     </div>
     <div class="shop-note" id="shop-note"></div>
     <div class="modal-btns" style="margin-top:12px"><button class="modal-cancel" onclick="closeShop()">Done</button></div>
+  </div>
+</div>
+<div class="sheet-overlay hidden" id="stat-sheet" onclick="if(event.target===this)closeStatSheet()">
+  <div class="sheet">
+    <div class="sheet-grab" onclick="closeStatSheet()"></div>
+    <div class="shop-head">
+      <span class="shop-t" id="stat-sheet-title">Books</span>
+      <span class="shop-bal" id="stat-sheet-sum"></span>
+    </div>
+    <button class="stat-back hidden" id="stat-sheet-back" onclick="statSheetBack()">&larr; All books</button>
+    <div id="stat-sheet-list" class="yb-list"></div>
   </div>
 </div>
 <div class="sheet-overlay hidden" id="runaway-sheet">
@@ -2282,6 +2303,119 @@ function minsListenedFor(b,isRead){
   if(!b || !(b.sessions||[]).length) return 0;
   return _audioMinsFrom(b.runtimeMin||0, b.sessions, b.timerSessions, isRead);
 }
+/* ---- Stats hero cards: tap through to the books behind the number ----
+   Each list is built from the same function that produces the number on the
+   card — pagesReadFor, minsListenedFor, readSet — so the list can never
+   disagree with the figure the user just tapped. The Streak card has no list
+   behind it and stays inert.
+
+   Order is most recent activity first: the last book you logged time against is
+   at the top, which is the order the log is actually built in. Books with no
+   recorded session fall back to their read-through dates, then library order. */
+var _statKind='', _statBookIdx=-1;
+
+function _statLastActivity(b){
+  var t=0;
+  (b.timerSessions||[]).forEach(function(s){ if(s && !s.detached && s.startTime>t) t=s.startTime; });
+  if(t) return t;
+  (b.sessions||[]).forEach(function(r){
+    if(!r) return;
+    var d=Date.parse(r.end||r.start||'');
+    if(!isNaN(d) && d>t) t=d;
+  });
+  return t;
+}
+function _statBooks(kind){
+  var out=[];
+  for(var i=0;i<books.length;i++){
+    var b=books[i], isRead=readSet.has(i), val=0, sub='';
+    if(kind==='read'){
+      if(!isRead) continue;
+      var pr=pagesReadFor(b,true), ml=minsListenedFor(b,true);
+      val=1; sub = ml ? fmtMins(ml)+' listened' : (pr ? pr.toLocaleString()+' pages' : '');
+    } else if(kind==='pages'){
+      val=pagesReadFor(b,isRead);
+      if(!val) continue;
+      sub=val.toLocaleString()+' page'+(val!==1?'s':'');
+    } else {
+      val=minsListenedFor(b,isRead);
+      if(!val) continue;
+      sub=fmtMins(val)+' listened';
+    }
+    out.push({i:i, b:b, val:val, sub:sub, t:_statLastActivity(b)});
+  }
+  out.sort(function(x,y){ return (y.t-x.t) || (x.i-y.i); });
+  return out;
+}
+function openStatSheet(kind){
+  _statKind=kind; _statBookIdx=-1;
+  _statRender();
+  document.getElementById('stat-sheet').classList.remove('hidden');
+}
+function closeStatSheet(){
+  _statBookIdx=-1;
+  var el=document.getElementById('stat-sheet'); if(el) el.classList.add('hidden');
+}
+function statSheetBook(i){ _statBookIdx=i; _statRender(); }
+function statSheetBack(){ _statBookIdx=-1; _statRender(); }
+
+function _statRender(){
+  var titleEl=document.getElementById('stat-sheet-title'),
+      sumEl=document.getElementById('stat-sheet-sum'),
+      listEl=document.getElementById('stat-sheet-list'),
+      backEl=document.getElementById('stat-sheet-back');
+  if(!titleEl||!listEl) return;
+
+  if(_statBookIdx>=0){                                   // one book's sessions
+    var b=books[_statBookIdx];
+    if(!b){ statSheetBack(); return; }
+    if(backEl) backEl.classList.remove('hidden');
+    titleEl.textContent=b.title||'Book';
+    var rows=(b.timerSessions||[]).filter(function(s){ return s && s.startTime && !s.detached; })
+      .slice().sort(function(x,y){ return y.startTime-x.startTime; });
+    var tot=0; rows.forEach(function(s){ tot+=(s.durationSec||0); });
+    sumEl.textContent = rows.length
+      ? rows.length+' session'+(rows.length!==1?'s':'')+' \u00b7 '+fmtMins(Math.round(tot/60))
+      : '';
+    listEl.innerHTML = rows.length ? rows.map(function(s){
+      var d=new Date(s.startTime);
+      var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var hh=d.getHours(), mm=String(d.getMinutes()).padStart(2,'0');
+      var ap=hh<12?'AM':'PM', h12=hh%12; if(h12===0) h12=12;
+      var dur=Math.max(1,Math.round((s.durationSec||0)/60));
+      var isAud=sessionIsAudio(b,s);
+      var moved=Math.max(0,(s.endPage||0)-(s.startPage||0));
+      // Audio sessions record a position in minutes; print records page numbers.
+      var detail = moved
+        ? (isAud ? fmtMins(s.startPage)+'\u2013'+fmtMins(s.endPage)
+                 : 'p.'+s.startPage+'\u2013'+s.endPage+' ('+moved+')')
+        : '';
+      return '<div class="stat-row" style="cursor:default">'
+        +'<div class="sr-l"><div class="sr-t">'
+          +MON[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear()+'</div>'
+        +'<div class="sr-m">'+h12+':'+mm+' '+ap+' \u00b7 '+dur+' min'
+          +(detail?' \u00b7 '+esc(detail):'')+'</div></div></div>';
+    }).join('') : '<div class="lookup-note">No timed sessions recorded for this book.</div>';
+    return;
+  }
+
+  if(backEl) backEl.classList.add('hidden');             // the books list
+  var kind=_statKind, rows2=_statBooks(kind);
+  titleEl.textContent = kind==='read' ? 'Books read'
+                      : kind==='pages' ? 'Pages read' : 'Listened';
+  var tot2=0;
+  rows2.forEach(function(r){ tot2 += (kind==='read'?1:r.val); });
+  sumEl.textContent = kind==='read' ? rows2.length+' book'+(rows2.length!==1?'s':'')
+                    : kind==='pages' ? tot2.toLocaleString()+' pages'
+                    : fmtMins(tot2);
+  listEl.innerHTML = rows2.length ? rows2.map(function(r){
+    return '<div class="stat-row" onclick="statSheetBook('+r.i+')">'
+      +'<div class="sr-l"><div class="sr-t">'+esc(r.b.title||'Untitled')+'</div>'
+      +'<div class="sr-m">'+esc([r.b.author,r.sub].filter(Boolean).join(' \u00b7 '))+'</div></div>'
+      +'<div class="sr-v">\u203a</div></div>';
+  }).join('') : '<div class="lookup-note">Nothing recorded yet.</div>';
+}
+
 function updateStats(){
   var total=books.length, read=0, pages=0, pagesRead=0;
   for(var i=0;i<books.length;i++){
@@ -3581,6 +3715,11 @@ function pauseTimer(){
 }
 function resumeTimer(){
   if(!activeTimer || !activeTimer.pausedAt) return;
+  // Not while the save prompt is open. Finishing now also freezes the clock via
+  // pausedAt, so a plain resume here would clear that freeze and leave the
+  // prompt showing a figure that quietly starts running again. The prompt has
+  // its own way back (Keep reading), which restores the clock properly.
+  if(activeTimer.finishing) return;
   // Roll the paused duration into accumulatedSec, then start a fresh run.
   activeTimer.accumulatedSec = (activeTimer.accumulatedSec || 0)
     + Math.max(0, Math.floor((activeTimer.pausedAt - activeTimer.startTime)/1000));
@@ -3600,6 +3739,11 @@ function finishTimer(){
   // Mark finishing FIRST so any downstream code (openRL → startTimerTick)
   // sees the flag and doesn't restart the tick.
   activeTimer.finishing = true;
+  // Freeze the clock on the record, not just in a local. 'finishing' alone left
+  // startTime running, so anything that recomputed elapsed while the prompt was
+  // open got a larger number each time. Two UIs and the native bridge all
+  // recompute, which is how the displayed figure crept upward.
+  if(!activeTimer.pausedAt) activeTimer.pausedAt = Date.now();
   saveActiveTimer();
   // Stop the live tick and lock the displays to the snapshot.
   stopTimerTick();
@@ -4279,10 +4423,11 @@ function tmrBegin(){
 }
 function tmrPauseResume(){
   if(!activeTimer) return;
+  if(activeTimer.finishing) return;   // same reason as resumeTimer: the prompt owns the clock
   if(activeTimer.pausedAt){ activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((activeTimer.pausedAt-activeTimer.startTime)/1000)); activeTimer.startTime=Date.now(); activeTimer.pausedAt=null; saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState(); }
   else { activeTimer.pausedAt=Date.now(); saveActiveTimer(); tmrStopTick(); tmrMode='paused'; renderTimerTab(); pushTimerState(); }
 }
-function tmrFinish(){ if(!activeTimer) return; _tmrFrozenSec=timerElapsedSec(); activeTimer.finishing=true; saveActiveTimer(); tmrStopTick(); tmrMode='finishprompt'; renderTimerTab(); pushTimerState(); var inp=document.getElementById('tmr-endpage')||document.getElementById('tmr-endpage-h'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
+function tmrFinish(){ if(!activeTimer) return; _tmrFrozenSec=timerElapsedSec(); activeTimer.finishing=true; if(!activeTimer.pausedAt) activeTimer.pausedAt=Date.now(); saveActiveTimer(); tmrStopTick(); tmrMode='finishprompt'; renderTimerTab(); pushTimerState(); var inp=document.getElementById('tmr-endpage')||document.getElementById('tmr-endpage-h'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
 function tmrKeepReading(){ if(!activeTimer) return; activeTimer.finishing=false; activeTimer.accumulatedSec=_tmrFrozenSec; activeTimer.startTime=Date.now(); activeTimer.pausedAt=null; saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState(); }
 function tmrConfirmFinish(){
   if(!activeTimer) return;
@@ -4360,7 +4505,12 @@ function runawayDiscard(){
   showToast('Session discarded');
 }
 
-function tmrInit(){ if(activeTimer){ tmrSelIdx=(activeTimer.listId===activeId)?activeTimer.bookIdx:-1; tmrSyncMode(); if(tmrMode==='running') tmrStartTick(); } }
+function tmrInit(){
+  // _tmrFrozenSec lives only in memory. After a cold start in the middle of a
+  // save prompt it was 0, so the screen showed 00:00 and "Keep reading" wrote
+  // accumulatedSec = 0 — the whole session gone. Rebuild it from the record,
+  // which is frozen because finishing now also sets pausedAt.
+  if(activeTimer && activeTimer.finishing) _tmrFrozenSec = timerElapsedSec(); if(activeTimer){ tmrSelIdx=(activeTimer.listId===activeId)?activeTimer.bookIdx:-1; tmrSyncMode(); if(tmrMode==='running') tmrStartTick(); } }
 
 /* ── Native timer bridge (floating bubble) ──────────────────────────────────
    Web is the single source of truth. Every timer transition mirrors state to
@@ -4424,17 +4574,50 @@ function tmrBridgeSync(quiet){
   return P.get({key:'babelTimerCmd'}).then(function(r){
     var acts=[]; try{ var c=r&&r.value?JSON.parse(r.value):null; acts=(c&&c.actions)||[]; }catch(e){}
     if(!acts.length){ if(!quiet) pushTimerState(); return; }
+    var now=Date.now();
+    // Two native surfaces append to this queue, so arrival order is not
+    // guaranteed to be time order. Applying a resume before the pause it
+    // followed double-counted the interval between them. Sort by 'at', and
+    // never trust a timestamp from the future or from before the timer began.
+    acts = acts.filter(function(a){
+      if(!a || !a.type) return false;
+      var at=Number(a.at)||now;
+      // A command stamped before the current leg began belongs to an earlier
+      // leg or is corrupt — a Stop like that was collapsing a live session to
+      // zero. Discard it. Clamping it instead is wrong: it turns a nonsense
+      // timestamp into a plausible-looking one.
+      if(activeTimer && at < activeTimer.startTime - 1000) return false;
+      return true;
+    }).map(function(a){
+      var at=Number(a.at)||now;
+      if(at>now) at=now;                       // nothing may be stamped in the future
+      if(activeTimer && at<activeTimer.startTime) at=activeTimer.startTime;
+      return {type:a.type, at:at, _k:a.type+'@'+(a.at||0)};
+    }).sort(function(x,y){ return x.at-y.at; });
     var stopAt=0, consumed={};
     acts.forEach(function(a){
       if(!a) return;
       // After boot, activeTimer being null means the timer genuinely ended.
       // The action is stale; mark it consumed so it can't be replayed onto a
       // later session, but apply nothing.
-      consumed[a.type+'@'+(a.at||0)]=1;
+      consumed[a._k]=1;
       if(!activeTimer) return;
-      if(a.type==='pause'){ if(!activeTimer.pausedAt) activeTimer.pausedAt=a.at||Date.now(); }
-      else if(a.type==='resume'){ if(activeTimer.pausedAt){ activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((activeTimer.pausedAt-activeTimer.startTime)/1000)); activeTimer.startTime=a.at||Date.now(); activeTimer.pausedAt=null; } }
-      else if(a.type==='stop'){ stopAt=a.at||Date.now(); }
+      // Once the save prompt is up the elapsed figure is frozen and the user is
+      // deciding what to write down. Late or repeated commands from the bubble
+      // or the notification are consumed but applied to nothing — otherwise a
+      // second Stop re-runs the finish and recomputes the frozen number, which
+      // is why "FINISHING" was seen creeping upward.
+      if(activeTimer.finishing) return;
+      if(a.type==='pause'){ if(!activeTimer.pausedAt) activeTimer.pausedAt=a.at; }
+      else if(a.type==='resume'){
+        // A resume can only ever start a new leg at or after the pause it ends.
+        if(activeTimer.pausedAt){
+          activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((activeTimer.pausedAt-activeTimer.startTime)/1000));
+          activeTimer.startTime=Math.max(a.at, activeTimer.pausedAt);
+          activeTimer.pausedAt=null;
+        }
+      }
+      else if(a.type==='stop'){ stopAt=a.at; }
     });
     // Re-read before clearing, so anything native appended while we were
     // applying survives instead of being wiped.
@@ -4445,14 +4628,22 @@ function tmrBridgeSync(quiet){
       return P.remove({key:'babelTimerCmd'});
     }).then(function(){
       if(activeTimer){
-        if(stopAt){
-          // Fold elapsed up to the bubble's Stop moment, then run the normal
-          // finish flow — elapsed freezes exactly at stopAt, prompt included.
-          if(!activeTimer.pausedAt){
-            activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((stopAt-activeTimer.startTime)/1000));
-            activeTimer.startTime=stopAt;
-          }
+        // Apply Stop's effect on the clock FIRST, so the shrink check below
+        // sees it. Checking before this ran let a corrupt Stop collapse a
+        // session to zero unnoticed.
+        var doFinish = !!(stopAt && !activeTimer.finishing);
+        if(doFinish && !activeTimer.pausedAt){
+          // Elapsed while paused is acc + (pausedAt - startTime). So pausedAt
+          // must NOT be moved forward on a timer that is already paused —
+          // doing that stretches the frozen interval and counts the time
+          // between pausing and pressing Stop as reading. Pause at 10s, Stop
+          // 29 minutes later, and the session became 29 minutes.
+          // Only an unpaused timer folds its running leg in and freezes at stopAt.
+          activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((stopAt-activeTimer.startTime)/1000));
+          activeTimer.startTime=stopAt;
           activeTimer.pausedAt=stopAt;
+        }
+        if(doFinish){
           saveActiveTimer();
           switchScreen('timer');
           tmrFinish();
@@ -4830,7 +5021,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v8';
+var BABEL_VERSION='babel-v11';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
