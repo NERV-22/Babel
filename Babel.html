@@ -4872,7 +4872,12 @@ function _hWeek(d){
   return t.getFullYear()+'-W'+String(Math.ceil(((t-y0)/86400000+1)/7)).padStart(2,'0');
 }
 function loadHearth(){
-  try{ var r=storage.getItem('rl_hearth'); if(r){ var o=JSON.parse(r); for(var k in o) babelHearth[k]=o[k]; } }catch(e){}
+  // Whether this hearth already existed and had been through the earlier freeze
+  // grants. That is the evidence it is an established profile which could have
+  // suffered the sync wipe — a fresh install never had 9 freezes to lose, and
+  // must not be handed a repair for a loss that never happened.
+  var _established=false;
+  try{ var r=storage.getItem('rl_hearth'); if(r){ var o=JSON.parse(r); _established=!!o.freezeGrant2; for(var k in o) babelHearth[k]=o[k]; } }catch(e){}
   babelHearthLoaded=true;   // from here on, saving is safe
   ['frozen','claims','unlocked','logins','claimedAch','metEver'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
   // One-time: tiers unlocked before achievements became claimable were paid
@@ -4919,6 +4924,21 @@ function loadHearth(){
     babelHearth.freezes=(babelHearth.freezes||0)+(babelHearth.freezeGrant1?3:4);
     babelHearth.freezeGrant1=1;
     babelHearth.freezeGrant2=1;
+    _hMig=true;
+  }
+  // One-time: 9 banked freezes went to 0 overnight, with no days newly frozen
+  // and no spend notice. They were not spent — the sync merge let an incoming
+  // copy holding 0 overwrite the local count outright. That line now takes the
+  // higher of the two, like embers, so a pull can raise the count but never
+  // lower it. This puts back what that bug took.
+  // Additive, so a spend between the loss and this running is not undone, and
+  // flagged so it cannot pay out twice. The flag rides the sync merge below
+  // for the same reason the other make-goods do.
+  if(!babelHearth.freezeRestore1){
+    if(_established) babelHearth.freezes=(babelHearth.freezes||0)+9;
+    // Flagged either way. A fresh profile is marked as already settled so this
+    // can never pay out to it once it becomes established.
+    babelHearth.freezeRestore1=1;
     _hMig=true;
   }
   // De-duplicating shared books halved the recorded minutes on days where a
@@ -5021,7 +5041,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v11';
+var BABEL_VERSION='babel-v12';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -6718,6 +6738,7 @@ window.BabelCloud = (function(){
           var _keepGrants={g1:babelHearth&&babelHearth.freezeGrant1,
                            g2:babelHearth&&babelHearth.freezeGrant2,
                            sr:babelHearth&&babelHearth.streakRepair,
+                           fr1:babelHearth&&babelHearth.freezeRestore1,
                            frozen:(babelHearth&&babelHearth.frozen)||{},
                            metEver:(babelHearth&&babelHearth.metEver)||{},
                            freezes:(babelHearth&&babelHearth.freezes)||0};
@@ -6766,13 +6787,28 @@ window.BabelCloud = (function(){
             babelHearth.embers  =Math.max(0,babelHearth.emEarned-babelHearth.emSpent);
           }
           else if(typeof babelHearth.embers !=='number') babelHearth.embers =_localH.embers ||0;
-          if(typeof babelHearth.freezes!=='number') babelHearth.freezes=_localH.freezes||0;
+          // Freezes were the one balance a pull could lower. Every other field
+          // here is protected: embers take the max of the lifetime ledgers,
+          // metEver is merged additively, frozen days are carried across. This
+          // line said "if the incoming copy has a number, use it" — so a stale
+          // copy holding 0 replaced a real 9 instantly, with nothing marked and
+          // no notice. Spending is the only thing allowed to reduce freezes,
+          // and spending happens locally, so an incoming copy may raise the
+          // count but never lower it.
+          babelHearth.freezes = Math.max(
+            typeof babelHearth.freezes==='number' ? babelHearth.freezes : 0,
+            _localH.freezes || 0
+          );
           if(_localH.freezeFrom && !babelHearth.freezeFrom) babelHearth.freezeFrom=_localH.freezeFrom;
           if(_keepNote && !babelHearth.freezeNote) babelHearth.freezeNote=_keepNote;
           if(_keepGrants.g2 && !babelHearth.freezeGrant2){
             babelHearth.freezeGrant1=1; babelHearth.freezeGrant2=1;
             babelHearth.freezes=Math.max(babelHearth.freezes||0,_keepGrants.freezes);
           }
+          // Same reasoning as the grants above: if this device has already been
+          // repaid the 9, an incoming copy that predates the repair must not
+          // clear the flag, or the next boot pays it out a second time.
+          if(_keepGrants.fr1) babelHearth.freezeRestore1=1;
           // The met-day ledger is additive and must never shrink on sync.
           babelHearth.metEver=babelHearth.metEver||{};
           for(var _mk in (_keepGrants.metEver||{})) babelHearth.metEver[_mk]=1;
