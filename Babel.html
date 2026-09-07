@@ -789,10 +789,6 @@ body{padding:0}
 .rt-pages{font-family:sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:9px}
 .lookup-own{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:999px;background:var(--accent-shadow);color:var(--accent);font-size:9.5px;font-weight:600;vertical-align:1px}
 .rt-dates{display:flex;gap:9px;margin-bottom:9px}
-.rt-ooo{display:flex;align-items:flex-start;gap:8px;margin-bottom:9px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.rt-ooo input{margin:1px 0 0;flex:none;accent-color:var(--accent)}
-.rt-ooo span{font-family:sans-serif;font-size:11.5px;color:var(--text-muted);line-height:1.45}
-.rt-ooo i{font-style:normal;opacity:.75}
 .rt-d{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .rt-d span{font-family:sans-serif;font-size:10.5px;color:var(--text-muted)}
 .rt-d input{width:100%;padding:7px 9px;font-size:12.5px;font-family:sans-serif;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none}
@@ -3554,35 +3550,7 @@ function ensureCurrentRead(b){
   return b.sessions[i].id;
 }
 // Furthest page reached within one read-through.
-/* Pages genuinely covered by a read, merging overlapping ranges.
-
-   The default below tracks a BOOKMARK — the furthest page reached. For a book
-   read front to back that equals pages read, which is why it has always been
-   right. For an anthology read out of order it is badly wrong: 460-480 then
-   230-300 is 90 pages read, but the furthest point is 480.
-
-   This sums the ranges instead. Overlaps merge, so re-reading a section counts
-   once. Opt-in per read via the "read out of order" toggle, so every existing
-   book keeps behaving exactly as before. */
-function _coverageForRead(b,readId){
-  var iv=[];
-  ((b&&b.timerSessions)||[]).forEach(function(x){
-    if(!x || x.detached || x.readId!==readId) return;
-    var a=Math.max(0, x.startPage||0), z=Math.max(0, x.endPage||0);
-    if(z>a) iv.push([a,z]);          // a session that moved nothing covers nothing
-  });
-  if(!iv.length) return 0;
-  iv.sort(function(p,q){ return p[0]-q[0] || p[1]-q[1]; });
-  var total=0, s=iv[0][0], e=iv[0][1];
-  for(var i=1;i<iv.length;i++){
-    if(iv[i][0]<=e){ if(iv[i][1]>e) e=iv[i][1]; }   // overlaps or touches: extend
-    else { total+=e-s; s=iv[i][0]; e=iv[i][1]; }    // a gap: bank and start again
-  }
-  return total+(e-s);
-}
 function pagesForRead(b,readId){
-  var _r=readById(b,readId);
-  if(_r && _r.outOfOrder) return _coverageForRead(b,readId);
   var max=0;
   ((b&&b.timerSessions)||[]).forEach(function(x){
     if(!x || x.detached || x.readId!==readId) return;
@@ -3715,23 +3683,6 @@ function curTotalOf(b){
   return readTotal(b,curReadOf(b));
 }
 function curUnitStr(b,n){ return unitStr(curReadOf(b), n); }
-/* Where to START the next session, which is NOT the same as how much has been
-   read once a read is out of order. Coverage might be 90 pages while the last
-   thing you did was finish an essay on page 480 — prefilling the timer with 90
-   would be nonsense. Ordinary reads are unaffected: for them the bookmark and
-   the coverage are the same number. */
-function resumePageFor(b){
-  if(!b) return 0;
-  var i=currentReadIdx(b), r=(i>=0&&b.sessions)?b.sessions[i]:null;
-  if(!r || !r.outOfOrder) return currentPageFor(b)||0;
-  var last=null;
-  (b.timerSessions||[]).forEach(function(x){
-    if(!x || x.detached || x.readId!==r.id) return;
-    if(!last || x.startTime>last.startTime) last=x;
-  });
-  return last?Math.max(0,last.endPage||0):0;
-}
-
 function currentPageFor(b){
   if(!b || !b.timerSessions || !b.timerSessions.length) return 0;
   // Progress means "how far into the read I'm on now". Sessions belonging to
@@ -3765,9 +3716,7 @@ function startTimer(idx){
     cancelTimerSilently();
   }
   var b=books[idx];
-  // Where to resume, not how much has been read — they differ once a read is
-  // marked out of order.
-  var suggestedPage = resumePageFor(b) || 0;
+  var suggestedPage = currentPageFor(b) || 0;
   showPagePrompt("start", suggestedPage, function(page){
     activeTimer = {
       listId: activeId, bookIdx: idx,
@@ -4458,17 +4407,6 @@ function setReadFormat(i,fmt){
   r.format=fmt;
   saveCurrentList(); fanOutBookMeta(smIdx); renderSM(); renderTable();
 }
-/* Switching this changes what "pages read" means for this read, so it moves the
-   progress bar and the pages-read total. It does not touch a single session —
-   only how they are added up — so it is fully reversible. */
-function setReadOutOfOrder(i,on){
-  if(smIdx<0) return;
-  var b=books[smIdx], r=(b.sessions||[])[i]; if(!r) return;
-  if(isAudioRead(r)) return;
-  if(on) r.outOfOrder=1; else delete r.outOfOrder;
-  saveCurrentList(); fanOutBookMeta(smIdx);
-  renderSM(); renderTable(); updateStats();
-}
 function setReadRating(i,val){
   if(smIdx<0)return;
   var ss=books[smIdx].sessions||[];
@@ -4522,12 +4460,6 @@ function renderSM(){
           +'<label class="rt-d"><span>Started</span><input type="date" value="'+esc(x.start||'')+'" onchange="updS('+i+',\'start\',this.value)"/></label>'
           +'<label class="rt-d"><span>Finished</span><input type="date" value="'+esc(x.end||'')+'" onchange="updS('+i+',\'end\',this.value)"/></label>'
         +'</div>'
-        // Anthologies and reference books get read in jumps. Only meaningful
-        // for print: audio position is a single running timeline.
-        +(isAudioRead(x) ? '' :
-          '<label class="rt-ooo"><input type="checkbox"'+(x.outOfOrder?' checked':'')
-          +' onchange="setReadOutOfOrder('+i+',this.checked)"/>'
-          +'<span>Read out of order <i>&mdash; count pages covered, not furthest page</i></span></label>')
         +'<div class="rt-rate">'+readStarsHTML(i,x.rating||0)+'</div>'
         +'<textarea class="rt-note" placeholder="What did you think of this read?" onchange="updS('+i+',\'note\',this.value)">'+esc(x.note||'')+'</textarea>'
       +'</div>';
@@ -4734,7 +4666,7 @@ function renderTimerTab(){
   else if(tmrMode==='startprompt'){
     var _sa=b?isAudioRead(curReadOf(b)):false;
     var _smax=b?curTotalOf(b):0;
-    controls='<div class="tmr-pageform"><label>'+(_sa?'Starting position':'Starting page')+'</label>'+tmrPosField('tmr-startpage',_sa,b?(resumePageFor(b)||0):0,_smax)+'<div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrBegin()">Begin</button><button class="tmr-ghost" onclick="tmrCancelStart()">Cancel</button></div></div>'; }
+    controls='<div class="tmr-pageform"><label>'+(_sa?'Starting position':'Starting page')+'</label>'+tmrPosField('tmr-startpage',_sa,b?(currentPageFor(b)||0):0,_smax)+'<div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrBegin()">Begin</button><button class="tmr-ghost" onclick="tmrCancelStart()">Cancel</button></div></div>'; }
   else if(tmrMode==='running'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Pause</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
   else if(tmrMode==='paused'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Resume</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
   else if(tmrMode==='finishprompt'){
@@ -5413,7 +5345,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v14';
+var BABEL_VERSION='babel-v15';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
