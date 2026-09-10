@@ -5238,6 +5238,34 @@ function loadHearth(){
   // Additive, so a spend between the loss and this running is not undone, and
   // flagged so it cannot pay out twice. The flag rides the sync merge below
   // for the same reason the other make-goods do.
+  // One-time: a 40-day streak broke with six freezes banked, because the pass
+  // that spends them only ever ran at cold start and the day rolled over while
+  // the app sat in the background. The cause is fixed properly by
+  // hearthDayCheck below; this repairs the day that was already lost.
+  //
+  // Deliberately narrow. It covers YESTERDAY only, only if yesterday is
+  // genuinely uncovered, and only if the day before it counted — that is, only
+  // where a real streak was broken by exactly this bug. It cannot walk
+  // backwards into an old absence and drain the balance, which is the risk in
+  // simply lifting the freezeFrom guard. It spends one of his own banked
+  // freezes; it does not hand out a free day.
+  if(!babelHearth.streakRescue1){
+    babelHearth.streakRescue1=1;
+    _hMig=true;
+    try{
+      var _y=new Date(); _y.setHours(0,0,0,0); _y.setDate(_y.getDate()-1);
+      var _p=new Date(_y); _p.setDate(_p.getDate()-1);
+      var _yk=_dayKey(_y), _pk=_dayKey(_p), _m=_gatherSecByDay(), _need=babelGoalMin*60;
+      var _metY=((_m[_yk]||0)>=_need) || !!(babelHearth.metEver&&babelHearth.metEver[_yk]);
+      var _metP=((_m[_pk]||0)>=_need) || !!(babelHearth.metEver&&babelHearth.metEver[_pk])
+                || !!babelHearth.frozen[_pk];
+      if(!_metY && !babelHearth.frozen[_yk] && _metP && babelHearth.freezes>0){
+        babelHearth.frozen[_yk]=1;
+        babelHearth.freezes--;
+        babelHearth.freezeNote=(babelHearth.freezeNote||0)+1;
+      }
+    }catch(e){}
+  }
   if(!babelHearth.freezeRestore1){
     if(_established) babelHearth.freezes=(babelHearth.freezes||0)+9;
     // Flagged either way. A fresh profile is marked as already settled so this
@@ -5345,7 +5373,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v15';
+var BABEL_VERSION='babel-v16';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -5560,8 +5588,42 @@ function applyStreakFreezes(){
   if(babelHearth.freezes<=0) babelHearth.freezeFrom=0;
   if(used){ babelHearth.freezeNote=used; saveHearth(); }
 }
+/* The freeze pass used to run in exactly one place — hearthInit, at cold start.
+   On a phone the app is almost always RESUMED rather than launched, so if the
+   day rolled over while Babel sat in the background, nothing ever ran to cover
+   the missed day. A 40-day streak was lost with six freezes banked, and the
+   only way to trigger the rescue was to force-stop the app and reopen it.
+
+   This runs it again whenever Babel comes back to the foreground, and once a
+   minute so midnight is caught even with the app open and on screen.
+
+   Safe to call as often as we like: the pass walks back from yesterday and
+   stops at the first day that is already met or already frozen, so once a day
+   is covered it spends nothing further. That is verified, not assumed. */
+var _hLastDay='';
+function hearthDayCheck(){
+  if(typeof babelHearthLoaded!=='undefined' && !babelHearthLoaded) return;
+  var k=_hDay();
+  var rolled = (_hLastDay && k!==_hLastDay);
+  _hLastDay = k;
+  var freezesBefore = babelHearth.freezes;
+  try{ babelHearth.logins[k]=1; }catch(e){}
+  try{ applyStreakFreezes(); }catch(e){}
+  var spent = babelHearth.freezes !== freezesBefore;
+  if(!rolled && !spent) return;                 // nothing to redraw
+  try{ saveHearth(); }catch(e){}
+  // Everything below is date-dependent and stale the moment the day changes.
+  try{ renderStreak(); }catch(e){}
+  try{ renderReadingScreen(); }catch(e){}
+  try{ renderHearth(); }catch(e){}
+  try{ updateStats(); }catch(e){}
+}
+document.addEventListener('visibilitychange', function(){ if(!document.hidden) hearthDayCheck(); });
+setInterval(hearthDayCheck, 60000);
+
 function hearthInit(){
   loadHearth();
+  _hLastDay=_hDay();
   babelHearth.logins[_hDay()]=1;
   applyStreakFreezes();
   hearthCheckUnlocks();
@@ -7043,6 +7105,7 @@ window.BabelCloud = (function(){
                            g2:babelHearth&&babelHearth.freezeGrant2,
                            sr:babelHearth&&babelHearth.streakRepair,
                            fr1:babelHearth&&babelHearth.freezeRestore1,
+                           sr1:babelHearth&&babelHearth.streakRescue1,
                            frozen:(babelHearth&&babelHearth.frozen)||{},
                            metEver:(babelHearth&&babelHearth.metEver)||{},
                            freezes:(babelHearth&&babelHearth.freezes)||0};
@@ -7113,6 +7176,7 @@ window.BabelCloud = (function(){
           // repaid the 9, an incoming copy that predates the repair must not
           // clear the flag, or the next boot pays it out a second time.
           if(_keepGrants.fr1) babelHearth.freezeRestore1=1;
+          if(_keepGrants.sr1) babelHearth.streakRescue1=1;
           // The met-day ledger is additive and must never shrink on sync.
           babelHearth.metEver=babelHearth.metEver||{};
           for(var _mk in (_keepGrants.metEver||{})) babelHearth.metEver[_mk]=1;
