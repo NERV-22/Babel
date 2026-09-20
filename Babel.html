@@ -755,6 +755,9 @@ body{padding:0}
 .hm-row input{width:64px;min-width:0}
 .hm-s{font-family:sans-serif;font-size:11.5px;color:var(--text-muted)}
 .custom-genre-input,.genre-preview{display:none!important}
+.fr-v textarea.grow{min-height:44px;max-height:132px;overflow-y:auto;resize:none;
+  font-family:Georgia,'Times New Roman',serif;line-height:1.4}
+.fr-v textarea.grow-lg{max-height:210px}
 .gsugg{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 8px}
 .gsugg .gs{border:1px solid var(--border);background:none;color:var(--text-muted);border-radius:999px;
   padding:7px 13px;font-family:sans-serif;font-size:12.5px;cursor:pointer}
@@ -1475,10 +1478,10 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <div id="add-manual" class="hidden">
             <div class="form-rows">
         
-      <div class="fr"><span class="fr-l">Title</span><div class="fr-v"><input type="text" id="f-title" placeholder="—"/></div></div>
-      <div class="fr"><span class="fr-l">Author</span><div class="fr-v"><input type="text" id="f-author" placeholder="—"/></div></div>
-      <div class="fr"><span class="fr-l">Edition</span><div class="fr-v"><input type="text" id="f-translator" placeholder="—"/></div></div>
-      <div class="fr"><span class="fr-l">Series</span><div class="fr-v"><input type="text" class="w-sm" id="f-series" placeholder="#"/><input type="text" id="f-series-name" placeholder="Series name"/></div></div>
+      <div class="fr"><span class="fr-l">Title</span><div class="fr-v"><textarea rows="1" class="grow" id="f-title" placeholder="—" oninput="autoGrow(this)" onkeydown="noEnter(event)"></textarea></div></div>
+      <div class="fr"><span class="fr-l">Author</span><div class="fr-v"><textarea rows="1" class="grow" id="f-author" placeholder="—" oninput="autoGrow(this)" onkeydown="noEnter(event)"></textarea></div></div>
+      <div class="fr"><span class="fr-l">Edition</span><div class="fr-v"><textarea rows="1" class="grow" id="f-translator" placeholder="—" oninput="autoGrow(this)" onkeydown="noEnter(event)"></textarea></div></div>
+      <div class="fr"><span class="fr-l">Series</span><div class="fr-v"><input type="text" class="w-sm" id="f-series" placeholder="#"/><textarea rows="1" class="grow" id="f-series-name" placeholder="Series name" oninput="autoGrow(this)" onkeydown="noEnter(event)"></textarea></div></div>
       <div class="fr"><span class="fr-l">Pages</span><div class="fr-v"><input type="number" class="w-md" id="f-pages" placeholder="0" min="1"/></div></div>
       <div class="fr fr-top"><span class="fr-l">Audio</span><div class="fr-v fr-col"><div class="hm-row hidden" id="f-v1">
           <input type="text" id="f-audiolabel" class="ed-name" placeholder="Audiobook"/>
@@ -1491,12 +1494,12 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
             <input type="number" id="f-ed-h" placeholder="hr" min="0"/>
             <input type="number" id="f-ed-m" placeholder="min" min="0" max="59"/>
             <button type="button" onclick="edAdd('f')">Add</button></div></div></div></div>
-      <div class="fr fr-top"><span class="fr-l">Summary</span><div class="fr-v"><textarea id="f-summary" placeholder="—"></textarea></div></div>
+      <div class="fr fr-top"><span class="fr-l">Summary</span><div class="fr-v"><textarea rows="1" class="grow grow-lg" id="f-summary" placeholder="—" oninput="autoGrow(this)"></textarea></div></div>
     
       </div>
       <div class="fr fr-top"><span class="fr-l">Genre</span><div class="fr-v fr-col">
-        <input type="text" id="f-genre-input" placeholder="Start typing — Fic, Phil…" autocomplete="off"
-          oninput="genreType('f')" onfocus="genreType('f')"/>
+        <textarea rows="1" class="grow" id="f-genre-input" onkeydown="noEnter(event)" placeholder="Start typing — Fic, Phil…" autocomplete="off"
+          oninput="genreType('f')" onfocus="genreType('f')"></textarea>
         <div class="gsugg" id="f-genre-sugg"></div></div></div>
       <input class="custom-genre-input" type="text" id="f-custom-genre" placeholder="Or type a new genre, e.g. Gothic Fiction" oninput="onCustomGenreInput()" style="margin-top:8px"/>
       <div class="genre-preview hidden" id="genre-preview">Will be tagged as: <span id="genre-preview-tag"></span></div>
@@ -1616,10 +1619,10 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <p class="modal-subtitle" id="details-modal-subtitle"></p>
     <div class="form-rows">
       
-      <div class="fr"><span class="fr-l">Title</span><div class="fr-v"><input type="text" id="d-title" placeholder="—"/></div></div>
-      <div class="fr"><span class="fr-l">Author</span><div class="fr-v"><input type="text" id="d-author" placeholder="—"/></div></div>
-      <div class="fr"><span class="fr-l">Edition</span><div class="fr-v"><input type="text" id="d-translator" placeholder="—"/></div></div>
-      <div class="fr"><span class="fr-l">Series</span><div class="fr-v"><input type="text" class="w-sm" id="d-series" placeholder="#"/><input type="text" id="d-series-name" placeholder="Series name"/></div></div>
+      <div class="fr"><span class="fr-l">Title</span><div class="fr-v"><textarea rows="1" class="grow" id="d-title" placeholder="—" oninput="autoGrow(this)" onkeydown="noEnter(event)"></textarea></div></div>
+      <div class="fr"><span class="fr-l">Author</span><div class="fr-v"><textarea rows="1" class="grow" id="d-author" placeholder="—" oninput="autoGrow(this)" onkeydown="noEnter(event)"></textarea></div></div>
+      <div class="fr"><span class="fr-l">Edition</span><div class="fr-v"><textarea rows="1" class="grow" id="d-translator" placeholder="—" oninput="autoGrow(this)" onkeydown="noEnter(event)"></textarea></div></div>
+      <div class="fr"><span class="fr-l">Series</span><div class="fr-v"><input type="text" class="w-sm" id="d-series" placeholder="#"/><textarea rows="1" class="grow" id="d-series-name" placeholder="Series name" oninput="autoGrow(this)" onkeydown="noEnter(event)"></textarea></div></div>
       <div class="fr"><span class="fr-l">Pages</span><div class="fr-v"><input type="number" class="w-md" id="d-pages" placeholder="0" min="1"/></div></div>
       <div class="fr fr-top"><span class="fr-l">Audio</span><div class="fr-v fr-col"><div class="hm-row hidden" id="d-v1">
         <input type="text" id="d-audiolabel" class="ed-name" placeholder="Audiobook"/>
@@ -1632,12 +1635,12 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
           <input type="number" id="d-ed-h" placeholder="hr" min="0"/>
           <input type="number" id="d-ed-m" placeholder="min" min="0" max="59"/>
           <button type="button" onclick="edAdd('d')">Add</button></div></div></div></div>
-      <div class="fr fr-top"><span class="fr-l">Summary</span><div class="fr-v"><textarea id="d-summary" placeholder="—"></textarea></div></div>
+      <div class="fr fr-top"><span class="fr-l">Summary</span><div class="fr-v"><textarea rows="1" class="grow grow-lg" id="d-summary" placeholder="—" oninput="autoGrow(this)"></textarea></div></div>
     
     </div>
     <div class="fr fr-top"><span class="fr-l">Genre</span><div class="fr-v fr-col">
-      <input type="text" id="d-genre-input" placeholder="Start typing…" autocomplete="off"
-        oninput="genreType('d')" onfocus="genreType('d')"/>
+      <textarea rows="1" class="grow" id="d-genre-input" onkeydown="noEnter(event)" placeholder="Start typing…" autocomplete="off"
+        oninput="genreType('d')" onfocus="genreType('d')"></textarea>
       <div class="gsugg" id="d-genre-sugg"></div></div></div>
     <input class="custom-genre-input" type="text" id="d-custom-genre" placeholder="Or type a new genre" oninput="onDetailsCustomGenreInput()" style="margin-top:8px"/>
     <div class="genre-preview hidden" id="d-genre-preview">Will be tagged as: <span id="d-genre-preview-tag"></span></div>
@@ -3148,6 +3151,7 @@ function openDetailsModal(idx){
   var _dt=document.getElementById("d-translator"); if(_dt) _dt.value = b.translator || "";
   hmSet("d-rt", b.runtimeMin||0);
   edLoad('d', b);
+  growAll('d');
   var gi=document.getElementById('d-genre-input'); if(gi) gi.value=b.genre||'';
   document.getElementById("d-pages").value       = b.pages || "";
   document.getElementById("d-series").value      = b.seriesOrder || "";
@@ -3820,6 +3824,24 @@ var _edDraft={f:[],d:[]};
 // Genre is a lookup, not a wall of pills: type a few letters and the genres
 // already in use are offered. Anything typed that matches nothing is simply a
 // new genre, so adding one costs no extra field.
+// A field grows with what is typed instead of clipping it, up to a ceiling —
+// past that it scrolls, so one long summary can never push the button off the
+// screen. scrollHeight is absent outside a browser, so guard it.
+function autoGrow(el){
+  if(!el || !el.style) return;
+  try{
+    el.style.height='auto';
+    var h=el.scrollHeight;
+    if(typeof h==='number' && h>0) el.style.height=h+'px';
+  }catch(e){}
+}
+function growAll(pfx){
+  ['-title','-author','-translator','-series-name','-summary','-genre-input'].forEach(function(k){
+    autoGrow(document.getElementById(pfx+k));
+  });
+}
+// These read as one-line fields; Enter should not put a newline in a title.
+function noEnter(e){ if(e && e.key==='Enter'){ e.preventDefault(); } }
 function genreType(p){
   var box=document.getElementById(p+'-genre-input'), out=document.getElementById(p+'-genre-sugg');
   if(!box||!out) return;
@@ -5636,7 +5658,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v25';
+var BABEL_VERSION='babel-v26';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -6346,6 +6368,7 @@ function _lkFillSummary(txt){
   var sum=document.getElementById('f-summary');
   if(!sum || sum.value.trim() || !txt) return;
   sum.value=txt;
+  autoGrow(sum);
 }
 function lookupPick(i){
   var r=_lookupDocs[i]; if(!r) return;
@@ -6354,6 +6377,7 @@ function lookupPick(i){
   document.getElementById('f-author').value=r.author||'';
   if(r.pages) document.getElementById('f-pages').value=r.pages;
   if(r.desc) _lkFillSummary(r.desc);
+  growAll('f');
   if(r.cats&&r.cats.length) _lkApplyGenre(r.cats);
   var box=document.getElementById('lookup-results'); box.innerHTML=''; box.classList.add('hidden');
   var lf=document.getElementById('f-lookup'); if(lf) lf.value='';
