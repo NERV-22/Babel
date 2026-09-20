@@ -746,8 +746,17 @@ body{padding:0}
 .bp-progl{font-family:sans-serif;font-size:12px;color:var(--text-muted);margin-top:6px}
 .bp-empty{font-family:sans-serif;font-size:12.5px;color:var(--text-muted);text-align:center;padding:14px 0}
 .rt-card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius,14px);padding:12px 13px;margin-bottom:10px}
-.rt-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
-.rt-n{font-family:sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700}
+.rt-head{display:flex;align-items:center;gap:11px;margin-bottom:10px}
+.rt-head .rt-ttl{flex:1;min-width:0}
+.rt-head .rt-ttl b{display:block;font-family:Georgia,serif;font-size:16px;font-weight:700;
+  color:var(--text);line-height:1.25}
+.rt-head .rt-ttl span{display:block;font-family:sans-serif;font-size:12px;color:var(--text-muted);
+  margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt-head .rt-pct{flex:none;font-family:Georgia,serif;font-size:15px;font-weight:700;color:var(--accent)}
+.rt-head .sdel{flex:none}
+.rt-n{flex:none;width:30px;height:30px;border-radius:9px;
+  background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);
+  font-family:Georgia,serif;font-size:14px;font-weight:700;line-height:30px;text-align:center}
 .bk-trans{color:var(--text-muted);opacity:.85}
 .bk-audio{font-family:sans-serif;font-size:10.5px;padding:1px 6px;border-radius:999px;border:1px solid var(--border);color:var(--text-muted);margin-left:5px}
 .hm-row{display:flex;align-items:center;gap:6px}
@@ -785,8 +794,17 @@ body{padding:0}
 .fr-v textarea{min-height:44px;resize:vertical}
 .fr-v .w-sm{flex:0 0 48px}
 .fr-v .w-md{flex:0 0 88px}
-.fr .hm-row{padding:0;border:0;gap:8px}
+.fr .hm-row{padding:0;border:0;gap:7px;flex-wrap:nowrap;width:100%}
 .fr .hm-l{display:none}
+.fr .hm-row .ed-name{flex:1 1 auto;width:auto;min-width:0}
+.fr .hm-row input[type=number]{flex:0 0 44px;width:44px;text-align:center;padding-left:0;padding-right:0}
+.fr .hm-s{flex:none;font-size:11.5px}
+.fr .ed-new{gap:7px;flex-wrap:wrap;padding:2px 0 6px}
+.fr .ed-new input[type=text]{flex:1 1 100%;width:100%}
+.fr .ed-new input[type=number]{flex:0 0 44px;width:44px;text-align:center;padding-left:0;padding-right:0}
+.fr .ed-new button{flex:0 0 auto;padding:8px 15px;border-radius:8px;font-size:13px}
+.fr .ed-row{padding:8px 0;border-top:1px solid var(--border)}
+.fr .ed-add{padding:9px 0}
 .h-rank{padding:2px 0 14px}
 .h-rank-n{font-size:26px;font-weight:700;letter-spacing:-.4px;color:var(--text)}
 .h-rank-s{font-family:sans-serif;font-size:12.5px;color:var(--text-muted);margin-top:4px}
@@ -5658,7 +5676,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v26';
+var BABEL_VERSION='babel-v28';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
