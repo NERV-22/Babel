@@ -754,6 +754,31 @@ body{padding:0}
 .hm-l{flex:none;font-family:sans-serif;font-size:11.5px;color:var(--text-muted)}
 .hm-row input{width:64px;min-width:0}
 .hm-s{font-family:sans-serif;font-size:11.5px;color:var(--text-muted)}
+.h-cards{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:16px}
+.h-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius,14px);padding:16px}
+.h-card-n{font-family:Georgia,serif;font-size:28px;font-weight:700;letter-spacing:-.6px;color:var(--text)}
+.h-card-l{font-family:sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--text-muted);margin-top:7px}
+.set-row{display:flex;align-items:center;gap:12px;text-align:left}
+.set-n{flex:1;min-width:0;display:block}
+.set-n b{display:block;font-weight:400;font-size:15.5px;color:var(--text)}
+.set-n em{display:block;font-style:normal;font-family:sans-serif;font-size:12.5px;
+  color:var(--text-muted);margin-top:3px}
+.form-rows{display:flex;flex-direction:column}
+.fr{display:flex;align-items:center;gap:12px;min-height:48px;border-bottom:1px solid var(--border)}
+.fr-top{align-items:flex-start;padding:10px 0}
+.fr-l{flex:0 0 76px;font-family:sans-serif;font-size:12px;color:var(--text-muted);letter-spacing:.2px}
+.fr-top .fr-l{padding-top:10px}
+.fr-v{flex:1;min-width:0;display:flex;align-items:center;gap:9px}
+.fr-col{flex-direction:column;align-items:stretch;gap:0}
+.fr-v input,.fr-v textarea{width:100%;background:none;border:0;border-bottom:1px solid transparent;
+  border-radius:0;padding:11px 0;font-size:15.5px;color:var(--text)}
+.fr-v input:focus,.fr-v textarea:focus{border-bottom-color:var(--accent);box-shadow:none;outline:none}
+.fr-v textarea{min-height:44px;resize:vertical}
+.fr-v .w-sm{flex:0 0 48px}
+.fr-v .w-md{flex:0 0 88px}
+.fr .hm-row{padding:0;border:0;gap:8px}
+.fr .hm-l{display:none}
 .h-rank{padding:2px 0 14px}
 .h-rank-n{font-size:26px;font-weight:700;letter-spacing:-.4px;color:var(--text)}
 .h-rank-s{font-family:sans-serif;font-size:12.5px;color:var(--text-muted);margin-top:4px}
@@ -1232,7 +1257,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <div class="set-list">
         <div class="set-group">
           <div class="set-group-h">Appearance</div>
-          <button class="set-row" onclick="toggleThemePanel()"><span>Theme &amp; colours</span><span class="set-chev">&rsaquo;</span></button>
+          <button class="set-row" onclick="toggleThemePanel()">
+            <span class="set-n"><b>Theme &amp; colours</b><em>Each list keeps its own palette</em></span>
+            <span class="set-chev">&rsaquo;</span></button>
         </div>
         <div class="set-group">
           <div class="set-group-h">Account</div>
@@ -1441,12 +1468,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <div class="lookup-status hidden" id="lookup-status"></div>
       <button type="button" class="manual-toggle" id="manual-toggle" onclick="showManual()">Enter details manually</button>
       <div id="add-manual" class="hidden">
-            <div class="form-grid">
-        <input class="span-full" type="text" id="f-title" placeholder="Title"/>
-        <input class="span-full" type="text" id="f-author" placeholder="Author"/>
-        <input class="span-full" type="text" id="f-translator" placeholder="Translator (optional)"/>
-        <input type="number" id="f-pages" placeholder="Page count" min="1"/>
-        <div class="hm-row span-full"><span class="hm-l">Audio</span>
+            <div class="form-rows">
+        
+      <div class="fr"><span class="fr-l">Title</span><div class="fr-v"><input type="text" id="f-title" placeholder="—"/></div></div>
+      <div class="fr"><span class="fr-l">Author</span><div class="fr-v"><input type="text" id="f-author" placeholder="—"/></div></div>
+      <div class="fr"><span class="fr-l">Translator</span><div class="fr-v"><input type="text" id="f-translator" placeholder="—"/></div></div>
+      <div class="fr"><span class="fr-l">Pages</span><div class="fr-v"><input type="number" class="w-md" id="f-pages" placeholder="0" min="1"/></div></div>
+      <div class="fr"><span class="fr-l">Series</span><div class="fr-v"><input type="text" class="w-sm" id="f-series" placeholder="#"/><input type="text" id="f-series-name" placeholder="Series name"/></div></div>
+      <div class="fr fr-top"><span class="fr-l">Audio</span><div class="fr-v fr-col"><div class="hm-row">
           <input type="text" id="f-audiolabel" class="ed-name" placeholder="Audiobook"/>
           <input type="number" id="f-rt-h" placeholder="hr" min="0"/><span class="hm-s">hr</span>
           <input type="number" id="f-rt-m" placeholder="min" min="0" max="59"/><span class="hm-s">min</span></div>
@@ -1456,12 +1485,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
             <input type="text" id="f-ed-label" placeholder="GraphicAudio"/>
             <input type="number" id="f-ed-h" placeholder="hr" min="0"/>
             <input type="number" id="f-ed-m" placeholder="min" min="0" max="59"/>
-            <button type="button" onclick="edAdd('f')">Add</button></div></div>
-        <input type="text" id="f-series" placeholder="Series # (optional, e.g. 1, 2, Prequel)"/>
-        <input class="span-full" type="text" id="f-series-name" placeholder="Series name (optional, e.g. Harry Potter)"/>
-        <textarea class="span-full" id="f-summary" placeholder="Summary / thoughts (optional)"></textarea>
+            <button type="button" onclick="edAdd('f')">Add</button></div></div></div></div>
+      <div class="fr fr-top"><span class="fr-l">Summary</span><div class="fr-v"><textarea id="f-summary" placeholder="—"></textarea></div></div>
+    
       </div>
-      <p class="genre-pick-label">Genre - pick an existing one or type a new one:</p>
+      <p class="genre-pick-label">Genre</p>
       <div class="genre-pick-pills" id="genre-pick-pills"></div>
       <input class="custom-genre-input" type="text" id="f-custom-genre" placeholder="Or type a new genre, e.g. Gothic Fiction" oninput="onCustomGenreInput()" style="margin-top:8px"/>
       <div class="genre-preview hidden" id="genre-preview">Will be tagged as: <span id="genre-preview-tag"></span></div>
@@ -1579,12 +1607,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <div class="modal" style="max-width:560px">
     <p class="modal-title">Edit Book Details</p>
     <p class="modal-subtitle" id="details-modal-subtitle"></p>
-    <div class="form-grid">
-      <input class="span-full" type="text" id="d-title"  placeholder="Title"/>
-      <input class="span-full" type="text" id="d-author" placeholder="Author"/>
-      <input class="span-full" type="text" id="d-translator" placeholder="Translator (optional)"/>
-      <input type="number" id="d-pages"  placeholder="Page count" min="1"/>
-      <div class="hm-row span-full"><span class="hm-l">Audio</span>
+    <div class="form-rows">
+      
+      <div class="fr"><span class="fr-l">Title</span><div class="fr-v"><input type="text" id="d-title" placeholder="—"/></div></div>
+      <div class="fr"><span class="fr-l">Author</span><div class="fr-v"><input type="text" id="d-author" placeholder="—"/></div></div>
+      <div class="fr"><span class="fr-l">Translator</span><div class="fr-v"><input type="text" id="d-translator" placeholder="—"/></div></div>
+      <div class="fr"><span class="fr-l">Pages</span><div class="fr-v"><input type="number" class="w-md" id="d-pages" placeholder="0" min="1"/></div></div>
+      <div class="fr"><span class="fr-l">Series</span><div class="fr-v"><input type="text" class="w-sm" id="d-series" placeholder="#"/><input type="text" id="d-series-name" placeholder="Series name"/></div></div>
+      <div class="fr fr-top"><span class="fr-l">Audio</span><div class="fr-v fr-col"><div class="hm-row">
         <input type="text" id="d-audiolabel" class="ed-name" placeholder="Audiobook"/>
         <input type="number" id="d-rt-h" placeholder="hr" min="0"/><span class="hm-s">hr</span>
         <input type="number" id="d-rt-m" placeholder="min" min="0" max="59"/><span class="hm-s">min</span></div>
@@ -1594,12 +1624,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
           <input type="text" id="d-ed-label" placeholder="GraphicAudio"/>
           <input type="number" id="d-ed-h" placeholder="hr" min="0"/>
           <input type="number" id="d-ed-m" placeholder="min" min="0" max="59"/>
-          <button type="button" onclick="edAdd('d')">Add</button></div></div>
-      <input type="text"   id="d-series" placeholder="Series # (optional, e.g. 1, 2, Prequel)"/>
-      <input class="span-full" type="text" id="d-series-name" placeholder="Series name (optional, e.g. Harry Potter)"/>
-      <textarea class="span-full" id="d-summary" placeholder="Summary / thoughts (optional)"></textarea>
+          <button type="button" onclick="edAdd('d')">Add</button></div></div></div></div>
+      <div class="fr fr-top"><span class="fr-l">Summary</span><div class="fr-v"><textarea id="d-summary" placeholder="—"></textarea></div></div>
+    
     </div>
-    <p class="genre-pick-label">Genre - pick an existing one or type a new one:</p>
+    <p class="genre-pick-label">Genre</p>
     <div class="genre-pick-pills" id="d-genre-pills"></div>
     <input class="custom-genre-input" type="text" id="d-custom-genre" placeholder="Or type a new genre" oninput="onDetailsCustomGenreInput()" style="margin-top:8px"/>
     <div class="genre-preview hidden" id="d-genre-preview">Will be tagged as: <span id="d-genre-preview-tag"></span></div>
@@ -5548,7 +5577,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v18';
+var BABEL_VERSION='babel-v21';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -5915,8 +5944,11 @@ function renderHearth(){
       +'<div class="h-rank-s">'+_sd+'-day streak'
       +(_sn.next?' \u00b7 '+esc(_sn.next)+' at '+_sn.at:'')+'</div></div>';
   }
-  h+='<div class="h-bal"><span class="h-emb">'+babelHearth.embers+'</span><span class="h-embl">embers</span>'
-      +'<span class="h-frz">'+babelHearth.freezes+' freeze'+(babelHearth.freezes!==1?'s':'')+'</span></div>';
+  h+='<div class="h-cards">'
+      +'<div class="h-card"><div class="h-card-n">'+babelHearth.embers+'</div>'
+        +'<div class="h-card-l">Embers</div></div>'
+      +'<div class="h-card"><div class="h-card-n">'+babelHearth.freezes+'</div>'
+        +'<div class="h-card-l">Freeze'+(babelHearth.freezes!==1?'s':'')+'</div></div></div>';
   if(babelHearth.freezeNote){
     h+='<div class="h-note">'+ICONS.snow+' Freeze used \u2014 your streak was saved.'
       +'<button class="h-note-x" onclick="babelHearth.freezeNote=0;saveHearth();renderHearth();">\u00d7</button></div>';
@@ -6525,9 +6557,10 @@ function renderGenreChart(){
   var arr=Object.keys(counts).map(function(g){return {g:g,n:counts[g]};}).sort(function(a,b){return b.n-a.n;});
   if(!arr.length){ el.innerHTML=''; return; }
   var max=arr[0].n, top=arr.slice(0,8);
-  el.innerHTML='<div class="chart-title">This list by genre</div>'+top.map(function(x){
-    var c=genreColor(x.g), pct=Math.max(6,Math.round(x.n/max*100));
-    return '<div class="gc-row"><span class="gc-name">'+esc(x.g)+'</span><span class="gc-bar"><span class="gc-fill" style="width:'+pct+'%;background:'+c+'"></span></span><span class="gc-n">'+x.n+'</span></div>';
+  el.innerHTML='<div class="chart-title">This list by genre</div>'+top.map(function(x,_i){
+    var pct=Math.max(6,Math.round(x.n/max*100));
+    var c='var(--accent)', op=(1-(_i/Math.max(1,top.length))*0.55).toFixed(2);
+    return '<div class="gc-row"><span class="gc-name">'+esc(x.g)+'</span><span class="gc-bar"><span class="gc-fill" style="width:'+pct+'%;background:'+c+';opacity:'+op+'"></span></span><span class="gc-n">'+x.n+'</span></div>';
   }).join('');
 }
 
