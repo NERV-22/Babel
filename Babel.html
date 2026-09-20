@@ -754,6 +754,27 @@ body{padding:0}
 .hm-l{flex:none;font-family:sans-serif;font-size:11.5px;color:var(--text-muted)}
 .hm-row input{width:64px;min-width:0}
 .hm-s{font-family:sans-serif;font-size:11.5px;color:var(--text-muted)}
+.h-rank{padding:2px 0 14px}
+.h-rank-n{font-size:26px;font-weight:700;letter-spacing:-.4px;color:var(--text)}
+.h-rank-s{font-family:sans-serif;font-size:12.5px;color:var(--text-muted);margin-top:4px}
+.ed-name{flex:1 1 120px;min-width:90px}
+.ed-list{display:flex;flex-direction:column}
+.ed-row{display:flex;align-items:center;gap:10px;padding:9px 2px;border-top:1px solid var(--border)}
+.ed-row .ed-l{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ed-row .ed-t{color:var(--text-muted);font-size:13px;font-family:sans-serif}
+.ed-row .ed-x{background:none;border:0;color:var(--text-muted);font-size:17px;line-height:1;
+  padding:2px 4px;cursor:pointer;border-radius:4px}
+.ed-row .ed-x:hover{color:#e05c5c}
+.ed-add{background:none;border:0;color:var(--accent);font-family:sans-serif;font-size:13px;
+  font-weight:600;padding:10px 2px;cursor:pointer}
+.ed-new{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0 8px}
+.ed-new input[type=text]{flex:1 1 100%}
+.ed-new input[type=number]{flex:0 0 66px;text-align:center}
+.ed-new button{flex:0 0 auto;background:var(--accent);color:#fff;border:0;border-radius:8px;
+  padding:9px 15px;font-family:sans-serif;font-size:13px;font-weight:600;cursor:pointer}
+.rt-fmt{display:flex;gap:6px;margin-bottom:9px;flex-wrap:wrap}
+.rt-fmt button{min-width:84px}
+.rt-fmt button[disabled]{opacity:.7;cursor:default}
 .rt-fmt{display:flex;gap:6px;margin-bottom:9px}
 .rt-fmt button{flex:1;padding:7px 0;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-muted);font-family:sans-serif;font-size:12px;cursor:pointer}
 .rt-fmt button.on{border-color:var(--accent);color:var(--accent);background:var(--surface)}
@@ -1274,6 +1295,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <div class="shop-i-d">Covers a day you miss, automatically.</div></div>
       <button class="shop-buy" id="shop-buy" onclick="buyFreeze()">50</button>
     </div>
+    <div class="shop-item">
+      <div class="shop-i-l"><div class="shop-i-n">Five freezes</div>
+        <div class="shop-i-d">Saves 50 embers.</div></div>
+      <button class="shop-buy" id="shop-buy5" onclick="buyFreeze(5)">200</button>
+    </div>
     <div class="shop-note" id="shop-note"></div>
     <div class="modal-btns" style="margin-top:12px"><button class="modal-cancel" onclick="closeShop()">Done</button></div>
   </div>
@@ -1420,9 +1446,17 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <input class="span-full" type="text" id="f-author" placeholder="Author"/>
         <input class="span-full" type="text" id="f-translator" placeholder="Translator (optional)"/>
         <input type="number" id="f-pages" placeholder="Page count" min="1"/>
-        <div class="hm-row span-full"><span class="hm-l">Audiobook length</span>
+        <div class="hm-row span-full"><span class="hm-l">Audio</span>
+          <input type="text" id="f-audiolabel" class="ed-name" placeholder="Audiobook"/>
           <input type="number" id="f-rt-h" placeholder="hr" min="0"/><span class="hm-s">hr</span>
           <input type="number" id="f-rt-m" placeholder="min" min="0" max="59"/><span class="hm-s">min</span></div>
+        <div class="span-full"><div id="f-eds" class="ed-list"></div>
+          <button type="button" class="ed-add" id="f-ed-add" onclick="edOpen('f')">+ Version</button>
+          <div class="ed-new hidden" id="f-ed-new">
+            <input type="text" id="f-ed-label" placeholder="GraphicAudio"/>
+            <input type="number" id="f-ed-h" placeholder="hr" min="0"/>
+            <input type="number" id="f-ed-m" placeholder="min" min="0" max="59"/>
+            <button type="button" onclick="edAdd('f')">Add</button></div></div>
         <input type="text" id="f-series" placeholder="Series # (optional, e.g. 1, 2, Prequel)"/>
         <input class="span-full" type="text" id="f-series-name" placeholder="Series name (optional, e.g. Harry Potter)"/>
         <textarea class="span-full" id="f-summary" placeholder="Summary / thoughts (optional)"></textarea>
@@ -1550,9 +1584,17 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <input class="span-full" type="text" id="d-author" placeholder="Author"/>
       <input class="span-full" type="text" id="d-translator" placeholder="Translator (optional)"/>
       <input type="number" id="d-pages"  placeholder="Page count" min="1"/>
-      <div class="hm-row span-full"><span class="hm-l">Audiobook length</span>
+      <div class="hm-row span-full"><span class="hm-l">Audio</span>
+        <input type="text" id="d-audiolabel" class="ed-name" placeholder="Audiobook"/>
         <input type="number" id="d-rt-h" placeholder="hr" min="0"/><span class="hm-s">hr</span>
         <input type="number" id="d-rt-m" placeholder="min" min="0" max="59"/><span class="hm-s">min</span></div>
+      <div class="span-full"><div id="d-eds" class="ed-list"></div>
+        <button type="button" class="ed-add" id="d-ed-add" onclick="edOpen('d')">+ Version</button>
+        <div class="ed-new hidden" id="d-ed-new">
+          <input type="text" id="d-ed-label" placeholder="GraphicAudio"/>
+          <input type="number" id="d-ed-h" placeholder="hr" min="0"/>
+          <input type="number" id="d-ed-m" placeholder="min" min="0" max="59"/>
+          <button type="button" onclick="edAdd('d')">Add</button></div></div>
       <input type="text"   id="d-series" placeholder="Series # (optional, e.g. 1, 2, Prequel)"/>
       <input class="span-full" type="text" id="d-series-name" placeholder="Series name (optional, e.g. Harry Potter)"/>
       <textarea class="span-full" id="d-summary" placeholder="Summary / thoughts (optional)"></textarea>
@@ -1993,7 +2035,7 @@ function fanOutSession(bookId, session, skipListId){
 // in one list reaches every copy of it. Deliberately NOT part of fanOutBookMeta:
 // that runs on every rating tap and session delete, and a stray call must never
 // quietly rewrite another list's details. Only an actual edit calls this.
-var BOOK_DETAIL_FIELDS=['title','author','translator','pages','runtimeMin','genre','seriesOrder','seriesName','summary'];
+var BOOK_DETAIL_FIELDS=['title','author','translator','pages','runtimeMin','audioLabel','editions','genre','seriesOrder','seriesName','summary'];
 function fanOutBookDetails(idx){
   var b=books[idx]; if(!b||!b.bookId) return;
   lists.forEach(function(l){
@@ -2314,10 +2356,13 @@ function pagesReadFor(b,isRead){
 // the book's own running time, NOT in wall-clock listening: at 1.5x a 30-hour
 // book is 30 hours of book and 20 hours of his evening. This counts the book.
 // Time actually spent still drives the goal, the streak and the Today cards.
-function _audioMinsFrom(run,reads,sessions,isRead){
+function _audioMinsFrom(runFor,reads,sessions,isRead){
   var total=0, i;
   for(i=0;i<(reads||[]).length;i++){
     var r=reads[i]; if(!r || !isAudioRead(r)) continue;
+    // Each read is measured against ITS OWN version's length. The hearth still
+    // passes a plain number, which applies to every read as it always did.
+    var run = (typeof runFor==='function') ? (runFor(r)||0) : (runFor||0);
     var f=0;
     (sessions||[]).forEach(function(x){          // audio positions are minutes
       if(x && x.readId===r.id && (x.endPage||0)>f) f=x.endPage||0;
@@ -2329,7 +2374,8 @@ function _audioMinsFrom(run,reads,sessions,isRead){
 }
 function minsListenedFor(b,isRead){
   if(!b || !(b.sessions||[]).length) return 0;
-  return _audioMinsFrom(b.runtimeMin||0, b.sessions, b.timerSessions, isRead);
+  return _audioMinsFrom(function(r){ var v=versionFor(b,r); return v?v.mins:0; },
+                        b.sessions, b.timerSessions, isRead);
 }
 /* ---- Stats hero cards: tap through to the books behind the number ----
    Each list is built from the same function that produces the number on the
@@ -2728,8 +2774,8 @@ function filteredBooks(){
     if(fl==='m' && !(pg>=200&&pg<=500)) continue;
     if(fl==='l' && !(pg>500)) continue;
     var ffm=_fv('ff-fmt');
-    if(ffm==='audio' && !(b.runtimeMin>0)) continue;
-    if(ffm==='print' && b.runtimeMin>0) continue;
+    if(ffm==='audio' && !audioVersions(b).length) continue;
+    if(ffm==='print' && audioVersions(b).length) continue;
     var fo=_fv('ff-opt');
     if(fo==='yes' && !b.optional) continue;
     if(fo==='no'  && b.optional) continue;
@@ -2780,7 +2826,7 @@ function openDescSheet(idx){
   document.getElementById('desc-title').textContent=b.title||'Book';
   document.getElementById('desc-sub').textContent=
     [b.author,(b.translator?'trans. '+b.translator:''),st,b.genre,
-     (b.pages?b.pages+'p':''),(b.runtimeMin?fmtMins(b.runtimeMin)+' audio':'')]
+     lengthTag(b,curReadOf(b))]
     .filter(Boolean).join(' \u00b7 ');
   document.getElementById('desc-body').innerHTML = (b.summary||'').trim()
     ? esc(b.summary)
@@ -2933,14 +2979,16 @@ function submitBook(){
 
   if(!title)                   return showFormError("Title is required.");
   if(!author)                  return showFormError("Author is required.");
-  if((isNaN(pages)||pages<1) && !(runtimeMin>0))
-    return showFormError("Enter a page count or an audiobook length.");
+  if((isNaN(pages)||pages<1) && !(runtimeMin>0) && !(_edDraft.f||[]).length)
+    return showFormError("Enter a page count or an audio length.");
   if(!genre)                   return showFormError("Please select or type a genre.");
 
   if(!confirmDuplicate(title,author,-1)) return;
   books.push({
     bookId:resolveBookId(title,author),
-    title:title, author:author, translator:translator, pages:pages, runtimeMin:runtimeMin, genre:genre,
+    title:title, author:author, translator:translator, pages:pages, runtimeMin:runtimeMin,
+    audioLabel:(document.getElementById("f-audiolabel")||{value:''}).value.trim(),
+    editions:(_edDraft.f||[]).slice(), genre:genre,
     summary:summary, optional:false, myRating:0,
     seriesOrder:seriesOrder, seriesName:seriesName,
     isFav:false, isReading:false, sessions:[]
@@ -3051,6 +3099,7 @@ function openDetailsModal(idx){
   document.getElementById("d-author").value      = b.author || "";
   var _dt=document.getElementById("d-translator"); if(_dt) _dt.value = b.translator || "";
   hmSet("d-rt", b.runtimeMin||0);
+  edLoad('d', b);
   document.getElementById("d-pages").value       = b.pages || "";
   document.getElementById("d-series").value      = b.seriesOrder || "";
   document.getElementById("d-series-name").value = b.seriesName || "";
@@ -3122,7 +3171,7 @@ function saveDetailsModal(){
 
   if(!title)                  return showDetailsError("Title is required.");
   if(!author)                 return showDetailsError("Author is required.");
-  if((isNaN(pages)||pages<1) && !(runtimeMin>0))
+  if((isNaN(pages)||pages<1) && !(runtimeMin>0) && !(_edDraft.d||[]).length)
     return showDetailsError("Enter a page count or an audiobook length.");
   if(!genre)                  return showDetailsError("Please select or type a genre.");
 
@@ -3130,6 +3179,8 @@ function saveDetailsModal(){
   // any other fields not exposed in the form.
   var b=books[detailsIdx];
   b.title=title; b.author=author; b.translator=translator; b.pages=pages; b.runtimeMin=runtimeMin; b.genre=genre;
+  b.audioLabel=(document.getElementById("d-audiolabel")||{value:''}).value.trim();
+  b.editions=(_edDraft.d||[]).slice();
   b.seriesOrder=seriesOrder; b.seriesName=seriesName; b.summary=summary;
 
   saveCurrentList();
@@ -3154,7 +3205,7 @@ function copyBook(idx){
   // SOURCE list (so Inherit can replay that on the destination).
   clipboardBook = {
     bookId: b.bookId,
-    title: b.title, author: b.author, translator: b.translator||'', pages: b.pages, runtimeMin: b.runtimeMin||0, genre: b.genre,
+    title: b.title, author: b.author, translator: b.translator||'', pages: b.pages, runtimeMin: b.runtimeMin||0, audioLabel: b.audioLabel||'', editions: (b.editions||[]).slice(), genre: b.genre,
     summary: b.summary || "",
     seriesOrder: b.seriesOrder || "",
     seriesName: b.seriesName || "",
@@ -3202,7 +3253,7 @@ function confirmPaste(mode){
     // Inherit = the SAME book shown in another list (shared id, shared reads).
     // Reset = a genuinely separate entry, so it gets its own identity.
     bookId: mode==="inherit" ? (c.bookId || resolveBookId(c.title,c.author)) : newBookId(),
-    title: c.title, author: c.author, translator: c.translator||'', pages: c.pages, runtimeMin: c.runtimeMin||0, genre: c.genre,
+    title: c.title, author: c.author, translator: c.translator||'', pages: c.pages, runtimeMin: c.runtimeMin||0, audioLabel: c.audioLabel||'', editions: (c.editions||[]).slice(), genre: c.genre,
     summary: c.summary, optional: c.optional,
     seriesOrder: c.seriesOrder, seriesName: c.seriesName,
     myRating:   mode==="inherit" ? c.myRating  : 0,
@@ -3571,7 +3622,54 @@ function tagSessionRead(b,session){
 // only the unit shown, and which statistics a read feeds, differ.
 function readFormat(r){ return (r && r.format==='audio') ? 'audio' : 'print'; }
 function isAudioRead(r){ return readFormat(r)==='audio'; }
-function readTotal(b,r){ return !b?0:(isAudioRead(r)?(b.runtimeMin||0):(b.pages||0)); }
+// A book's audio can exist in several versions — a dramatisation and a plain
+// narration run to different lengths. Version one is the original runtimeMin,
+// named by audioLabel; any others live in b.editions. A read-through points at
+// one with edId, and no edId means version one, so every read written before
+// this existed keeps working untouched.
+function audioVersions(b){
+  var out=[];
+  if(!b) return out;
+  if((b.runtimeMin||0)>0) out.push({id:'',label:(b.audioLabel||'Audiobook'),mins:b.runtimeMin||0});
+  (b.editions||[]).forEach(function(e){
+    if(e&&e.id) out.push({id:e.id,label:e.label||'Audio',mins:e.mins||0});
+  });
+  return out;
+}
+// The version a read is on, or null when that version has since been deleted.
+// Null is NOT silently swapped for another version: borrowing a different
+// length is what turned a runtime into a page count once already, and a read
+// showing "no length set" is honest where a wrong denominator is not.
+function versionFor(b,r){
+  var vs=audioVersions(b), id=(r&&r.edId)||'';
+  for(var i=0;i<vs.length;i++) if(vs[i].id===id) return vs[i];
+  return null;
+}
+function readTotal(b,r){
+  if(!b) return 0;
+  if(!isAudioRead(r)) return b.pages||0;
+  var v=versionFor(b,r);
+  return v?v.mins:0;
+}
+// One length tag, never a list. A book with three recordings would otherwise
+// print all three and push the card to five lines before the progress bar.
+// The tag follows the read you are actually on, so it always agrees with the
+// progress line underneath it. With nothing started it counts the versions
+// instead of naming them.
+function lengthTag(b,r){
+  if(!b) return '';
+  if(isAudioRead(r)){
+    var v=versionFor(b,r);
+    if(!v) return 'no runtime set';
+    return (v.label?v.label+' \u00b7 ':'')+fmtMins(v.mins);
+  }
+  if(r) return b.pages>0 ? b.pages+'p' : 'no page count';
+  var vs=audioVersions(b), out=[];
+  if(b.pages>0) out.push(b.pages+'p');
+  if(vs.length===1) out.push(vs[0].label+' \u00b7 '+fmtMins(vs[0].mins));
+  else if(vs.length>1) out.push(vs.length+' audio versions');
+  return out.join(' \u00b7 ');
+}
 function fmtMins(n){
   n=Math.max(0,Math.round(n||0));
   var h=Math.floor(n/60), m=n%60;
@@ -3661,6 +3759,54 @@ function stampFormats(b){
 }
 function bookHasAudio(b){ return ((b&&b.sessions)||[]).some(isAudioRead); }
 // Two-box hh/mm entry — one hh:mm field is painful on a phone keypad.
+// Extra audio versions while a form is open. Version one stays in the hr/min
+// boxes above; these are the rest, held here until the form is submitted so a
+// half-typed version is never written to a book.
+var _edDraft={f:[],d:[]};
+function edRender(p){
+  var host=document.getElementById(p+'-eds'); if(!host) return;
+  host.innerHTML=(_edDraft[p]||[]).map(function(e){
+    return '<div class="ed-row"><span class="ed-l">'+esc(e.label)+'</span>'
+      +'<span class="ed-t">'+fmtMins(e.mins)+'</span>'
+      +'<button type="button" class="ed-x" onclick="edDel(\''+p+'\',\''+esc(e.id)+'\')" '
+      +'title="Remove this version">\u00d7</button></div>';
+  }).join('');
+}
+function edOpen(p){
+  var n=document.getElementById(p+'-ed-new'), a=document.getElementById(p+'-ed-add');
+  if(n) n.classList.remove('hidden');
+  if(a) a.classList.add('hidden');
+  var l=document.getElementById(p+'-ed-label'); if(l) l.focus();
+}
+function edClose(p){
+  var n=document.getElementById(p+'-ed-new'), a=document.getElementById(p+'-ed-add');
+  if(n) n.classList.add('hidden');
+  if(a) a.classList.remove('hidden');
+  ['-ed-label','-ed-h','-ed-m'].forEach(function(k){
+    var el=document.getElementById(p+k); if(el) el.value='';
+  });
+}
+function edAdd(p){
+  var label=(document.getElementById(p+'-ed-label')||{value:''}).value.trim();
+  var mins=hmGet(p+'-ed');
+  // Both halves are required: a version with no length would quietly give
+  // every read pointing at it a denominator of zero.
+  if(!label){ showToast('Name this version'); return; }
+  if(!(mins>0)){ showToast('Give this version a length'); return; }
+  _edDraft[p]=_edDraft[p]||[];
+  _edDraft[p].push({id:'ed'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
+                    label:label, mins:mins});
+  edClose(p); edRender(p);
+}
+function edDel(p,id){
+  _edDraft[p]=(_edDraft[p]||[]).filter(function(e){ return e.id!==id; });
+  edRender(p);
+}
+function edLoad(p,b){
+  _edDraft[p]=((b&&b.editions)||[]).map(function(e){ return {id:e.id,label:e.label,mins:e.mins}; });
+  var l=document.getElementById(p+'-audiolabel'); if(l) l.value=(b&&b.audioLabel)||'';
+  edClose(p); edRender(p);
+}
 function hmGet(pfx){
   var h=parseInt((document.getElementById(pfx+'-h')||{}).value,10)||0;
   var m=parseInt((document.getElementById(pfx+'-m')||{}).value,10)||0;
@@ -4397,14 +4543,18 @@ function syncHeadlineRating(idx){
 }
 // A read-through's medium is fixed once it has sessions — switching would
 // reinterpret their recorded positions as the wrong unit.
-function setReadFormat(i,fmt){
+function setReadFormat(i,fmt,edId){
   if(smIdx<0)return;
   var b=books[smIdx], r=(b.sessions||[])[i]; if(!r) return;
-  if(readFormat(r)===fmt) return;
+  edId=edId||'';
+  if(readFormat(r)===fmt && ((r.edId||'')===edId)) return;
   var used=(b.timerSessions||[]).some(function(x){ return x && x.readId===r.id; });
   if(used){ showToast('This read already has sessions \u2014 start a new read to change medium'); return; }
-  if(fmt==='audio' && !(b.runtimeMin>0)){ showToast('Set the audiobook length on this book first'); return; }
+  if(fmt==='audio' && !audioVersions(b).length){ showToast('Add an audio version to this book first'); return; }
   r.format=fmt;
+  // Only an audio read carries a version. Switching to print drops it, so a
+  // read can never hold a stale version id that a later switch would revive.
+  if(fmt==='audio') r.edId=edId; else delete r.edId;
   saveCurrentList(); fanOutBookMeta(smIdx); renderSM(); renderTable();
 }
 function setReadRating(i,val){
@@ -4417,6 +4567,23 @@ function setReadRating(i,val){
   saveCurrentList(); fanOutBookMeta(smIdx); renderSM(); renderTable(); updateStats();
 }
 // The book page: identity, current-read progress, then every read-through
+// One button per medium the book actually has a figure for: Print when it has
+// pages, then one per audio version. A read whose version has been deleted
+// keeps a button of its own, or it would be stuck in a medium with nothing on
+// screen to change it.
+function readFmtButtons(b,x,i){
+  var out=[], vs=audioVersions(b), audio=isAudioRead(x);
+  if((b.pages||0)>0 || !audio)
+    out.push('<button class="'+(!audio?'on':'')+'" onclick="setReadFormat('+i+',\'print\')">Print</button>');
+  vs.forEach(function(v){
+    var on = audio && ((x&&x.edId)||'')===v.id;
+    out.push('<button class="'+(on?'on':'')+'" onclick="setReadFormat('+i+',\'audio\',\''+esc(v.id)+'\')">'
+      +esc(v.label)+'</button>');
+  });
+  if(audio && !versionFor(b,x))
+    out.push('<button class="on" disabled title="This version was deleted">Removed version</button>');
+  return '<div class="rt-fmt">'+out.join('')+'</div>';
+}
 // newest-first — each with its own bar, dates, rating and written thoughts.
 function renderSM(){
   if(smIdx<0)return;
@@ -4425,7 +4592,7 @@ function renderSM(){
   document.getElementById("sm-booktitle").textContent=b.title||'Book';
   document.getElementById("sm-subtitle").textContent=
     [b.author,(b.translator?'trans. '+b.translator:''),seriesText(b),b.genre,
-     (b.pages?b.pages+'p':''),(b.runtimeMin?fmtMins(b.runtimeMin)+' audio':'')]
+     lengthTag(b,curReadOf(b))]
     .filter(Boolean).join(' \u00b7 ');
 
   var ss=b.sessions, n=ss.length;
@@ -4454,8 +4621,7 @@ function renderSM(){
           +'<button class="sdel" onclick="delS('+i+')" title="Remove this read">'+ICONS.close+'</button></div>'
         +'<div class="rt-bar"><div class="rt-fill" style="width:'+rpct+'%"></div></div>'
         +'<div class="rt-pages">'+progText(x,rp,rtot)+'</div>'
-        +'<div class="rt-fmt"><button class="'+(!isAudioRead(x)?'on':'')+'" onclick="setReadFormat('+i+',\'print\')">Print</button>'
-          +'<button class="'+(isAudioRead(x)?'on':'')+'" onclick="setReadFormat('+i+',\'audio\')">Audio</button></div>'
+        +readFmtButtons(b,x,i)
         +'<div class="rt-dates">'
           +'<label class="rt-d"><span>Started</span><input type="date" value="'+esc(x.start||'')+'" onchange="updS('+i+',\'start\',this.value)"/></label>'
           +'<label class="rt-d"><span>Finished</span><input type="date" value="'+esc(x.end||'')+'" onchange="updS('+i+',\'end\',this.value)"/></label>'
@@ -5099,7 +5265,7 @@ function renderTable(){
         +'<div class="bk-id" onclick="openDescSheet('+b.idx+')" title="Show description">'
           +'<div class="bk-title">'+esc(b.title)+inlineSeriesTag+(b.optional?'<span class="optional-tag">(optional)</span>':'')+sBadge+'</div>'
           +seriesLine
-          +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+(b.translator?' &middot; <span class="bk-trans">trans. '+esc(b.translator)+'</span>':'')+(b.pages>0?' &middot; '+b.pages+'p':'')+(b.runtimeMin?' <span class="bk-audio">'+fmtMins(b.runtimeMin)+' audio</span>':'')+'</div>'
+          +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+(b.translator?' &middot; <span class="bk-trans">trans. '+esc(b.translator)+'</span>':'')+(function(){var _t=lengthTag(b,curReadOf(b));return _t?' <span class="bk-audio">'+esc(_t)+'</span>':'';})()+'</div>'
         +'</div>'
         +'<button class="fav-btn'+(b.isFav?' on':'')+'" onclick="toggleFav('+b.idx+')" title="Favourite">'+ICONS.heart+'</button>'
       +'</div>'
@@ -5382,7 +5548,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v17';
+var BABEL_VERSION='babel-v18';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -5718,6 +5884,20 @@ function hearthSub(w){ _hSub=w;
 }
 function hToggle(k){ _hOpen[k]=!_hOpen[k]; renderHearth(); }
 function _hNum(n){ return n>=1000?Math.round(n).toLocaleString():(Math.round(n*10)/10); }
+// Names for the streak, shown as the Hearth's title. These sit ON TOP of the
+// badge ladder, they do not replace it — the streak track keeps all 25 of its
+// numeric tiers and every badge already earned. Each threshold is a real rung
+// of that track, so a name arrives on the same day a badge does.
+var STREAK_NAMES=[[3,'Cinderling'],[7,'Emberfall'],[30,'Hearthkeeper'],[90,'Promethean'],
+                  [120,'Hestian'],[160,'Beacon'],[210,'Radiant Vigil'],[340,'Pyre Eternal']];
+function streakName(days){
+  var cur=null,next=null;
+  for(var i=0;i<STREAK_NAMES.length;i++){
+    if(days>=STREAK_NAMES[i][0]) cur=STREAK_NAMES[i];
+    else { next=STREAK_NAMES[i]; break; }
+  }
+  return {name:cur?cur[1]:'', next:next?next[1]:'', at:next?next[0]:0};
+}
 function renderHearth(){
   var el=document.getElementById('h-body'); if(!el) return;
   // Recompute here so the panel can never show a stale "next tier" below the
@@ -5727,7 +5907,15 @@ function renderHearth(){
     var _pa=pendingAch(), _st=document.getElementById('h-st-ach');
     if(_st) _st.textContent='Achievements'+(_pa?' \u00b7 '+_pa:'');
   }catch(e){}
-  var h='<div class="h-bal"><span class="h-emb">'+babelHearth.embers+'</span><span class="h-embl">embers</span>'
+  var _sd=0; try{ _sd=computeStreak().current||0; }catch(e){}
+  var _sn=streakName(_sd);
+  var h='';
+  if(_sn.name){
+    h+='<div class="h-rank"><div class="h-rank-n">'+esc(_sn.name)+'</div>'
+      +'<div class="h-rank-s">'+_sd+'-day streak'
+      +(_sn.next?' \u00b7 '+esc(_sn.next)+' at '+_sn.at:'')+'</div></div>';
+  }
+  h+='<div class="h-bal"><span class="h-emb">'+babelHearth.embers+'</span><span class="h-embl">embers</span>'
       +'<span class="h-frz">'+babelHearth.freezes+' freeze'+(babelHearth.freezes!==1?'s':'')+'</span></div>';
   if(babelHearth.freezeNote){
     h+='<div class="h-note">'+ICONS.snow+' Freeze used \u2014 your streak was saved.'
@@ -5805,11 +5993,16 @@ function renderShop(){
   var btn=document.getElementById('shop-buy'), note=document.getElementById('shop-note');
   var why = babelHearth.embers<50 ? ('Need '+(50-babelHearth.embers)+' more embers.') : '';
   btn.disabled=!!why; btn.classList.toggle('off',!!why);
+  var b5=document.getElementById('shop-buy5');
+  if(b5){ var no5=babelHearth.embers<200; b5.disabled=no5; b5.classList.toggle('off',no5); }
   note.textContent=why||'Buy as many as you like \u2014 they bank up.';
 }
-function buyFreeze(){
-  if(emBal()<50) return;
-  emSpend(50); babelHearth.freezes++;
+var FREEZE_PACKS={1:50,5:200};
+function buyFreeze(n){
+  n=(n===5)?5:1;
+  var cost=FREEZE_PACKS[n];
+  if(emBal()<cost) return;
+  emSpend(cost); babelHearth.freezes+=n;
   // A freeze covers days from the day you bought it onward — it must never be
   // eaten retroactively by a gap that already happened.
   if(!babelHearth.freezeFrom){ var _t=new Date(); _t.setHours(0,0,0,0); babelHearth.freezeFrom=_t.getTime(); }
