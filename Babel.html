@@ -3647,10 +3647,32 @@ function formatHMS(totalSec){
 // instead of being swallowed by the previous read's furthest page.
 function newReadId(){ return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 // Newest read = latest start date, ties broken by array order (later = newer).
+// Which read is "current" decides the card, the progress line and the timer's
+// denominator, so getting it wrong shows the wrong length everywhere. Ranking:
+//   1. a read still in progress beats a finished one
+//   2. among those, the one with the most recent timed session - what you are
+//      actually reading now, which a start date cannot tell you
+//   3. then the later start date, then the newer entry
+// Finished reads rank by when they finished, most recent first.
+function _readActivity(b,r){
+  var t=0, id=r&&r.id; if(!id) return 0;
+  var ts=(b&&b.timerSessions)||[];
+  for(var i=0;i<ts.length;i++){
+    var x=ts[i];
+    if(x && !x.detached && x.readId===id && x.startTime>t) t=x.startTime;
+  }
+  return t;
+}
 function currentReadIdx(b){
   var ss=(b&&b.sessions)||[], best=-1, bestKey='';
   for(var i=0;i<ss.length;i++){
-    var k=(ss[i].start||'')+'|'+String(i).padStart(4,'0');
+    var r=ss[i]||{};
+    var open=!(r.end||'');
+    var k=(open?'1':'0')
+         +'|'+(open?String(_readActivity(b,r)).padStart(16,'0'):'0000000000000000')
+         +'|'+(open?'':(r.end||''))
+         +'|'+(r.start||'')
+         +'|'+String(i).padStart(4,'0');
     if(best<0 || k>=bestKey){ best=i; bestKey=k; }
   }
   return best;
@@ -3732,18 +3754,49 @@ function readMediumName(b,r){
   var v=versionFor(b,r);
   return v?(v.label||'Audiobook'):'Removed version';
 }
+// Every medium a book exists in: print counts as one, then each audio version.
+function mediaFor(b){
+  var out=[];
+  if(b && (b.pages||0)>0) out.push('print');
+  audioVersions(b).forEach(function(v){ out.push('a:'+v.id); });
+  return out;
+}
+// The media actually finished. A version read twice counts once; a read that
+// was started and abandoned does not count as read at all.
+function mediaRead(b){
+  var seen={}, n=0, all=mediaFor(b);
+  ((b&&b.sessions)||[]).forEach(function(r){
+    if(!r || !(r.end||'')) return;
+    var k=isAudioRead(r)?('a:'+(r.edId||'')):'print';
+    if(all.indexOf(k)<0) return;          // the version was deleted since
+    if(!seen[k]){ seen[k]=1; n++; }
+  });
+  return n;
+}
+// One tag, never a list, and it answers whichever question applies:
+//   reading now      -> which version, and how long it is
+//   nothing active   -> how many versions you have read, out of how many exist
+//   nothing read yet -> what the book exists as
 function lengthTag(b,r){
   if(!b) return '';
-  if(isAudioRead(r)){
-    var v=versionFor(b,r);
-    if(!v) return 'no runtime set';
-    return (v.label?v.label+' \u00b7 ':'')+fmtMins(v.mins);
+  var active = r && !(r.end||'');
+  if(active){
+    if(isAudioRead(r)){
+      var v=versionFor(b,r);
+      if(!v) return 'no runtime set';
+      return (v.label?v.label+' \u00b7 ':'')+fmtMins(v.mins);
+    }
+    return b.pages>0 ? b.pages+'p' : 'no page count';
   }
-  if(r) return b.pages>0 ? b.pages+'p' : 'no page count';
+  var media=mediaFor(b), total=media.length, done=mediaRead(b);
+  if(done>0 && total>1)
+    return done>=total ? ('all '+total+' versions read')
+                       : (done+' of '+total+' versions read');
   var vs=audioVersions(b), out=[];
   if(b.pages>0) out.push(b.pages+'p');
   if(vs.length===1) out.push(vs[0].label+' \u00b7 '+fmtMins(vs[0].mins));
   else if(vs.length>1) out.push(vs.length+' audio versions');
+  if(done>0 && total===1) out.push('read');
   return out.join(' \u00b7 ');
 }
 function fmtMins(n){
@@ -5676,7 +5729,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v28';
+var BABEL_VERSION='babel-v30';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
