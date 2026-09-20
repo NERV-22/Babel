@@ -189,8 +189,8 @@ tbody tr.is-read .title-series{opacity:.6}
 .form-error{font-size:12px;color:#c0392b;font-family:sans-serif}
 .submit-btn{align-self:flex-start;padding:9px 20px;font-size:13px;font-family:sans-serif;font-weight:600;border:none;border-radius:8px;background:var(--text);color:var(--surface);cursor:pointer}
 .submit-btn:hover{opacity:.82}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal{background:var(--surface);border-radius:14px;padding:24px;width:100%;max-width:520px;display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 40px rgba(0,0,0,.15)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal{background:var(--surface);border-radius:14px;padding:24px;width:100%;max-width:520px;display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 40px rgba(0,0,0,.15);max-height:calc(var(--vvh,100vh) - 40px);margin:auto 0}
 @media (max-width:560px){
   .modal-overlay{padding:12px}
   .modal{padding:18px;gap:12px}
@@ -199,7 +199,9 @@ tbody tr.is-read .title-series{opacity:.6}
 .modal-title{font-size:16px;font-weight:700;color:var(--text)}
 .modal-subtitle{font-size:13px;color:var(--text-muted);font-family:sans-serif;margin-top:-8px}
 .modal textarea{padding:10px 12px;font-size:13px;font-family:sans-serif;border:1px solid var(--border);border-radius:8px;background:var(--bg1);color:var(--text);outline:none;resize:vertical;min-height:120px;line-height:1.6;width:100%}
-.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+.modal-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  margin:0 -4px;padding:0 4px}
+.modal-btns{flex:none;display:flex;gap:8px;justify-content:flex-end}
 .modal-cancel{padding:8px 16px;font-size:13px;font-family:sans-serif;font-weight:600;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-muted);cursor:pointer}
 .modal-save{padding:8px 16px;font-size:13px;font-family:sans-serif;font-weight:600;border:none;border-radius:8px;background:var(--text);color:var(--surface);cursor:pointer}
 
@@ -767,9 +769,9 @@ body{padding:0}
 .grow,.fr-v input,.fr-v textarea{scroll-margin-top:84px;scroll-margin-bottom:84px}
 .rt-note.grow{min-height:52px;max-height:200px;overflow-y:auto;resize:none}
 .grow-modal{min-height:140px;max-height:46vh;overflow-y:auto}
-.fr-v textarea.grow{min-height:44px;max-height:132px;overflow-y:auto;resize:none;
+.fr-v textarea.grow{min-height:44px;max-height:120px;overflow-y:auto;resize:none;
   font-family:Georgia,'Times New Roman',serif;line-height:1.4}
-.fr-v textarea.grow-lg{max-height:210px}
+.fr-v textarea.grow-lg{max-height:184px}
 .gsugg{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 8px}
 .gsugg .gs{border:1px solid var(--border);background:none;color:var(--text-muted);border-radius:999px;
   padding:7px 13px;font-family:sans-serif;font-size:12.5px;cursor:pointer}
@@ -1638,6 +1640,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <div class="modal" style="max-width:560px">
     <p class="modal-title">Edit Book Details</p>
     <p class="modal-subtitle" id="details-modal-subtitle"></p>
+    <div class="modal-scroll">
     <div class="form-rows">
       
       <div class="fr"><span class="fr-l">Title</span><div class="fr-v"><textarea rows="1" class="grow" id="d-title" placeholder="—" oninput="autoGrow(this)" onkeydown="noEnter(event)"></textarea></div></div>
@@ -1663,6 +1666,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <textarea rows="1" class="grow" id="d-genre-input" onkeydown="noEnter(event)" placeholder="Start typing…" autocomplete="off"
         oninput="genreType('d')" onfocus="genreType('d')"></textarea>
       <div class="gsugg" id="d-genre-sugg"></div></div></div>
+    </div>
     <input class="custom-genre-input" type="text" id="d-custom-genre" placeholder="Or type a new genre" oninput="onDetailsCustomGenreInput()" style="margin-top:8px"/>
     <div class="genre-preview hidden" id="d-genre-preview">Will be tagged as: <span id="d-genre-preview-tag"></span></div>
     <p class="form-error hidden" id="d-form-error"></p>
@@ -3927,6 +3931,24 @@ function growAll(pfx){
 }
 // These read as one-line fields; Enter should not put a newline in a title.
 function noEnter(e){ if(e && e.key==='Enter'){ e.preventDefault(); } }
+// A phone's 100vh ignores the keyboard, so anything sized by it hides behind
+// one. visualViewport reports what is actually visible; publish it as --vvh.
+function _syncViewportHeight(){
+  try{
+    var vv=window.visualViewport;
+    var h=vv?vv.height:(window.innerHeight||0);
+    if(h>0) document.documentElement.style.setProperty('--vvh', h+'px');
+  }catch(e){}
+}
+try{
+  _syncViewportHeight();
+  if(window.visualViewport && window.visualViewport.addEventListener){
+    window.visualViewport.addEventListener('resize', _syncViewportHeight);
+    window.visualViewport.addEventListener('scroll', _syncViewportHeight);
+  }
+  window.addEventListener('resize', _syncViewportHeight);
+  window.addEventListener('orientationchange', function(){ setTimeout(_syncViewportHeight,150); });
+}catch(e){}
 var _focusField=null;
 function _keepFocusVisible(){
   var el=_focusField;
@@ -5770,7 +5792,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v32';
+var BABEL_VERSION='babel-v33';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
