@@ -764,6 +764,8 @@ body{padding:0}
 .hm-row input{width:64px;min-width:0}
 .hm-s{font-family:sans-serif;font-size:11.5px;color:var(--text-muted)}
 .custom-genre-input,.genre-preview{display:none!important}
+.rt-note.grow{min-height:52px;max-height:200px;overflow-y:auto;resize:none}
+.grow-modal{min-height:140px;max-height:46vh;overflow-y:auto}
 .fr-v textarea.grow{min-height:44px;max-height:132px;overflow-y:auto;resize:none;
   font-family:Georgia,'Times New Roman',serif;line-height:1.4}
 .fr-v textarea.grow-lg{max-height:210px}
@@ -1624,7 +1626,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <div class="modal">
     <p class="modal-title">Edit Summary/Thoughts</p>
     <p class="modal-subtitle" id="modal-subtitle"></p>
-    <textarea id="modal-textarea" placeholder="Paste or type the book summary / your thoughts here..."></textarea>
+    <textarea id="modal-textarea" class="grow-modal" placeholder="Paste or type the book summary / your thoughts here..."></textarea>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal()">Cancel</button>
       <button class="modal-save" onclick="saveModal()">Save</button>
@@ -3169,7 +3171,6 @@ function openDetailsModal(idx){
   var _dt=document.getElementById("d-translator"); if(_dt) _dt.value = b.translator || "";
   hmSet("d-rt", b.runtimeMin||0);
   edLoad('d', b);
-  growAll('d');
   var gi=document.getElementById('d-genre-input'); if(gi) gi.value=b.genre||'';
   document.getElementById("d-pages").value       = b.pages || "";
   document.getElementById("d-series").value      = b.seriesOrder || "";
@@ -3189,6 +3190,9 @@ function openDetailsModal(idx){
   renderDetailsGenrePills();
   updateDetailsGenrePreview();
   document.getElementById("details-modal").classList.remove("hidden");
+  // Only now do the fields have both their values and a size on screen. A
+  // hidden element reports no height, so measuring earlier collapsed them all.
+  growSoon('d');
 }
 function closeDetailsModal(){
   document.getElementById("details-modal").classList.add("hidden");
@@ -3906,6 +3910,15 @@ function autoGrow(el){
     if(typeof h==='number' && h>0) el.style.height=h+'px';
   }catch(e){}
 }
+// Measure after the browser has laid the sheet out, then once more when the
+// keyboard has finished animating.
+function growSoon(pfx){
+  try{
+    if(typeof requestAnimationFrame==='function') requestAnimationFrame(function(){ growAll(pfx); });
+    else growAll(pfx);
+    setTimeout(function(){ growAll(pfx); }, 120);
+  }catch(e){ growAll(pfx); }
+}
 function growAll(pfx){
   ['-title','-author','-translator','-series-name','-summary','-genre-input'].forEach(function(k){
     autoGrow(document.getElementById(pfx+k));
@@ -3913,6 +3926,19 @@ function growAll(pfx){
 }
 // These read as one-line fields; Enter should not put a newline in a title.
 function noEnter(e){ if(e && e.key==='Enter'){ e.preventDefault(); } }
+// Tapping a field raises the keyboard, which shrinks the window and can leave
+// the field you just tapped above the fold. Put it back in view once the
+// keyboard has settled, and re-measure it while we are there.
+try{
+  document.addEventListener('focusin', function(e){
+    var el=e && e.target;
+    if(!el || !el.classList || !el.classList.contains('grow')) return;
+    autoGrow(el);
+    setTimeout(function(){
+      try{ el.scrollIntoView({block:'center', behavior:'smooth'}); }catch(_){ }
+    }, 260);
+  });
+}catch(e){}
 function genreType(p){
   var box=document.getElementById(p+'-genre-input'), out=document.getElementById(p+'-genre-sugg');
   if(!box||!out) return;
@@ -4808,11 +4834,15 @@ function renderSM(){
           +'<label class="rt-d"><span>Finished</span><input type="date" value="'+esc(x.end||'')+'" onchange="updS('+i+',\'end\',this.value)"/></label>'
         +'</div>'
         +'<div class="rt-rate">'+readStarsHTML(i,x.rating||0)+'</div>'
-        +'<textarea class="rt-note" placeholder="What did you think of this read?" onchange="updS('+i+',\'note\',this.value)">'+esc(x.note||'')+'</textarea>'
+        +'<textarea class="rt-note grow" rows="1" placeholder="What did you think of this read?" oninput="autoGrow(this)" onchange="updS('+i+',\'note\',this.value)">'+esc(x.note||'')+'</textarea>'
       +'</div>';
     }).join('');
   }
   document.getElementById("sm-list").innerHTML=head+body;
+  try{
+    var _n=document.querySelectorAll('#sm-list textarea.grow');
+    for(var _i=0;_i<_n.length;_i++) autoGrow(_n[_i]);
+  }catch(e){}
 }
 function addSession(){
   if(smIdx<0)return;
@@ -5729,7 +5759,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v30';
+var BABEL_VERSION='babel-v31';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
