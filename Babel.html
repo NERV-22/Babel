@@ -199,6 +199,10 @@ tbody tr.is-read .title-series{opacity:.6}
 .modal-title{font-size:16px;font-weight:700;color:var(--text)}
 .modal-subtitle{font-size:13px;color:var(--text-muted);font-family:sans-serif;margin-top:-8px}
 .modal textarea{padding:10px 12px;font-size:13px;font-family:sans-serif;border:1px solid var(--border);border-radius:8px;background:var(--bg1);color:var(--text);outline:none;resize:vertical;min-height:120px;line-height:1.6;width:100%}
+.sheet-form{display:flex;flex-direction:column}
+.sheet-form .form-rows{flex:0 0 auto}
+.sheet-form .modal-btns{position:sticky;bottom:0;background:var(--surface);
+  padding:12px 0 4px;margin-top:4px;border-top:1px solid var(--border)}
 .modal-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
   margin:0 -4px;padding:0 4px}
 .modal-btns{flex:none;display:flex;gap:8px;justify-content:flex-end}
@@ -544,7 +548,7 @@ body{padding:0}
 /* add sheet */
 .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:210;display:flex;align-items:flex-end;justify-content:center}
 .sheet-overlay.hidden{display:none}
-.sheet{width:100%;max-width:600px;max-height:90vh;overflow-y:auto;background:var(--surface);border-radius:20px 20px 0 0;padding:6px 16px 26px}
+.sheet{width:100%;max-width:600px;max-height:calc(var(--vvh,100vh) - 24px);overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--surface);border-radius:20px 20px 0 0;padding:6px 16px calc(26px + env(safe-area-inset-bottom,0px))}
 .sheet-grab{width:42px;height:4px;border-radius:99px;background:var(--border);margin:8px auto 4px;cursor:pointer}
 /* Description sheet. Replaces the old floating tooltip, which was anchored to
    the tapped card and so got clipped by the viewport on long summaries and
@@ -1636,11 +1640,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     </div>
   </div>
 </div>
-<div class="modal-overlay hidden" id="details-modal">
-  <div class="modal" style="max-width:560px">
+<div class="sheet-overlay hidden" id="details-modal" onclick="if(event.target===this)closeDetailsModal()">
+  <div class="sheet sheet-form">
+    <div class="sheet-grab" onclick="closeDetailsModal()"></div>
     <p class="modal-title">Edit Book Details</p>
     <p class="modal-subtitle" id="details-modal-subtitle"></p>
-    <div class="modal-scroll">
     <div class="form-rows">
       
       <div class="fr"><span class="fr-l">Title</span><div class="fr-v"><textarea rows="1" class="grow" id="d-title" placeholder="—" oninput="autoGrow(this)" onkeydown="noEnter(event)"></textarea></div></div>
@@ -1666,7 +1670,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <textarea rows="1" class="grow" id="d-genre-input" onkeydown="noEnter(event)" placeholder="Start typing…" autocomplete="off"
         oninput="genreType('d')" onfocus="genreType('d')"></textarea>
       <div class="gsugg" id="d-genre-sugg"></div></div></div>
-    </div>
     <input class="custom-genre-input" type="text" id="d-custom-genre" placeholder="Or type a new genre" oninput="onDetailsCustomGenreInput()" style="margin-top:8px"/>
     <div class="genre-preview hidden" id="d-genre-preview">Will be tagged as: <span id="d-genre-preview-tag"></span></div>
     <p class="form-error hidden" id="d-form-error"></p>
@@ -5792,7 +5795,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v33';
+var BABEL_VERSION='babel-v34';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
