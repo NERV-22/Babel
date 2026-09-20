@@ -2990,7 +2990,14 @@ function renderGenrePickPills(){
   try{ renderFilterOptions(); }catch(e){}
   try{ genreType('f'); }catch(e){}
 }
-function selectFormGenre(g){selectedFormGenre=g;document.getElementById("f-custom-genre").value="";renderGenrePickPills();updateGenrePreview();clearFormError();}
+function selectFormGenre(g){
+  selectedFormGenre=g;
+  var sink=document.getElementById("f-custom-genre"); if(sink) sink.value=g||"";
+  var box=document.getElementById("f-genre-input"); if(box) box.value=g||"";
+  var sg=document.getElementById("f-genre-sugg"); if(sg) sg.innerHTML="";
+  try{ updateGenrePreview(); }catch(e){}
+  clearFormError();
+}
 function onCustomGenreInput(){selectedFormGenre="";renderGenrePickPills();updateGenrePreview();clearFormError();}
 function updateGenrePreview(){
   var custom=document.getElementById("f-custom-genre").value.trim(),genre=custom||selectedFormGenre;
@@ -3031,8 +3038,14 @@ function submitBook(){
   saveCurrentList();
 
   // Reset the form so the next book starts from a blank slate.
-  ["f-title","f-author","f-pages","f-series","f-series-name","f-summary","f-custom-genre","f-genre-input"]
-    .forEach(function(id){document.getElementById(id).value="";});
+  ["f-title","f-author","f-pages","f-series","f-series-name","f-summary","f-custom-genre",
+   "f-genre-input","f-audiolabel","f-rt-h","f-rt-m"]
+    .forEach(function(id){var el=document.getElementById(id); if(el) el.value="";});
+  // The versions list and the runtime boxes are part of the form too. Left
+  // standing, the next book silently inherited the last one's audio.
+  _edDraft.f=[]; edClose('f'); edRender('f');
+  var _v1=document.getElementById('f-v1'); if(_v1) _v1.classList.add('hidden');
+  var _sg=document.getElementById('f-genre-sugg'); if(_sg) _sg.innerHTML='';
   selectedFormGenre="";
   document.getElementById("genre-preview").classList.add("hidden");
   clearFormError();
@@ -3689,6 +3702,14 @@ function readTotal(b,r){
 // The tag follows the read you are actually on, so it always agrees with the
 // progress line underneath it. With nothing started it counts the versions
 // instead of naming them.
+// What to CALL the medium a read is on — the version's name, or Print. The
+// length tag is a different thing (a figure) and reusing it here printed
+// "823p" as the heading of every print read.
+function readMediumName(b,r){
+  if(!isAudioRead(r)) return 'Print';
+  var v=versionFor(b,r);
+  return v?(v.label||'Audiobook'):'Removed version';
+}
 function lengthTag(b,r){
   if(!b) return '';
   if(isAudioRead(r)){
@@ -3804,7 +3825,7 @@ function genreType(p){
   if(!box||!out) return;
   var q=box.value.trim().toLowerCase();
   var all=[]; try{ all=allGenres()||[]; }catch(e){}
-  var hits=all.filter(function(g){ return !q || g.toLowerCase().indexOf(q)>=0; }).slice(0,8);
+  var hits=q ? all.filter(function(g){ return g.toLowerCase().indexOf(q)>=0; }).slice(0,8) : [];
   var typed=box.value.trim();
   var sink=document.getElementById(p+'-custom-genre'); if(sink) sink.value=typed;
   if(p==='f') selectFormGenreValue(typed); else detailsSelectedGenre=typed;
@@ -4683,7 +4704,7 @@ function renderSM(){
       var rp=pagesForRead(b,x.id), rtot=readTotal(b,x), rpct=rtot?Math.round(rp/rtot*100):0;
       return '<div class="rt-card">'
         +'<div class="rt-head"><span class="rt-n">'+(n-pos)+'</span>'
-          +'<span class="rt-ttl"><b>'+esc(lengthTag(b,x).split(' \u00b7 ')[0]||'Print')+'</b>'
+          +'<span class="rt-ttl"><b>'+esc(readMediumName(b,x))+'</b>'
             +'<span>'+progText(x,rp,rtot)+(x.start?' \u00b7 from '+esc(x.start.slice(5)):'')+'</span></span>'
           +'<span class="rt-pct">'+(rtot?rpct+'%':'\u2014')+'</span>'
           +'<button class="sdel" onclick="delS('+i+')" title="Remove this read">'+ICONS.close+'</button></div>'
@@ -5615,7 +5636,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v22';
+var BABEL_VERSION='babel-v25';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
