@@ -199,10 +199,11 @@ tbody tr.is-read .title-series{opacity:.6}
 .modal-title{font-size:16px;font-weight:700;color:var(--text)}
 .modal-subtitle{font-size:13px;color:var(--text-muted);font-family:sans-serif;margin-top:-8px}
 .modal textarea{padding:10px 12px;font-size:13px;font-family:sans-serif;border:1px solid var(--border);border-radius:8px;background:var(--bg1);color:var(--text);outline:none;resize:vertical;min-height:120px;line-height:1.6;width:100%}
-.sheet-form{display:flex;flex-direction:column}
-.sheet-form .form-rows{flex:0 0 auto}
-.sheet-form .modal-btns{position:sticky;bottom:0;background:var(--surface);
-  padding:12px 0 4px;margin-top:4px;border-top:1px solid var(--border)}
+.sheet-form{display:flex;flex-direction:column;overflow:hidden}
+.sheet-form .form-rows{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet-form .modal-btns{flex:none;background:var(--surface);padding:12px 0 2px;
+  margin-top:2px;border-top:1px solid var(--border)}
+.sheet-form .modal-title,.sheet-form .modal-subtitle,.sheet-form .form-error{flex:none}
 .modal-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
   margin:0 -4px;padding:0 4px}
 .modal-btns{flex:none;display:flex;gap:8px;justify-content:flex-end}
@@ -1462,7 +1463,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div class="add-row">
       <button class="add-toggle-btn" onclick="toggleAddForm()">
         <span id="add-icon" style="font-size:18px;line-height:1">+</span>
-        <span id="add-label">Add a book</span>
+        <span id="add-label"><span id="add-sheet-title">Add a book</span></span>
       </button>
       <div class="paste-pill" id="paste-pill">
         <button class="paste-btn" onclick="openPasteChooser()" title="Paste copied book">
@@ -1531,7 +1532,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <input class="custom-genre-input" type="text" id="f-custom-genre" placeholder="Or type a new genre, e.g. Gothic Fiction" oninput="onCustomGenreInput()" style="margin-top:8px"/>
       <div class="genre-preview hidden" id="genre-preview">Will be tagged as: <span id="genre-preview-tag"></span></div>
       <p class="form-error hidden" id="form-error"></p>
-      <button class="submit-btn" onclick="submitBook()">Add to list</button>
+      <button class="submit-btn" id="submit-btn" onclick="submitBook()">Add to list</button>
       </div>
     </div>
   </div>
@@ -3056,6 +3057,24 @@ function submitBook(){
     return showFormError("Enter a page count or an audio length.");
   if(!genre)                   return showFormError("Please select or type a genre.");
 
+  if(detailsIdx>=0){
+    var _b=books[detailsIdx];
+    if(!_b){ detailsIdx=-1; return; }
+    if(!confirmDuplicate(title,author,detailsIdx)) return;
+    // Mutated in place, so rating, favourite, reads and timed sessions survive.
+    _b.title=title; _b.author=author; _b.translator=translator;
+    _b.pages=pages; _b.runtimeMin=runtimeMin; _b.genre=genre;
+    _b.audioLabel=(document.getElementById("f-audiolabel")||{value:''}).value.trim();
+    _b.editions=(_edDraft.f||[]).slice();
+    _b.seriesOrder=seriesOrder; _b.seriesName=seriesName; _b.summary=summary;
+    saveCurrentList();
+    fanOutBookDetails(detailsIdx);
+    closeAddSheet();
+    updateStats(); renderFilterPills(); renderGenreDropdown(); renderGenrePickPills();
+    currentTab==="list" ? renderTable() : renderGenreTab();
+    return;
+  }
+
   if(!confirmDuplicate(title,author,-1)) return;
   books.push({
     bookId:resolveBookId(title,author),
@@ -3171,42 +3190,29 @@ document.addEventListener("keydown",function(e){
 // ── Edit Book Details modal ───────────────────────────────────────────────────
 // Opens a pre-filled form mirroring the Add Book form, writes back to
 // the existing book on save (no new entry created).
+function fillFormFromBook(b){
+  var set=function(id,v){ var el=document.getElementById(id); if(el) el.value=(v==null?'':v); };
+  set('f-title',b.title); set('f-author',b.author); set('f-translator',b.translator||'');
+  set('f-pages',b.pages||''); set('f-series',b.seriesOrder||''); set('f-series-name',b.seriesName||'');
+  set('f-summary',b.summary||'');
+  set('f-genre-input',b.genre||''); set('f-custom-genre',b.genre||'');
+  selectedFormGenre=b.genre||'';
+  hmSet('f-rt', b.runtimeMin||0);
+  edLoad('f', b);
+  var sg=document.getElementById('f-genre-sugg'); if(sg) sg.innerHTML='';
+}
 function openDetailsModal(idx){
+  var b=books[idx]; if(!b) return;
   detailsIdx=idx;
-  var b=books[idx];
-  document.getElementById("d-title").value       = b.title || "";
-  document.getElementById("d-author").value      = b.author || "";
-  var _dt=document.getElementById("d-translator"); if(_dt) _dt.value = b.translator || "";
-  hmSet("d-rt", b.runtimeMin||0);
-  edLoad('d', b);
-  var gi=document.getElementById('d-genre-input'); if(gi) gi.value=b.genre||'';
-  document.getElementById("d-pages").value       = b.pages || "";
-  document.getElementById("d-series").value      = b.seriesOrder || "";
-  document.getElementById("d-series-name").value = b.seriesName || "";
-  document.getElementById("d-summary").value     = b.summary || "";
-  // If the book's genre matches a known one, treat it as a selected pill;
-  // otherwise put it in the custom-genre input so it stays editable.
-  if(allGenres().indexOf(b.genre)>=0){
-    detailsSelectedGenre = b.genre;
-    document.getElementById("d-custom-genre").value = "";
-  } else {
-    detailsSelectedGenre = "";
-    document.getElementById("d-custom-genre").value = b.genre || "";
-  }
-  document.getElementById("details-modal-subtitle").textContent = b.title;
-  clearDetailsError();
-  renderDetailsGenrePills();
-  updateDetailsGenrePreview();
-  document.getElementById("details-modal").classList.remove("hidden");
-  // Only now do the fields have both their values and a size on screen. A
-  // hidden element reports no height, so measuring earlier collapsed them all.
-  growSoon('d');
+  openAddSheet();
+  try{ showManual(); }catch(e){}
+  fillFormFromBook(b);
+  var t=document.getElementById('add-sheet-title'); if(t) t.textContent='Edit book';
+  var btn=document.getElementById('submit-btn'); if(btn) btn.textContent='Save changes';
+  clearFormError();
+  growSoon('f');
 }
-function closeDetailsModal(){
-  document.getElementById("details-modal").classList.add("hidden");
-  detailsIdx=-1;
-  detailsSelectedGenre="";
-}
+function closeDetailsModal(){ closeAddSheet(); }
 function renderDetailsGenrePills(){
   try{ genreType('d'); }catch(e){}
 }
@@ -5470,6 +5476,9 @@ function openAddSheet(){
 }
 function closeAddSheet(){
   if(typeof closeScan==='function') closeScan();
+  detailsIdx=-1;
+  var _t=document.getElementById('add-sheet-title'); if(_t) _t.textContent='Add a book';
+  var _b=document.getElementById('submit-btn'); if(_b) _b.textContent='Add to list';
   var o=document.getElementById('add-sheet'); if(o) o.classList.add('hidden');
   var f=document.getElementById('add-form'); if(f) f.classList.add('hidden');
   document.body.style.overflow='';
@@ -5795,7 +5804,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v34';
+var BABEL_VERSION='babel-v36';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
