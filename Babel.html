@@ -777,6 +777,10 @@ body{padding:0}
 .fr-v textarea.grow{min-height:44px;max-height:120px;overflow-y:auto;resize:none;
   font-family:Georgia,'Times New Roman',serif;line-height:1.4}
 .fr-v textarea.grow-lg{max-height:184px}
+.cover-btn{flex:none;background:none;border:1px solid var(--border);color:var(--text-muted);
+  border-radius:999px;padding:7px 12px;font-family:sans-serif;font-size:12px;cursor:pointer;
+  white-space:nowrap}
+.cover-btn.on{border-color:var(--accent);color:var(--accent);background:rgba(194,168,120,.12)}
 .gsugg{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 8px}
 .gsugg .gs{border:1px solid var(--border);background:none;color:var(--text-muted);border-radius:999px;
   padding:7px 13px;font-family:sans-serif;font-size:12.5px;cursor:pointer}
@@ -1510,7 +1514,10 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <div class="fr"><span class="fr-l">Author</span><div class="fr-v"><textarea rows="1" class="grow" id="f-author" placeholder="—" oninput="autoGrow(this)" onkeydown="noEnter(event)"></textarea></div></div>
       <div class="fr"><span class="fr-l">Edition</span><div class="fr-v"><textarea rows="1" class="grow" id="f-translator" placeholder="—" oninput="autoGrow(this)" onkeydown="noEnter(event)"></textarea></div></div>
       <div class="fr"><span class="fr-l">Series</span><div class="fr-v"><input type="text" class="w-sm" id="f-series" placeholder="#"/><textarea rows="1" class="grow" id="f-series-name" placeholder="Series name" oninput="autoGrow(this)" onkeydown="noEnter(event)"></textarea></div></div>
-      <div class="fr"><span class="fr-l">Pages</span><div class="fr-v"><input type="number" class="w-md" id="f-pages" placeholder="0" min="1"/></div></div>
+      <div class="fr"><span class="fr-l">Pages</span><div class="fr-v">
+        <input type="number" class="w-md" id="f-pages" placeholder="0" min="1"/>
+        <button type="button" class="cover-btn" id="f-cover" onclick="toggleCover()"
+          title="How progress is counted">Furthest page</button></div></div>
       <div class="fr fr-top"><span class="fr-l">Audio</span><div class="fr-v fr-col"><div class="hm-row hidden" id="f-v1">
           <input type="text" id="f-audiolabel" class="ed-name" placeholder="Audiobook"/>
           <input type="number" id="f-rt-h" placeholder="hr" min="0"/><span class="hm-s">hr</span>
@@ -2105,7 +2112,7 @@ function fanOutSession(bookId, session, skipListId){
 // in one list reaches every copy of it. Deliberately NOT part of fanOutBookMeta:
 // that runs on every rating tap and session delete, and a stray call must never
 // quietly rewrite another list's details. Only an actual edit calls this.
-var BOOK_DETAIL_FIELDS=['title','author','translator','pages','runtimeMin','audioLabel','editions','genre','seriesOrder','seriesName','summary'];
+var BOOK_DETAIL_FIELDS=['title','author','translator','pages','runtimeMin','audioLabel','editions','coverage','genre','seriesOrder','seriesName','summary'];
 function fanOutBookDetails(idx){
   var b=books[idx]; if(!b||!b.bookId) return;
   lists.forEach(function(l){
@@ -3067,6 +3074,7 @@ function submitBook(){
     _b.audioLabel=(document.getElementById("f-audiolabel")||{value:''}).value.trim();
     _b.editions=(_edDraft.f||[]).slice();
     _b.seriesOrder=seriesOrder; _b.seriesName=seriesName; _b.summary=summary;
+    _b.coverage=_coverDraft;
     saveCurrentList();
     fanOutBookDetails(detailsIdx);
     closeAddSheet();
@@ -3079,6 +3087,7 @@ function submitBook(){
   books.push({
     bookId:resolveBookId(title,author),
     title:title, author:author, translator:translator, pages:pages, runtimeMin:runtimeMin,
+    coverage:_coverDraft,
     audioLabel:(document.getElementById("f-audiolabel")||{value:''}).value.trim(),
     editions:(_edDraft.f||[]).slice(), genre:genre,
     summary:summary, optional:false, myRating:0,
@@ -3093,7 +3102,7 @@ function submitBook(){
     .forEach(function(id){var el=document.getElementById(id); if(el) el.value="";});
   // The versions list and the runtime boxes are part of the form too. Left
   // standing, the next book silently inherited the last one's audio.
-  _edDraft.f=[]; edClose('f'); edRender('f');
+  _edDraft.f=[]; edClose('f'); edRender('f'); setCover(false);
   var _v1=document.getElementById('f-v1'); if(_v1) _v1.classList.add('hidden');
   var _sg=document.getElementById('f-genre-sugg'); if(_sg) _sg.innerHTML='';
   selectedFormGenre="";
@@ -3190,6 +3199,17 @@ document.addEventListener("keydown",function(e){
 // ── Edit Book Details modal ───────────────────────────────────────────────────
 // Opens a pre-filled form mirroring the Add Book form, writes back to
 // the existing book on save (no new entry created).
+// Off by default, so nothing already in the library changes behaviour.
+var _coverDraft=false;
+function setCover(on){
+  _coverDraft=!!on;
+  var btn=document.getElementById('f-cover');
+  if(btn){
+    btn.textContent=_coverDraft?'Pages covered':'Furthest page';
+    btn.classList.toggle('on',_coverDraft);
+  }
+}
+function toggleCover(){ setCover(!_coverDraft); }
 function fillFormFromBook(b){
   var set=function(id,v){ var el=document.getElementById(id); if(el) el.value=(v==null?'':v); };
   set('f-title',b.title); set('f-author',b.author); set('f-translator',b.translator||'');
@@ -3198,6 +3218,7 @@ function fillFormFromBook(b){
   set('f-genre-input',b.genre||''); set('f-custom-genre',b.genre||'');
   selectedFormGenre=b.genre||'';
   hmSet('f-rt', b.runtimeMin||0);
+  setCover(!!b.coverage);
   edLoad('f', b);
   var sg=document.getElementById('f-genre-sugg'); if(sg) sg.innerHTML='';
 }
@@ -3709,12 +3730,34 @@ function ensureCurrentRead(b){
   return b.sessions[i].id;
 }
 // Furthest page reached within one read-through.
-function pagesForRead(b,readId){
-  var max=0;
-  ((b&&b.timerSessions)||[]).forEach(function(x){
-    if(!x || x.detached || x.readId!==readId) return;
-    if((x.endPage||0)>max) max=x.endPage||0;
+// Some books are not read front to back. With coverage on, progress is how
+// many pages you have actually covered - the session ranges merged, so an
+// overlap is never counted twice and a gap is never counted at all. Off (the
+// default, and every existing book) progress stays the furthest page reached.
+function _mergedPages(list){
+  var r=[];
+  (list||[]).forEach(function(x){
+    if(!x || x.detached) return;
+    var a=Math.max(0,x.startPage||0), b2=Math.max(0,x.endPage||0);
+    if(b2<=a) return;                       // a backwards or empty range covers nothing
+    r.push([a,b2]);
   });
+  if(!r.length) return 0;
+  r.sort(function(p,q){ return p[0]-q[0]; });
+  var total=0, s0=r[0][0], e0=r[0][1];
+  for(var i=1;i<r.length;i++){
+    if(r[i][0]<=e0){ if(r[i][1]>e0) e0=r[i][1]; }   // overlapping or touching
+    else { total+=e0-s0; s0=r[i][0]; e0=r[i][1]; }
+  }
+  return total+(e0-s0);
+}
+function pagesForRead(b,readId){
+  var mine=((b&&b.timerSessions)||[]).filter(function(x){
+    return x && !x.detached && x.readId===readId;
+  });
+  if(b && b.coverage) return _mergedPages(mine);
+  var max=0;
+  mine.forEach(function(x){ if((x.endPage||0)>max) max=x.endPage||0; });
   return max;
 }
 // Stamp a session with the book's current read before it is stored.
@@ -3916,12 +3959,31 @@ var _edDraft={f:[],d:[]};
 // A field grows with what is typed instead of clipping it, up to a ceiling —
 // past that it scrolls, so one long summary can never push the button off the
 // screen. scrollHeight is absent outside a browser, so guard it.
+function _scrollParent(el){
+  try{
+    var n=el&&el.parentNode;
+    while(n && n.nodeType===1){
+      if(n.scrollHeight>n.clientHeight+1) return n;
+      n=n.parentNode;
+    }
+  }catch(e){}
+  return null;
+}
+// Measuring a field means collapsing it to 'auto' for an instant, which
+// scrolls whatever contains it and makes the view snap between the top of the
+// box and the caret on every keystroke. Remember where the container was and
+// put it back before the browser paints.
 function autoGrow(el){
   if(!el || !el.style) return;
   try{
+    var sc=_scrollParent(el);
+    var keep=sc?sc.scrollTop:(window.pageYOffset||window.scrollY||0);
+    var prev=el.style.height;
     el.style.height='auto';
     var h=el.scrollHeight;
-    if(typeof h==='number' && h>0) el.style.height=h+'px';
+    el.style.height=(typeof h==='number' && h>0)?(h+'px'):prev;
+    if(sc){ if(sc.scrollTop!==keep) sc.scrollTop=keep; }
+    else if((window.pageYOffset||window.scrollY||0)!==keep) window.scrollTo(0,keep);
   }catch(e){}
 }
 // Measure after the browser has laid the sheet out, then once more when the
@@ -3976,8 +4038,14 @@ try{
   });
   document.addEventListener('focusout', function(){ _focusField=null; });
   if(window.visualViewport && window.visualViewport.addEventListener){
+    var _lastVVH=window.visualViewport.height||0;
     window.visualViewport.addEventListener('resize', function(){
-      setTimeout(_keepFocusVisible, 60);
+      var h=window.visualViewport.height||0, moved=Math.abs(h-_lastVVH);
+      _lastVVH=h;
+      // Only a real keyboard open or close should move the view. The
+      // suggestion strip appearing as you type resizes it by a few dozen
+      // pixels, and re-centring on that is the other half of the flicker.
+      if(moved>120) setTimeout(_keepFocusVisible, 60);
     });
   }
 }catch(e){}
@@ -4085,6 +4153,7 @@ function currentPageFor(b){
     var tagged=b.timerSessions.some(function(x){ return x&&x.readId; });
     if(tagged) return pagesForRead(b,rid);
   }
+  if(b.coverage) return _mergedPages(b.timerSessions);
   var max=0;
   for(var j=0;j<b.timerSessions.length;j++){
     var ep=b.timerSessions[j].endPage||0;
@@ -5804,7 +5873,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v36';
+var BABEL_VERSION='babel-v38';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
