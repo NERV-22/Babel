@@ -1852,6 +1852,24 @@ function seedFromLists(){
 var STREAK_MIN_SEC=15*60;
 var babelGoalMin=10;
 function _dayKey(d){return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
+// A session that runs past midnight belongs to BOTH days. Crediting all of it
+// to the day it started left the new day reading zero minutes - so a night of
+// reading did not count toward the day it mostly happened in, and the midnight
+// pass could spend a freeze on a day that was about to be met.
+function _addSpanByDay(map, startMs, durSec){
+  var remain=Math.max(0, Math.round(durSec||0));
+  if(!startMs){ return; }
+  if(remain<=0){ var k0=_dayKey(new Date(startMs)); map[k0]=(map[k0]||0); return; }
+  var t=startMs, guard=0;
+  while(remain>0 && guard++<400){
+    var mid=new Date(t); mid.setHours(24,0,0,0);          // the next midnight
+    var toMid=Math.max(1, Math.floor((mid.getTime()-t)/1000));
+    var take=Math.min(remain, toMid);
+    var k=_dayKey(new Date(t));
+    map[k]=(map[k]||0)+take;
+    remain-=take; t+=take*1000;
+  }
+}
 function _gatherSecByDay(){
   var map={}, seen={};
   // A book in two lists holds the SAME session in both copies (fan-out), so
@@ -1859,12 +1877,27 @@ function _gatherSecByDay(){
   function addTS(arr){(arr||[]).forEach(function(s){
     if(!s||!s.startTime||s.detached)return;
     if(seen[s.startTime])return; seen[s.startTime]=1;
-    var k=_dayKey(new Date(s.startTime));map[k]=(map[k]||0)+(s.durationSec||0);});}
+    _addSpanByDay(map, s.startTime, s.durationSec||0);});}
   books.forEach(function(b){addTS(b.timerSessions);});
   lists.forEach(function(l){
     if(l.id===activeId)return;
     try{var raw=storage.getItem(listKey(l.id));if(!raw)return;JSON.parse(raw).forEach(function(b){addTS(b.timerSessions);});}catch(e){}
   });
+  // A timer still running has not been saved yet, so its minutes were invisible
+  // to the streak and to today's total: reading through midnight showed zero for
+  // the new day until you pressed stop, and the midnight pass could spend a
+  // freeze on a day you were in the middle of earning. Count the live session
+  // over the same span the saved one will use, so nothing shifts on save.
+  try{
+    if(typeof activeTimer!=='undefined' && activeTimer && activeTimer.startTime){
+      var _liveStart=activeTimer.startTime-(activeTimer.accumulatedSec||0)*1000;
+      if(!seen[_liveStart]){                       // never alongside its saved self
+        var _cap=(typeof MAX_PLAUSIBLE_SESSION_HOURS==='number'?MAX_PLAUSIBLE_SESSION_HOURS:3)*3600;
+        var _live=Math.min(Math.max(0, timerElapsedSec()), _cap);
+        if(_live>0){ seen[_liveStart]=1; _addSpanByDay(map, _liveStart, _live); }
+      }
+    }
+  }catch(e){}
   return map;
 }
 function computeStreak(){
@@ -5873,7 +5906,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v38';
+var BABEL_VERSION='babel-v40';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
