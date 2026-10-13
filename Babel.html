@@ -244,22 +244,38 @@ tbody tr.is-read .title-series{opacity:.6}
   cursor:pointer;margin-top:2px}
 .rl-log-add:hover{border-color:var(--accent)}
 .rl-log-row-main{cursor:pointer}
-.rl-edit{border:1px solid var(--accent);border-radius:10px;padding:12px;background:var(--bg1)}
-.rl-edit-head{font-family:sans-serif;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--accent);margin-bottom:10px}
-.rl-edit-row{display:flex;align-items:center;gap:7px;margin-bottom:9px}
-.rl-edit-l{flex:0 0 64px;font-family:sans-serif;font-size:12px;color:var(--text-muted)}
-.rl-edit-u{font-family:sans-serif;font-size:11.5px;color:var(--text-muted);flex:none}
-.rl-edit-row input{flex:1 1 0;min-width:0;background:var(--surface);border:1px solid var(--border);
-  border-radius:8px;color:var(--text);font-size:14px;padding:8px 9px;outline:none}
-.rl-edit-row input[type=number]{flex:0 0 58px;text-align:center}
-.rl-edit-row input:focus{border-color:var(--accent)}
-.rl-edit-err{color:#e07c7c;font-family:sans-serif;font-size:12px;margin-bottom:8px}
+.rl-edit{border:1px solid var(--accent-line,rgba(194,168,120,.34));border-radius:12px;padding:14px;
+  background:var(--bg1);margin:2px 0 8px}
+.rl-edit-head{font-family:sans-serif;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:12px}
+.rle-f{margin-bottom:12px}
+.rle-l{display:block;font-family:sans-serif;font-size:12px;color:var(--text-muted);margin-bottom:6px}
+.rle-when{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.rle-when input{width:100%;min-width:0;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);font-size:15px;padding:11px 10px;outline:none}
+.rle-when input:focus{border-color:var(--accent)}
+.rle-box{display:flex;flex-direction:column;gap:5px;min-width:0}
+.rle-box input{width:100%;min-width:0;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);font-family:Georgia,serif;font-size:17px;padding:12px 6px;
+  text-align:center;outline:none}
+.rle-box input:focus{border-color:var(--accent)}
+.rle-box span{font-family:sans-serif;font-size:11.5px;color:var(--text-muted);text-align:center}
+.rle-g3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.rle-g2{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.rle-g1{display:grid;grid-template-columns:1fr;gap:9px}
+.rle-pos{display:grid;grid-template-columns:1fr auto 1fr;gap:9px;align-items:start}
+.rle-g{min-width:0}
+.rle-gh{font-family:sans-serif;font-size:11.5px;color:var(--text-muted);margin-bottom:5px}
+.rle-arrow{color:var(--text-muted);font-size:15px;align-self:center;padding-top:14px}
+.rl-edit-err{color:#e07c7c;font-family:sans-serif;font-size:12.5px;margin-bottom:10px}
 .rl-edit-btns{display:flex;gap:8px;justify-content:flex-end}
-.rl-edit-btns button{border-radius:8px;padding:9px 15px;font-family:sans-serif;font-size:13px;
+.rl-edit-btns button{border-radius:9px;padding:10px 17px;font-family:sans-serif;font-size:13.5px;
   font-weight:600;cursor:pointer}
 .rl-edit-cancel{background:none;border:1px solid var(--border);color:var(--text-muted)}
-.rl-edit-save{background:var(--accent);border:0;color:#fff}
+.rl-edit-save{background:var(--accent);border:0;color:#1a1509}
+/* While the editor is open the list must not keep its 260px cap, or the panel
+   is squeezed inside a scroll box and looks cut off. */
+.rl-log-list.editing{max-height:none;overflow:visible}
 .rl-log-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 .rl-log-list::-webkit-scrollbar{display:block;width:6px}
 .rl-log-list::-webkit-scrollbar-track{background:transparent}
@@ -4779,6 +4795,7 @@ function renderRLModal(){
     + '<div class="rl-stat"><div class="rl-stat-n">'+(isAudioRead(curReadOf(b))?fmtMins(_progress):_progress.toLocaleString())+'</div><div class="rl-stat-l">'+(isAudioRead(curReadOf(b))?'listened':'pages')+(_hasReread?'<span class="rl-stat-sub">'+(isAudioRead(curReadOf(b))?fmtMins(_totPages):_totPages.toLocaleString())+' total</span>':'')+'</div></div>';
   // Session log list
   var list = document.getElementById("rl-log-list");
+  list.classList.toggle("editing", rlEditIdx !== -1);
   var ts = b.timerSessions || [];
   if(!ts.length){
     list.innerHTML = (rlEditIdx===-2 ? rlEditorHTML(b,null,-2) : '')
@@ -4788,7 +4805,11 @@ function renderRLModal(){
   }
   // Newest first
   var rows = ts.map(function(s,i){return {s:s, i:i};}).sort(function(a,b){return (b.s.startTime||0) - (a.s.startTime||0);});
-  list.innerHTML = rows.map(function(r){
+  // A new session opens ABOVE the log, on a book with a log and on one without.
+  // Prepended in only one of the two branches, "+ Add session" cleared the
+  // button and drew nothing on every book that had ever been timed.
+  list.innerHTML = (rlEditIdx===-2 ? rlEditorHTML(b,null,-2) : '')
+    + rows.map(function(r){
     var s = r.s;
     var _sa = sessionIsAudio(b,s);
     var pages = Math.max(0,(s.endPage||0) - (s.startPage||0));
@@ -4834,19 +4855,38 @@ function rlEditorHTML(b,s,idx){
   var sec = isNew ? 0 : Math.max(0, Math.round((s.durationSec||0)));
   var from = isNew ? currentPageFor(b) : (s.startPage||0);
   var to   = isNew ? currentPageFor(b) : (s.endPage||0);
-  var unit = audio ? 'minutes' : 'pages';
+  // Units sit UNDER their box, not beside it: beside, three boxes and three
+  // words are wider than a phone and the row wraps mid-field. Under, every box
+  // is the same width and the columns line up down the panel.
+  // The id arrives as a whole attribute rather than a bare name, so every box
+  // the reader looks up is written out literally in this file and a scan can
+  // match the two against each other.
+  function box(idAttr,val,unit,max){
+    return '<label class="rle-box"><input type="number" min="0"'+(max?' max="'+max+'"':'')
+      +' '+idAttr+' value="'+val+'"/><span>'+unit+'</span></label>';
+  }
+  function grp(head,inner){ return '<div class="rle-g"><div class="rle-gh">'+head+'</div>'+inner+'</div>'; }
+  var posInner = audio
+    ? grp('From','<div class="rle-g2">'+box('id="rle-fromh"',Math.floor(from/60),'hr')
+                 +box('id="rle-fromm"',from%60,'min',59)+'</div>')
+      +'<div class="rle-arrow">\u2192</div>'
+      +grp('To','<div class="rle-g2">'+box('id="rle-toh"',Math.floor(to/60),'hr')
+                 +box('id="rle-tom"',to%60,'min',59)+'</div>')
+    : grp('From','<div class="rle-g1">'+box('id="rle-from"',from,'page')+'</div>')
+      +'<div class="rle-arrow">\u2192</div>'
+      +grp('To','<div class="rle-g1">'+box('id="rle-to"',to,'page')+'</div>');
   return '<div class="rl-edit">'
     + '<div class="rl-edit-head">'+(isNew?'New session':'Edit session')+'</div>'
-    + '<div class="rl-edit-row"><span class="rl-edit-l">When</span>'
+    + '<div class="rle-f"><span class="rle-l">When</span><div class="rle-when">'
       + '<input type="date" id="rle-date" value="'+dateV+'"/>'
-      + '<input type="time" id="rle-time" value="'+timeV+'"/></div>'
-    + '<div class="rl-edit-row"><span class="rl-edit-l">Length</span>'
-      + '<input type="number" min="0" id="rle-h" value="'+Math.floor(sec/3600)+'"/><span class="rl-edit-u">h</span>'
-      + '<input type="number" min="0" max="59" id="rle-m" value="'+Math.floor((sec%3600)/60)+'"/><span class="rl-edit-u">m</span>'
-      + '<input type="number" min="0" max="59" id="rle-s" value="'+(sec%60)+'"/><span class="rl-edit-u">s</span></div>'
-    + '<div class="rl-edit-row"><span class="rl-edit-l">'+(audio?'Position':'Pages')+'</span>'
-      + '<input type="number" min="0" id="rle-from" value="'+from+'"/><span class="rl-edit-u">to</span>'
-      + '<input type="number" min="0" id="rle-to" value="'+to+'"/><span class="rl-edit-u">'+unit+'</span></div>'
+      + '<input type="time" id="rle-time" value="'+timeV+'"/></div></div>'
+    + '<div class="rle-f"><span class="rle-l">Length</span><div class="rle-g3">'
+      + box('id="rle-h"',Math.floor(sec/3600),'hr')
+      + box('id="rle-m"',Math.floor((sec%3600)/60),'min',59)
+      + box('id="rle-s"',sec%60,'sec',59)
+    + '</div></div>'
+    + '<div class="rle-f"><span class="rle-l">'+(audio?'Position':'Pages')+'</span>'
+      + '<div class="rle-pos">'+posInner+'</div></div>'
     + '<div class="rl-edit-err hidden" id="rle-err"></div>'
     + '<div class="rl-edit-btns">'
       + '<button class="rl-edit-cancel" onclick="rlEditCancel()">Cancel</button>'
@@ -4867,7 +4907,11 @@ function rlEditRead(b, base){
   var sec=n('rle-h')*3600 + n('rle-m')*60 + n('rle-s');
   if(sec<=0) return 'Give the session a length.';
   if(sec > 24*3600) return 'Longer than a day — check the hours.';
-  var from=n('rle-from'), to=n('rle-to');
+  // An audio position is two boxes an end; print is one. Either way the stored
+  // value is what it has always been: minutes for audio, a page for print.
+  var audioPos = !!document.getElementById('rle-fromh');
+  var from = audioPos ? (n('rle-fromh')*60 + n('rle-fromm')) : n('rle-from');
+  var to   = audioPos ? (n('rle-toh')*60   + n('rle-tom'))   : n('rle-to');
   // The open item from the handoff: p.120 to p.0 was storable and contributed
   // nothing. Refuse it here rather than letting it sit in the data.
   if(to < from) return 'The end cannot be before the start.';
@@ -6030,7 +6074,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v43';
+var BABEL_VERSION='babel-v44';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
