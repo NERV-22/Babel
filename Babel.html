@@ -239,6 +239,27 @@ tbody tr.is-read .title-series{opacity:.6}
 .rl-log-section{display:flex;flex-direction:column;gap:8px}
 .rl-log-title{font-size:12px;font-weight:700;color:var(--text-muted);font-family:sans-serif;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
 .rl-log-empty{font-size:12px;color:var(--text-muted);font-family:sans-serif;font-style:italic;text-align:center;padding:16px 8px}
+.rl-log-add{width:100%;background:none;border:1px dashed var(--border);color:var(--accent);
+  border-radius:10px;padding:10px;font-family:sans-serif;font-size:13px;font-weight:600;
+  cursor:pointer;margin-top:2px}
+.rl-log-add:hover{border-color:var(--accent)}
+.rl-log-row-main{cursor:pointer}
+.rl-edit{border:1px solid var(--accent);border-radius:10px;padding:12px;background:var(--bg1)}
+.rl-edit-head{font-family:sans-serif;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:10px}
+.rl-edit-row{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.rl-edit-l{flex:0 0 64px;font-family:sans-serif;font-size:12px;color:var(--text-muted)}
+.rl-edit-u{font-family:sans-serif;font-size:11.5px;color:var(--text-muted);flex:none}
+.rl-edit-row input{flex:1 1 0;min-width:0;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:14px;padding:8px 9px;outline:none}
+.rl-edit-row input[type=number]{flex:0 0 58px;text-align:center}
+.rl-edit-row input:focus{border-color:var(--accent)}
+.rl-edit-err{color:#e07c7c;font-family:sans-serif;font-size:12px;margin-bottom:8px}
+.rl-edit-btns{display:flex;gap:8px;justify-content:flex-end}
+.rl-edit-btns button{border-radius:8px;padding:9px 15px;font-family:sans-serif;font-size:13px;
+  font-weight:600;cursor:pointer}
+.rl-edit-cancel{background:none;border:1px solid var(--border);color:var(--text-muted)}
+.rl-edit-save{background:var(--accent);border:0;color:#fff}
 .rl-log-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 .rl-log-list::-webkit-scrollbar{display:block;width:6px}
 .rl-log-list::-webkit-scrollbar-track{background:transparent}
@@ -4706,6 +4727,7 @@ function openRL(idx){
   document.getElementById("rl-modal").classList.remove("hidden");
 }
 function closeRL(){
+  rlEditIdx = -1;
   rlOpenIdx = -1;
   cancelPagePrompt();
   document.getElementById("rl-modal").classList.add("hidden");
@@ -4759,7 +4781,9 @@ function renderRLModal(){
   var list = document.getElementById("rl-log-list");
   var ts = b.timerSessions || [];
   if(!ts.length){
-    list.innerHTML = '<div class="rl-log-empty">No timed sessions yet. Start a timer to log your reading.</div>';
+    list.innerHTML = (rlEditIdx===-2 ? rlEditorHTML(b,null,-2) : '')
+      + '<div class="rl-log-empty">No timed sessions yet. Start a timer, or add one by hand.</div>'
+      + rlAddRowHTML(b);
     return;
   }
   // Newest first
@@ -4777,15 +4801,115 @@ function renderRLModal(){
     var d = s.startTime ? new Date(s.startTime) : null;
     var dateStr = d ? d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : '—';
     var timeStr = d ? d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}) : '';
+    if(r.i===rlEditIdx) return rlEditorHTML(b,s,r.i);
     return '<div class="rl-log-row'+(_det?' detached':'')+'">'
-      + '<div class="rl-log-row-main">'
+      + '<div class="rl-log-row-main" onclick="rlEdit('+r.i+')" title="Edit this session">'
         + '<div class="rl-log-row-top"><span class="rl-log-row-date">'+esc(dateStr)+'</span><span class="rl-log-row-dur">'+formatHMS(s.durationSec||0)+'</span></div>'
         + '<div class="rl-log-row-sub">'+esc(timeStr)+'<span class="rl-log-dot">·</span>'+_posStr+'<span class="rl-log-dot">·</span>'+_amtStr
         +(_det?'<span class="rl-log-det">read deleted \u00b7 not counted</span>':'')+'</div>'
       + '</div>'
       + '<button class="rl-log-row-del" title="Delete session" onclick="deleteRLSession('+r.i+')">'+ICONS.close+'</button>'
     + '</div>';
-  }).join("");
+  }).join("") + rlAddRowHTML(b);
+}
+// A session logged by mistake used to be delete-or-live-with-it: pressing stop
+// without resetting the timer wrote 2h29m where 6m32s belonged, and nothing in
+// the app could correct it. A row opens for editing, and a session can be added
+// by hand for reading done away from the timer.
+var rlEditIdx = -1;                      // -1 none, -2 a new session, else index
+function rlEdit(i){ rlEditIdx = i; renderRLModal(); }
+function rlEditNew(){ rlEditIdx = -2; renderRLModal(); }
+function rlEditCancel(){ rlEditIdx = -1; renderRLModal(); }
+function rlAddRowHTML(b){
+  if(rlEditIdx===-2) return '';
+  return '<button class="rl-log-add" onclick="rlEditNew()">+ Add session</button>';
+}
+function _two(n){ return String(n).padStart(2,'0'); }
+function rlEditorHTML(b,s,idx){
+  var isNew = idx===-2;
+  var audio = isNew ? isAudioRead(curReadOf(b)) : sessionIsAudio(b,s);
+  var d = (!isNew && s && s.startTime) ? new Date(s.startTime) : new Date();
+  var dateV = d.getFullYear()+'-'+_two(d.getMonth()+1)+'-'+_two(d.getDate());
+  var timeV = _two(d.getHours())+':'+_two(d.getMinutes());
+  var sec = isNew ? 0 : Math.max(0, Math.round((s.durationSec||0)));
+  var from = isNew ? currentPageFor(b) : (s.startPage||0);
+  var to   = isNew ? currentPageFor(b) : (s.endPage||0);
+  var unit = audio ? 'minutes' : 'pages';
+  return '<div class="rl-edit">'
+    + '<div class="rl-edit-head">'+(isNew?'New session':'Edit session')+'</div>'
+    + '<div class="rl-edit-row"><span class="rl-edit-l">When</span>'
+      + '<input type="date" id="rle-date" value="'+dateV+'"/>'
+      + '<input type="time" id="rle-time" value="'+timeV+'"/></div>'
+    + '<div class="rl-edit-row"><span class="rl-edit-l">Length</span>'
+      + '<input type="number" min="0" id="rle-h" value="'+Math.floor(sec/3600)+'"/><span class="rl-edit-u">h</span>'
+      + '<input type="number" min="0" max="59" id="rle-m" value="'+Math.floor((sec%3600)/60)+'"/><span class="rl-edit-u">m</span>'
+      + '<input type="number" min="0" max="59" id="rle-s" value="'+(sec%60)+'"/><span class="rl-edit-u">s</span></div>'
+    + '<div class="rl-edit-row"><span class="rl-edit-l">'+(audio?'Position':'Pages')+'</span>'
+      + '<input type="number" min="0" id="rle-from" value="'+from+'"/><span class="rl-edit-u">to</span>'
+      + '<input type="number" min="0" id="rle-to" value="'+to+'"/><span class="rl-edit-u">'+unit+'</span></div>'
+    + '<div class="rl-edit-err hidden" id="rle-err"></div>'
+    + '<div class="rl-edit-btns">'
+      + '<button class="rl-edit-cancel" onclick="rlEditCancel()">Cancel</button>'
+      + '<button class="rl-edit-save" onclick="rlEditSave('+idx+')">Save</button></div>'
+  + '</div>';
+}
+// Reads the editor back into a session object. Returns a string on bad input so
+// the caller can show it rather than writing something impossible to the book.
+function rlEditRead(b, base){
+  function v(id){ var el=document.getElementById(id); return el? el.value : ''; }
+  function n(id){ var x=parseInt(v(id),10); return isNaN(x)?0:Math.max(0,x); }
+  var dv=v('rle-date'), tv=v('rle-time')||'00:00';
+  if(!dv) return 'Pick a date.';
+  var dp=dv.split('-'), tp=tv.split(':');
+  var when=new Date(+dp[0], (+dp[1])-1, +dp[2], +tp[0]||0, +tp[1]||0, 0, 0).getTime();
+  if(!when || isNaN(when)) return 'That date is not valid.';
+  if(when > Date.now()+60000) return 'That is in the future.';
+  var sec=n('rle-h')*3600 + n('rle-m')*60 + n('rle-s');
+  if(sec<=0) return 'Give the session a length.';
+  if(sec > 24*3600) return 'Longer than a day — check the hours.';
+  var from=n('rle-from'), to=n('rle-to');
+  // The open item from the handoff: p.120 to p.0 was storable and contributed
+  // nothing. Refuse it here rather than letting it sit in the data.
+  if(to < from) return 'The end cannot be before the start.';
+  var out = base ? Object.assign({}, base) : {};
+  out.startTime = when;
+  out.durationSec = sec;
+  out.startPage = from;
+  out.endPage = to;
+  return out;
+}
+function rlEditSave(idx){
+  if(rlOpenIdx<0) return;
+  var b=books[rlOpenIdx]; if(!b) return;
+  b.timerSessions = b.timerSessions || [];
+  var isNew = idx===-2;
+  var base = isNew ? null : b.timerSessions[idx];
+  if(!isNew && !base) { rlEditIdx=-1; renderRLModal(); return; }
+  var res = rlEditRead(b, base);
+  if(typeof res === 'string'){
+    var e=document.getElementById('rle-err');
+    if(e){ e.textContent=res; e.classList.remove('hidden'); }
+    return;
+  }
+  if(isNew){
+    // Stamp the medium and the read it belongs to, or it counts against the
+    // wrong denominator and slips past pagesForRead entirely.
+    var ri=currentReadIdx(b);
+    res.fmt = isAudioRead(curReadOf(b)) ? 'audio' : 'print';
+    if(ri>=0 && b.sessions[ri]) res.readId = b.sessions[ri].id;
+    b.timerSessions.push(res);
+  } else {
+    var oldStart = base.startTime;
+    b.timerSessions[idx] = res;
+    if(oldStart && oldStart!==res.startTime) fanOutSessionDelete(b.bookId, oldStart, activeId);
+  }
+  saveCurrentList();
+  try{ fanOutSession(b.bookId, res, activeId); }catch(e){}
+  rlEditIdx = -1;
+  renderRLModal();
+  try{ hearthCheckUnlocks(); renderHearth(); }catch(e){}
+  try{ updateStats(); }catch(e){}
+  try{ renderTable(); }catch(e){}
 }
 function formatRLDate(ms){
   if(!ms) return "—";
@@ -5906,7 +6030,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v42';
+var BABEL_VERSION='babel-v43';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
