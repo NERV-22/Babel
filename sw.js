@@ -1,6 +1,6 @@
 /* Babel service worker — offline app shell.
    Bump CACHE on every release so clients pull the new files. */
-const CACHE = 'babel-v44';
+const CACHE = 'babel-v45';
 const ASSETS = [
   'Babel.html',
   'index.html',
@@ -30,10 +30,16 @@ self.addEventListener('install', (e) => {
   );
 });
 
+// The typeface does not change between releases, so its cache is named without
+// the version and kept across them. Without this it is deleted on activate and
+// re-downloaded on every update — and a release installed offline would come
+// up in the fallback font.
+const FONTS = 'babel-fonts';
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(
+        keys.filter((k) => k !== CACHE && k !== FONTS).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -56,8 +62,25 @@ self.addEventListener('message', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
-  // Only handle same-origin requests — let cross-origin (Supabase, CDN) pass straight through.
-  if (new URL(req.url).origin !== self.location.origin) return;
+  const url = new URL(req.url);
+  // The typeface is the one cross-origin thing worth keeping. Cache-first and
+  // never re-fetched: after one online load the app is set in its own font
+  // offline, and a font that fails simply falls back to the stack in the CSS.
+  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
+    e.respondWith(
+      caches.open(FONTS).then((c) =>
+        c.match(req).then((hit) => hit || fetch(req).then((res) => {
+          // Opaque responses are cached too: a font request without CORS still
+          // paints, and storing it is what makes the next launch offline-safe.
+          if (res && (res.ok || res.type === 'opaque')) c.put(req, res.clone());
+          return res;
+        }).catch(() => hit))
+      )
+    );
+    return;
+  }
+  // Everything else cross-origin (Supabase, Google Books) passes straight through.
+  if (url.origin !== self.location.origin) return;
   const isNav = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
   if (isNav) {
     e.respondWith(
