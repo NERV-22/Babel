@@ -51,7 +51,7 @@ body::before{content:"";position:fixed;inset:0;background:var(--bg-gradient);z-i
 .container{max-width:1280px;margin:0 auto;padding:28px 20px}
 .list-header{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
 h1{font-size:28px;font-weight:700;letter-spacing:-0.5px}
-.h1-input{font-size:28px;font-weight:700;letter-spacing:-0.5px;font-family:var(--display);border:none;background:transparent;color:var(--text);outline:none;border-bottom:2px solid transparent;transition:border-color .15s;min-width:60px;max-width:600px}
+.h1-input{font-size:28px;font-weight:600;letter-spacing:-0.5px;font-family:var(--display);border:none;background:transparent;color:var(--text);outline:none;border-bottom:2px solid transparent;transition:border-color .15s;min-width:60px;max-width:600px;font-variation-settings:"opsz" 72,"wght" 600}
 .h1-input:focus{border-bottom-color:var(--border)}
 .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 16px;min-width:75px}
@@ -511,11 +511,11 @@ tbody tr.is-reading>td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 .babel-hero-art svg{width:100%;height:100%;display:block}
 .babel-hero-vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,rgba(255,255,255,0.05),rgba(7,7,7,0) 46%),radial-gradient(ellipse at 50% 128%,rgba(0,0,0,0.65),transparent 60%),linear-gradient(180deg,rgba(7,7,7,0.35),rgba(7,7,7,0) 22%)}
 .babel-hero-inner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:48px 20px 42px}
-.babel-word{font-family:var(--display);font-size:56px;font-weight:700;letter-spacing:.44em;text-indent:.44em;color:#f3eee3;margin:0;line-height:1;text-shadow:0 2px 30px rgba(0,0,0,0.6)}
+.babel-word{font-family:var(--display);font-size:56px;font-weight:600;letter-spacing:.44em;text-indent:.44em;color:#f3eee3;margin:0;line-height:1;text-shadow:0 2px 30px rgba(0,0,0,0.6);font-variation-settings:"opsz" 120,"wght" 600}
 .babel-tag{margin:16px 0 0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:rgba(243,238,227,0.52)}
 .babel-streak{margin-top:24px;display:inline-flex;align-items:center;gap:11px;padding:9px 17px;border:1px solid rgba(243,238,227,0.17);border-radius:999px;background:rgba(255,255,255,0.035);font-family:ui-monospace,Menlo,Consolas,monospace;min-height:20px}
 .babel-streak .bs-flame{width:13px;height:16px;flex-shrink:0;color:#c2a878}
-.babel-streak .bs-num{font-family:var(--display);font-size:21px;font-weight:700;color:#f3eee3;line-height:1}
+.babel-streak .bs-num{font-family:var(--display);font-size:21px;font-weight:600;color:#f3eee3;line-height:1;font-variation-settings:"opsz" 36,"wght" 600}
 .babel-streak .bs-lbl{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:rgba(243,238,227,0.62)}
 .babel-streak .bs-sep{width:1px;height:14px;background:rgba(243,238,227,0.18)}
 .babel-streak .bs-best{font-size:11px;letter-spacing:.1em;color:rgba(243,238,227,0.46)}
@@ -532,7 +532,7 @@ body{padding:0}
 .screen{padding:0 16px 28px}
 .screen.hidden{display:none!important}
 .appbar{display:flex;align-items:center;justify-content:space-between;padding:22px 2px 12px;position:sticky;top:0;background:var(--bg1);z-index:40}
-.appbar-title{font-family:var(--display);font-size:25px;font-weight:700;color:var(--text);letter-spacing:-.4px}
+.appbar-title{font-family:var(--display);font-size:25px;font-weight:600;color:var(--text);letter-spacing:-.4px;font-variation-settings:"opsz" 72,"wght" 600}
 
 /* compact hero in library */
 #screen-library{padding-top:0}
@@ -567,6 +567,20 @@ body{padding:0}
 #book-list{display:flex;flex-direction:column;gap:11px}
 .bk-empty{padding:40px 16px;text-align:center;color:var(--text-muted);font-family:var(--ui);font-size:13px}
 .bk-card{background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:14px 15px;display:flex;flex-direction:column;gap:10px}
+/* A bordered card per book, inside a bordered list, inside a bordered sheet is
+   most of what read as boxy — so the BOOK LIST becomes rows. The stats,
+   settings and hearth surfaces keep their card treatment, because the
+   complaint was the library, and card style is his theme setting rather than
+   mine: picking Glass still gives glass cards. Delete this block to put the
+   bordered cards back. */
+body.card-default .bk-card,
+body.card-lifted .bk-card{background:none;border:0;border-radius:0;box-shadow:none;
+  border-bottom:1px solid var(--border);padding:15px 2px 17px}
+/* With no border left to tint, the book he is on is marked down its edge. */
+body.card-default .bk-card.is-reading,
+body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padding-left:11px}
+#book-list>.bk-card:last-child{border-bottom:0}
+.bk-coverwrap{flex:none;cursor:pointer;align-self:flex-start;padding-top:1px}
 .bk-card.is-reading{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset,0 0 22px var(--accent-shadow)}
 .bk-row1{display:flex;align-items:flex-start;gap:12px}
 .bk-id{flex:1;min-width:0}
@@ -603,7 +617,7 @@ body{padding:0}
    covered the cards underneath it. A sheet has room for the whole text and
    dismisses the same way as every other sheet in the app. */
 .desc-head{padding:4px 2px 0}
-.desc-title{font-family:var(--display);font-size:18px;font-weight:700;color:var(--text);line-height:1.3}
+.desc-title{font-family:var(--display);font-size:18px;font-weight:600;color:var(--text);line-height:1.3;font-variation-settings:"opsz" 36,"wght" 600}
 .desc-sub{font-family:var(--ui);font-size:12px;color:var(--text-muted);margin-top:4px}
 .desc-body{font-family:var(--display);font-size:14.5px;line-height:1.7;color:var(--text);margin-top:14px;white-space:pre-wrap}
 .desc-body .desc-none{font-family:var(--ui);font-size:13px;color:var(--text-muted);font-style:italic}
@@ -627,7 +641,7 @@ body{padding:0}
 
 /* reading screen */
 .rd-streakcard{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;margin:6px 0 18px}
-.rd-streak-num{font-family:var(--display);font-size:46px;font-weight:700;color:var(--accent);line-height:1}
+.rd-streak-num{font-family:var(--display);font-size:46px;font-weight:600;color:var(--accent);line-height:1;font-variation-settings:"opsz" 120,"wght" 600}
 .rd-streak-lbl{font-family:var(--ui);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-top:6px}
 .rd-streak-sub{font-family:var(--ui);font-size:12.5px;color:var(--text-muted);margin-top:10px}
 .rd-empty{padding:30px 16px;text-align:center;color:var(--text-muted);font-family:var(--ui);font-size:13px;line-height:1.6;background:var(--surface);border:1px dashed var(--border);border-radius:14px}
@@ -673,7 +687,7 @@ body{padding:0}
 .stat-row .sr-m{font-family:var(--ui);font-size:11.5px;color:var(--text-muted);margin-top:3px}
 .stat-row .sr-v{font-family:var(--ui);font-size:12.5px;color:var(--accent);flex:none}
 /* Estimated time to finish */
-.eta-big{font-family:var(--display);font-size:26px;font-weight:700;color:var(--text);line-height:1.15;margin-top:2px}
+.eta-big{font-family:var(--display);font-size:26px;font-weight:600;color:var(--text);line-height:1.15;margin-top:2px;font-variation-settings:"opsz" 72,"wght" 600}
 .eta-sub{font-family:var(--ui);font-size:12.5px;color:var(--text-muted);margin-top:3px}
 .eta-line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)}
 .eta-line:last-of-type{border-bottom:none}
@@ -686,7 +700,7 @@ body{padding:0}
 .eta-th{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:8px}
 .eta-target input[type="date"]{width:100%;box-sizing:border-box;background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:var(--ui);font-size:13.5px}
 .eta-tout{margin-top:12px}
-.sh-n{font-family:var(--display);font-size:27px;font-weight:700;color:var(--text);line-height:1}
+.sh-n{font-family:var(--display);font-size:27px;font-weight:600;color:var(--text);line-height:1;font-variation-settings:"opsz" 72,"wght" 600}
 .sh-l{font-family:var(--ui);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:7px}
 #screen-stats .progress-wrap .storage-detail{text-align:left;margin-top:8px;font-size:11.5px}
 .stat-mini-row{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:16px 0}
@@ -734,7 +748,7 @@ body{padding:0}
 .ds-rl svg{width:9px;height:9px;margin-left:2px;vertical-align:-1px}
 .rd-freeze{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius,14px);padding:12px 14px;margin-bottom:14px}
 .rd-fz-l{flex:1;min-width:0;display:flex;align-items:baseline;gap:7px}
-.rd-fz-n{font-family:var(--display);font-size:20px;font-weight:700;color:var(--accent)}
+.rd-fz-n{font-family:var(--display);font-size:20px;font-weight:600;color:var(--accent);font-variation-settings:"opsz" 36,"wght" 600}
 .rd-fz-t{font-family:var(--ui);font-size:12px;color:var(--text-muted)}
 .rd-fz-b{flex:none;display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--accent);border-radius:999px;background:transparent;color:var(--accent);font-family:var(--ui);font-size:12.5px;cursor:pointer}
 .rd-fz-b svg{width:14px;height:14px}
@@ -747,7 +761,7 @@ body{padding:0}
 .dice-m.active{border-color:var(--accent);color:var(--text);background:var(--surface)}
 .dice-result{min-height:86px;display:flex;align-items:center;justify-content:center}
 .dice-book{width:100%;background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius,14px);padding:15px;cursor:pointer;text-align:center}
-.dice-t{font-family:var(--display);font-size:17px;font-weight:700;color:var(--text)}
+.dice-t{font-family:var(--display);font-size:17px;font-weight:600;color:var(--text)}
 .dice-a{font-family:var(--ui);font-size:12.5px;color:var(--text-muted);margin-top:4px}
 .dice-g{font-family:var(--ui);font-size:11px;color:var(--accent);margin-top:6px}
 .dice-empty{font-family:var(--ui);font-size:12.5px;color:var(--text-muted)}
@@ -760,7 +774,7 @@ body{padding:0}
 .h-shop{flex:none;width:42px;height:42px;border-radius:50%;border:none;background:var(--accent);color:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 10px var(--accent-shadow)}
 .h-shop svg{width:20px;height:20px}
 .h-bal{display:flex;align-items:baseline;gap:7px;margin-bottom:12px}
-.h-emb{font-family:var(--display);font-size:26px;font-weight:700;color:var(--star);text-shadow:0 0 9px var(--accent-shadow)}
+.h-emb{font-family:var(--display);font-size:26px;font-weight:600;color:var(--star);text-shadow:0 0 9px var(--accent-shadow);font-variation-settings:"opsz" 72,"wght" 600}
 .h-embl{font-family:var(--ui);font-size:12px;color:var(--text-muted)}
 .h-frz{margin-left:auto;font-family:var(--ui);font-size:12px;color:var(--text-muted)}
 .h-note{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius,14px);padding:10px 12px;margin-bottom:12px;font-family:var(--ui);font-size:12.5px;color:var(--text)}
@@ -780,7 +794,7 @@ body{padding:0}
 .h-tier{font-family:var(--ui);font-size:10.5px;padding:3px 7px;border-radius:999px;border:1px solid var(--border);color:var(--text-muted)}
 .h-tier.got{border-color:var(--accent);color:var(--accent);background:var(--accent-shadow)}
 .shop-head{display:flex;align-items:baseline;margin-bottom:14px}
-.shop-t{font-family:var(--display);font-size:19px;font-weight:700;color:var(--text)}
+.shop-t{font-family:var(--display);font-size:19px;font-weight:600;color:var(--text);font-variation-settings:"opsz" 36,"wght" 600}
 .shop-bal{margin-left:auto;font-family:var(--ui);font-size:13px;color:var(--star);font-weight:700}
 .shop-item{display:flex;align-items:center;gap:12px;background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius,14px);padding:13px}
 .shop-i-l{flex:1;min-width:0}
@@ -802,15 +816,15 @@ body{padding:0}
 .rt-card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius,14px);padding:12px 13px;margin-bottom:10px}
 .rt-head{display:flex;align-items:center;gap:11px;margin-bottom:10px}
 .rt-head .rt-ttl{flex:1;min-width:0}
-.rt-head .rt-ttl b{display:block;font-family:var(--display);font-size:16px;font-weight:700;
+.rt-head .rt-ttl b{display:block;font-family:var(--display);font-size:16px;font-weight:600;
   color:var(--text);line-height:1.25}
 .rt-head .rt-ttl span{display:block;font-family:var(--ui);font-size:12px;color:var(--text-muted);
   margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rt-head .rt-pct{flex:none;font-family:var(--display);font-size:15px;font-weight:700;color:var(--accent)}
+.rt-head .rt-pct{flex:none;font-family:var(--display);font-size:15px;font-weight:600;color:var(--accent)}
 .rt-head .sdel{flex:none}
 .rt-n{flex:none;width:30px;height:30px;border-radius:9px;
   background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);
-  font-family:var(--display);font-size:14px;font-weight:700;line-height:30px;text-align:center}
+  font-family:var(--display);font-size:14px;font-weight:600;line-height:30px;text-align:center}
 .bk-trans{color:var(--text-muted);opacity:.85}
 .bk-audio{font-family:var(--ui);font-size:10.5px;padding:1px 6px;border-radius:999px;border:1px solid var(--border);color:var(--text-muted);margin-left:5px}
 .hm-row{display:flex;align-items:center;gap:6px}
@@ -834,7 +848,7 @@ body{padding:0}
 .gsugg .gs:hover{border-color:var(--accent);color:var(--accent)}
 .h-cards{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:16px}
 .h-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius,14px);padding:16px}
-.h-card-n{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:-.6px;color:var(--text)}
+.h-card-n{font-family:var(--display);font-size:28px;font-weight:600;letter-spacing:-.6px;color:var(--text);font-variation-settings:"opsz" 72,"wght" 600}
 .h-card-l{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.07em;
   color:var(--text-muted);margin-top:7px}
 .set-row{display:flex;align-items:center;gap:12px;text-align:left}
@@ -932,6 +946,141 @@ body{padding:0}
 .rt-hit{position:absolute;top:0;height:100%;width:50%;cursor:pointer}
 .rt-hl{left:0}.rt-hr{right:0}
 .rt-rv{font-family:var(--ui);font-size:12px;color:var(--text-muted);min-width:22px}
+/* ── The book page ───────────────────────────────────────────────────────────
+   Hierarchy from light and spacing rather than from another bordered card
+   around every section. */
+.bp-sheet{position:relative;overflow-x:hidden}
+.bp-wash{position:absolute;top:0;left:0;right:0;height:300px;pointer-events:none;z-index:0;
+  background:radial-gradient(118% 70% at 50% -12%,var(--cv-a,#312c25) 0%,transparent 72%);
+  opacity:.5}
+.bp-inner{position:relative;z-index:1}
+.bp-hero{display:flex;flex-direction:column;align-items:center;padding:6px 0 0}
+.bp-coverwrap{width:152px;cursor:pointer;transition:transform .3s cubic-bezier(.22,.72,.26,1)}
+.bp-coverwrap:active{transform:scale(.975)}
+.bp-coveredit{border:0;background:none;cursor:pointer;color:var(--accent);font-family:var(--ui);
+  font-size:12px;padding:9px 12px 2px}
+.bp-title{font-family:var(--display);font-size:26px;font-weight:600;line-height:1.12;margin:8px 0 0;
+  text-align:center;color:var(--text);letter-spacing:-.02em;
+  font-variation-settings:"opsz" 72,"wght" 600}
+.bp-by{font-family:var(--ui);font-size:13.5px;color:var(--text-muted);margin:8px 0 0;text-align:center}
+.bp-trans{font-family:var(--ui);font-size:12px;color:var(--text-muted);opacity:.8;margin:4px 0 0;
+  text-align:center}
+.bp-tags{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;flex-wrap:wrap}
+.bp-tagtext{font-family:var(--ui);font-size:12.5px;color:var(--text-muted)}
+.pill-s{font-family:var(--ui);font-size:10.5px;color:var(--text-muted);border:1px solid var(--border);
+  border-radius:999px;padding:2px 8px;white-space:nowrap}
+.bp-stars{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:13px}
+.bp-rv{font-family:var(--ui);font-size:12px;color:var(--text-muted)}
+.bp-act{display:flex;gap:9px;justify-content:center;margin:18px 0 0}
+.bp-go{display:inline-flex;align-items:center;gap:8px;border:0;cursor:pointer;background:var(--accent);
+  color:var(--bg1);font-family:var(--ui);font-weight:600;font-size:13.5px;border-radius:999px;
+  padding:11px 20px;transition:transform .2s,filter .2s}
+.bp-go svg{width:14px;height:14px}
+.bp-go:active{transform:scale(.97);filter:brightness(1.08)}
+.bp-ghost{border:1px solid var(--border);background:none;color:var(--text-muted);cursor:pointer;
+  border-radius:999px;padding:11px 17px;font-family:var(--ui);font-size:13px}
+.bp-prog2{margin:20px 2px 0}
+.bp-fig{display:flex;align-items:baseline;gap:8px}
+.bp-n{font-family:var(--display);font-size:21px;font-weight:600;color:var(--text);
+  font-variation-settings:"opsz" 36,"wght" 600}
+.bp-of{font-family:var(--ui);font-size:12.5px;color:var(--text-muted)}
+.bp-left{margin-left:auto;font-family:var(--ui);font-size:12.5px;color:var(--text-muted)}
+/* The fore-edge of the book filling as he reads. */
+.bp-edge{margin-top:10px;height:9px;border-radius:2px;position:relative;overflow:hidden;
+  background:repeating-linear-gradient(90deg,rgba(128,128,128,.14) 0 1px,transparent 1px 3px),
+    var(--bg2)}
+.bp-edge i{position:absolute;inset:0 auto 0 0;border-radius:2px;
+  background:repeating-linear-gradient(90deg,rgba(0,0,0,.14) 0 1px,transparent 1px 3px),var(--accent);
+  transition:width .9s cubic-bezier(.16,1,.3,1)}
+.bp-sec{margin:28px 2px 0}
+.bp-sech{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding-bottom:9px;border-bottom:1px solid var(--border);margin-bottom:13px}
+.bp-sech h3{font-family:var(--display);font-size:14px;font-weight:600;margin:0;color:var(--text-muted);
+  letter-spacing:.01em}
+.bp-secact{border:0;background:none;cursor:pointer;color:var(--accent);font-family:var(--ui);
+  font-size:12px;padding:3px 0}
+.bp-desc{font-family:var(--display);font-size:14.5px;line-height:1.68;color:var(--text-muted);
+  margin:0;max-width:62ch}
+.bp-desc.clamped{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.bp-more{border:0;background:none;cursor:pointer;color:var(--accent);font-family:var(--ui);
+  font-size:12.5px;padding:9px 0 0}
+.bp-none{font-family:var(--ui);font-size:13px;color:var(--text-muted);margin:0}
+/* The thoughts, one at a time, newest first. */
+.bp-thtop{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
+.bp-thdate{font-family:var(--display);font-size:15px;font-weight:600;margin:0;color:var(--text)}
+.bp-thread{font-family:var(--ui);font-size:11.5px;color:var(--text-muted);margin:3px 0 0}
+.bp-thnav{display:flex;align-items:center;gap:1px;flex:none}
+.bp-thbody{font-family:var(--display);font-size:15.5px;line-height:1.72;color:var(--text);max-width:62ch}
+.bp-thbody p{margin:0 0 .95em}
+.bp-thbody p:last-child{margin-bottom:0}
+.bp-thdots{display:flex;gap:6px;margin-top:16px}
+.bp-thdots i{width:5px;height:5px;border-radius:50%;background:var(--border);
+  transition:background .25s,transform .25s}
+.bp-thdots i.on{background:var(--accent);transform:scale(1.3)}
+.bp-srow{display:flex;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.bp-srow:last-child{border-bottom:0}
+.bp-sd{font-family:var(--ui);font-size:12.5px;width:56px;flex:none;color:var(--text)}
+.bp-ss{font-family:var(--ui);font-size:11.5px;color:var(--text-muted)}
+.bp-sdur{margin-left:auto;font-family:var(--display);font-size:13.5px;color:var(--text);
+  font-variant-numeric:tabular-nums}
+.bp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:17px}
+.bp-stat b{display:block;font-family:var(--display);font-size:18px;font-weight:600;color:var(--text)}
+.bp-stat span{display:block;font-family:var(--ui);font-size:10.5px;color:var(--text-muted);margin-top:3px}
+.bp-facts{display:grid;grid-template-columns:auto 1fr;gap:10px 18px;align-items:baseline;margin:0}
+.bp-facts dt{font-family:var(--ui);font-size:12px;color:var(--text-muted);white-space:nowrap}
+.bp-facts dd{margin:0;font-family:var(--ui);font-size:13px;text-align:right;color:var(--text)}
+
+/* ── Choosing a cover ──────────────────────────────────────────────────────── */
+.cp-find{padding:10px 0 0}
+.cp-find input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  color:var(--text);font-family:var(--ui);font-size:14px;padding:11px 12px}
+.cp-find input:focus{border-color:var(--accent);outline:none}
+.cp-upload{width:100%;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;
+  cursor:pointer;background:none;border:1px solid var(--accent);border-radius:10px;
+  color:var(--accent);font-family:var(--ui);font-size:13.5px;padding:12px 14px}
+.cp-note{font-family:var(--ui);font-size:11.5px;color:var(--text-muted);line-height:1.5;margin:12px 0 0}
+.cp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.cp-cand{border:0;padding:0;background:none;cursor:pointer;border-radius:4px;overflow:hidden;
+  aspect-ratio:2/3;transition:transform .22s}
+.cp-cand:active{transform:scale(.96)}
+.cp-cand img{width:100%;height:100%;object-fit:cover;display:block;border-radius:4px}
+.cp-clear{color:#e07c7c}
+/* His blue circle, in Babel's own colours. */
+.cp-confirm{position:fixed;inset:0;z-index:320;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:24px;padding:28px;background:rgba(6,6,6,.9);backdrop-filter:blur(14px)}
+.cp-confirm .bcover{width:min(60vw,210px)}
+.cp-crow{display:flex;align-items:center;gap:18px}
+.cp-yes,.cp-no{border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cp-yes{width:62px;height:62px;border:0;background:var(--accent);color:var(--bg1);
+  box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.cp-no{width:50px;height:50px;background:none;border:1px solid rgba(255,255,255,.25);
+  color:rgba(255,255,255,.75)}
+.cp-yes svg{width:28px;height:28px}
+.cp-no svg{width:20px;height:20px}
+
+/* ── Cover art ───────────────────────────────────────────────────────────────
+   Nothing is ever drawn on top of a cover: actions live beside it, so the art
+   stays the art. A book with none gets a set cover rather than a grey hole —
+   plenty of his 142 will never have artwork. */
+.bcover{position:relative;aspect-ratio:2/3;border-radius:3px 5px 5px 3px;overflow:hidden;
+  background:var(--cv-b,#1d1b18);flex:none;container-type:inline-size;
+  box-shadow:0 1px 2px rgba(0,0,0,.45),0 7px 18px -7px rgba(0,0,0,.55)}
+.bcover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.bcover-fb{position:absolute;inset:0;padding:11% 10%;display:flex;flex-direction:column;
+  justify-content:space-between;
+  background:linear-gradient(152deg,var(--cv-a,#312c25) 0%,var(--cv-b,#16140f) 100%)}
+.bcover-fb b{font-family:var(--display);font-weight:500;font-size:clamp(7px,2.2cqw,12px);
+  line-height:1.16;color:rgba(255,255,255,.93);display:-webkit-box;-webkit-line-clamp:4;
+  -webkit-box-orient:vertical;overflow:hidden}
+.bcover-fb span{font-family:var(--ui);font-size:clamp(5px,1.5cqw,8px);
+  color:rgba(255,255,255,.5);letter-spacing:.02em}
+/* A sliver of light down the hinge, so a cover reads as an object with
+   thickness rather than a flat picture pasted on. */
+.bcover::after{content:"";position:absolute;inset:0 auto 0 0;width:3px;pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,.15),rgba(0,0,0,.28))}
+.bcover.lg{border-radius:4px 8px 8px 4px;
+  box-shadow:0 2px 6px rgba(0,0,0,.5),0 24px 52px -16px rgba(0,0,0,.7)}
+.bk-cover{width:52px}
 .rt-note{width:100%;min-height:66px;padding:9px 10px;font-size:13px;font-family:var(--ui);line-height:1.45;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);outline:none;resize:vertical}
 /* ── A read's dated entries ───────────────────────────────────────────────── */
 .rt-notes{display:flex;flex-direction:column;gap:7px}
@@ -958,7 +1107,7 @@ body{padding:0}
 .ds-h{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px}
 .ds-year{display:flex;align-items:center;gap:14px}
 .ds-year svg{width:74px;height:74px;flex:none}
-.ds-year-n{font-family:var(--display);font-size:24px;font-weight:700;color:var(--text)}
+.ds-year-n{font-family:var(--display);font-size:24px;font-weight:600;color:var(--text);font-variation-settings:"opsz" 72,"wght" 600}
 .ds-year-l{font-family:var(--ui);font-size:12px;color:var(--text-muted);margin-top:2px}
 .ds-cols{display:flex;align-items:flex-end;gap:4px;height:92px}
 .ds-cols24{gap:2px}
@@ -984,7 +1133,7 @@ body{padding:0}
 .gc-n{flex:none;font-family:var(--ui);font-size:12px;color:var(--text-muted);width:22px;text-align:right}
 
 .goal-input-row{display:flex;align-items:center;gap:12px}
-.goal-input-row input{width:96px;padding:11px 13px;font-family:var(--display);font-size:18px;font-weight:700;border:1px solid var(--border);border-radius:10px;background:var(--bg1);color:var(--text);outline:none}
+.goal-input-row input{width:96px;padding:11px 13px;font-family:var(--display);font-size:18px;font-weight:600;border:1px solid var(--border);border-radius:10px;background:var(--bg1);color:var(--text);outline:none;font-variation-settings:"opsz" 36,"wght" 600}
 .goal-unit{font-family:var(--ui);font-size:13px;color:var(--text-muted)}
 
 .rd-cal-title{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin:6px 0 12px}
@@ -1004,7 +1153,7 @@ body{padding:0}
    from the live theme accent, because every list carries its own palette and a
    hardcoded scheme would be wrong on all but one of them. */
 .rd-strip-head{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 9px;gap:10px}
-.rd-strip-tot{font-family:var(--display);font-size:16px;font-weight:700;color:var(--text)}
+.rd-strip-tot{font-family:var(--display);font-size:16px;font-weight:600;color:var(--text)}
 .rd-strip-sub{font-family:var(--ui);font-size:11.5px;color:var(--text-muted);text-align:right}
 .rd-strip{display:flex;align-items:flex-end;gap:5px;height:132px;padding:0 2px;position:relative;margin-bottom:22px}
 .rd-goalline{position:absolute;left:0;right:0;border-top:1px dashed var(--border);pointer-events:none;transform-origin:left;animation:rdGline 1s cubic-bezier(.3,.9,.3,1) backwards}
@@ -1047,7 +1196,7 @@ body{padding:0}
    style heatmap. */
 .cal-wrap{margin-bottom:22px}
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.cal-title{font-family:var(--display);font-size:16px;font-weight:700;color:var(--text)}
+.cal-title{font-family:var(--display);font-size:16px;font-weight:600;color:var(--text)}
 .cal-nav{display:flex;gap:6px}
 .cal-nav button{width:32px;height:32px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:15px;cursor:pointer;font-family:var(--ui);line-height:1}
 .cal-nav button:disabled{opacity:.3;cursor:default}
@@ -1156,7 +1305,7 @@ body{padding:0}
 .tmr-arrow:active{color:var(--accent);border-color:var(--accent)}
 .tmr-book.locked{cursor:default}
 .tmr-book-main{flex:1;min-width:0}
-.tmr-book-title{font-family:var(--display);font-size:17px;font-weight:700;color:var(--text)}
+.tmr-book-title{font-family:var(--display);font-size:17px;font-weight:600;color:var(--text)}
 .tmr-book-by{font-family:var(--ui);font-size:12.5px;color:var(--text-muted);margin-top:3px}
 .tmr-prog{height:5px;background:var(--border);border-radius:99px;margin:11px 0 6px;overflow:hidden}
 .tmr-prog-fill{height:100%;background:var(--accent);border-radius:99px}
@@ -1166,7 +1315,7 @@ body{padding:0}
 .tmr-ring{width:100%;height:100%;display:block}
 .tmr-track{fill:color-mix(in srgb,var(--text) 3%,transparent);stroke:color-mix(in srgb,var(--text) 9%,transparent);stroke-width:10}
 .tmr-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
-.tmr-time{font-family:var(--display);font-size:46px;font-weight:700;color:var(--text);letter-spacing:1px;font-variant-numeric:tabular-nums}
+.tmr-time{font-family:var(--display);font-size:46px;font-weight:600;color:var(--text);letter-spacing:1px;font-variant-numeric:tabular-nums;font-variation-settings:"opsz" 120,"wght" 600}
 .tmr-sub{font-family:var(--ui);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--text-muted);margin-top:9px}
 .tmr-controls{margin-top:20px}
 .tmr-primary{display:block;width:100%;padding:16px;border:none;border-radius:14px;background:var(--accent);color:#0a0a0a;font-family:var(--ui);font-size:15px;font-weight:700;letter-spacing:.02em;cursor:pointer}
@@ -1176,7 +1325,7 @@ body{padding:0}
 .tmr-row2 .tmr-ghost,.tmr-row2 .tmr-primary{flex:1;width:auto}
 .tmr-pageform{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
 .tmr-pageform label{display:block;font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:9px}
-.tmr-pageform input{width:100%;padding:12px 14px;font-family:var(--display);font-size:20px;font-weight:700;border:1px solid var(--border);border-radius:10px;background:var(--bg1);color:var(--text);outline:none}
+.tmr-pageform input{width:100%;padding:12px 14px;font-family:var(--display);font-size:20px;font-weight:600;border:1px solid var(--border);border-radius:10px;background:var(--bg1);color:var(--text);outline:none;font-variation-settings:"opsz" 36,"wght" 600}
 .tmr-hm{display:flex;align-items:center;gap:8px}
 .tmr-hm input{width:auto;flex:1;min-width:0;text-align:center}
 .tmr-hm-s{flex:none;font-family:var(--ui);font-size:12px;color:var(--text-muted)}
@@ -1203,14 +1352,14 @@ body{padding:0}
 <style>
 .rl-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:4px 0 6px}
 .rl-stat{background:var(--bg1);border:1px solid var(--border);border-radius:12px;padding:13px 6px;text-align:center}
-.rl-stat-n{font-family:var(--display);font-size:22px;font-weight:700;color:var(--text);line-height:1}
+.rl-stat-n{font-family:var(--display);font-size:22px;font-weight:600;color:var(--text);line-height:1;font-variation-settings:"opsz" 36,"wght" 600}
 .rl-stat-l{font-family:var(--ui);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-top:6px}
 .rl-stat-sub{display:block;font-family:var(--ui);font-size:9px;font-weight:600;color:var(--accent);margin-top:3px;letter-spacing:.04em;text-transform:none;opacity:.85}
 .rl-log-row{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--border);border-radius:11px;background:var(--bg1)}
 .rl-log-row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .rl-log-row-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .rl-log-row-date{font-family:var(--ui);font-size:13px;font-weight:600;color:var(--text)}
-.rl-log-row-dur{font-family:var(--display);font-size:14px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.rl-log-row-dur{font-family:var(--display);font-size:14px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
 .rl-log-row-sub{font-family:var(--ui);font-size:11.5px;color:var(--text-muted)}
 .rl-log-row.detached{opacity:.5}
 .rl-log-det{display:block;margin-top:3px;font-size:10.5px;font-style:italic;color:var(--text-muted)}
@@ -1470,6 +1619,83 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <button class="modal-cancel" id="runaway-trim" onclick="runawayTrim()">Trim</button>
       <button class="modal-save" onclick="runawayKeep()">Keep it</button>
     </div>
+  </div>
+</div>
+<!-- ── The book page ───────────────────────────────────────────────────────
+     Everything about one book in one place: what it is, where he is in it,
+     what he wrote, and when he read it. Opening a book from the library
+     lands here. -->
+<div class="sheet-overlay hidden" id="bp-sheet" onclick="if(event.target===this)closeBookPage()">
+  <div class="sheet bp-sheet">
+    <div class="sheet-grab" onclick="closeBookPage()"></div>
+    <div class="bp-wash" id="bp-wash"></div>
+    <div class="bp-inner">
+      <div class="bp-hero">
+        <div class="bp-coverwrap" id="bp-coverwrap" onclick="openCoverPicker()"
+             role="button" tabindex="0" aria-label="Change cover"></div>
+        <button class="bp-coveredit" onclick="openCoverPicker()">Change cover</button>
+        <h2 class="bp-title" id="bp-title"></h2>
+        <p class="bp-by" id="bp-by"></p>
+        <p class="bp-trans" id="bp-trans"></p>
+        <div class="bp-tags" id="bp-tags"></div>
+        <div class="bp-stars" id="bp-stars"></div>
+      </div>
+      <div class="bp-act">
+        <button class="bp-go" id="bp-go"></button>
+        <button class="bp-ghost" id="bp-log">Reading log</button>
+      </div>
+      <div class="bp-prog2">
+        <div class="bp-fig"><span class="bp-n" id="bp-n"></span>
+          <span class="bp-of" id="bp-of"></span>
+          <span class="bp-left" id="bp-left"></span></div>
+        <div class="bp-edge"><i id="bp-fill"></i></div>
+      </div>
+      <section class="bp-sec" id="bp-desc-sec">
+        <div class="bp-sech"><h3>Description</h3>
+          <button class="bp-secact" onclick="openDetailsModal(bpIdx)">Edit</button></div>
+        <p class="bp-desc clamped" id="bp-desc"></p>
+        <button class="bp-more" id="bp-more" onclick="bpToggleDesc()">Read more</button>
+      </section>
+      <section class="bp-sec">
+        <div class="bp-sech"><h3>My thoughts</h3>
+          <button class="bp-secact" onclick="openSM(bpIdx)">Edit</button></div>
+        <div class="bp-th" id="bp-th"></div>
+      </section>
+      <section class="bp-sec">
+        <div class="bp-sech"><h3>Sessions</h3>
+          <button class="bp-secact" onclick="openRL(bpIdx)">All</button></div>
+        <div id="bp-ses"></div>
+        <div class="bp-stats" id="bp-stats"></div>
+      </section>
+      <section class="bp-sec">
+        <div class="bp-sech"><h3>Details</h3></div>
+        <dl class="bp-facts" id="bp-facts"></dl>
+      </section>
+    </div>
+    <div class="modal-btns" style="margin-top:18px">
+      <button class="modal-cancel" onclick="closeBookPage()">Done</button></div>
+  </div>
+</div>
+<!-- ── Choosing a cover ─────────────────────────────────────────────────── -->
+<div class="sheet-overlay hidden" id="cp-sheet" onclick="if(event.target===this)closeCoverPicker()">
+  <div class="sheet cp-sheet">
+    <div class="sheet-grab" onclick="closeCoverPicker()"></div>
+    <div class="cp-head"><div class="desc-title">Choose a cover</div></div>
+    <div class="cp-find"><input id="cp-q" type="search" autocomplete="off" placeholder="Search by title"/></div>
+    <button class="cp-upload" onclick="cpPickFile()">Upload from your photos</button>
+    <input type="file" id="cp-file" accept="image/*" hidden onchange="cpFileChosen(this)"/>
+    <p class="cp-note" id="cp-note">Or tap a cover below to see it full size, then confirm.</p>
+    <div class="cp-grid" id="cp-grid"></div>
+    <div class="modal-btns" style="margin-top:12px">
+      <button class="modal-cancel" onclick="closeCoverPicker()">Cancel</button>
+      <button class="modal-cancel cp-clear" onclick="cpClear()">Remove cover</button></div>
+  </div>
+</div>
+<div class="cp-confirm hidden" id="cp-confirm">
+  <div class="bcover lg" id="cp-big"></div>
+  <div class="cp-crow">
+    <button class="cp-no" onclick="cpHideConfirm()" aria-label="Pick another"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button class="cp-yes" onclick="cpUseIt()" aria-label="Use this cover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg></button>
   </div>
 </div>
 <div class="sheet-overlay hidden" id="desc-sheet" onclick="if(event.target===this)closeDescSheet()">
@@ -3177,6 +3403,7 @@ function submitBook(){
     _b.editions=(_edDraft.f||[]).slice();
     _b.seriesOrder=seriesOrder; _b.seriesName=seriesName; _b.summary=summary;
     _b.coverage=_coverDraft;
+    adoptPendingCover(_b);
     saveCurrentList();
     fanOutBookDetails(detailsIdx);
     closeAddSheet();
@@ -3196,6 +3423,7 @@ function submitBook(){
     seriesOrder:seriesOrder, seriesName:seriesName,
     isFav:false, isReading:false, sessions:[]
   });
+  adoptPendingCover(books[books.length-1]);
   saveCurrentList();
 
   // Reset the form so the next book starts from a blank slate.
@@ -3204,7 +3432,7 @@ function submitBook(){
     .forEach(function(id){var el=document.getElementById(id); if(el) el.value="";});
   // The versions list and the runtime boxes are part of the form too. Left
   // standing, the next book silently inherited the last one's audio.
-  _edDraft.f=[]; edClose('f'); edRender('f'); setCover(false);
+  _edDraft.f=[]; edClose('f'); edRender('f'); setCover(false); _lkPendingCover='';
   var _v1=document.getElementById('f-v1'); if(_v1) _v1.classList.add('hidden');
   var _sg=document.getElementById('f-genre-sugg'); if(_sg) _sg.innerHTML='';
   selectedFormGenre="";
@@ -4051,6 +4279,407 @@ function stampFormats(b){
 }
 function bookHasAudio(b){ return ((b&&b.sessions)||[]).some(isAudioRead); }
 
+// ── Cover art ─────────────────────────────────────────────────────────────────
+// Babel called Google Books for every book and threw away `imageLinks`, so 142
+// books of artwork arrived and were discarded. Covers now live on the phone in
+// a database of their own — a separate one from the library, so adding this
+// cannot put a migration anywhere near his books.
+var coverStore = (function(){
+  var DB='rl_covers', STORE='img', dbp=null;
+  function open(){
+    if(dbp) return dbp;
+    dbp = new Promise(function(res,rej){
+      if(typeof indexedDB==='undefined' || !indexedDB) return rej(new Error('no indexedDB'));
+      var r=indexedDB.open(DB,1);
+      r.onupgradeneeded=function(){ try{ r.result.createObjectStore(STORE); }catch(e){} };
+      r.onsuccess=function(){ res(r.result); };
+      r.onerror=function(){ rej(r.error); };
+    });
+    dbp.catch(function(){ dbp=null; });   // a failed open must not be cached forever
+    return dbp;
+  }
+  function tx(mode,fn){
+    return open().then(function(d){ return new Promise(function(res,rej){
+      var t=d.transaction(STORE,mode);
+      fn(t.objectStore(STORE),res,rej);
+      t.onerror=function(){ rej(t.error); };
+    });});
+  }
+  return {
+    get:function(k){ return tx('readonly',function(s,res){
+      var q=s.get(k); q.onsuccess=function(){ res(q.result||null); };
+    }).catch(function(){ return null; }); },
+    put:function(k,v){ return tx('readwrite',function(s,res){
+      s.put(v,k); res(true);
+    }).catch(function(){ return false; }); },
+    del:function(k){ return tx('readwrite',function(s,res){
+      s.delete(k); res(true);
+    }).catch(function(){ return false; }); },
+    all:function(){ return tx('readonly',function(s,res){
+      var out={}, q=s.openCursor();
+      q.onsuccess=function(e){ var c=e.target.result;
+        if(c){ out[c.key]=c.value; c.continue(); } else res(out); };
+    }).catch(function(){ return {}; }); }
+  };
+})();
+// What the renderers read. Filled once at boot so drawing a row stays
+// synchronous; a book with nothing here gets the set cover instead.
+var COVERS={};
+function coverOf(b){ return (b && b.bookId && COVERS[b.bookId]) || ''; }
+function loadCovers(){
+  return coverStore.all().then(function(m){
+    COVERS=m||{};
+    try{ renderTable(); }catch(e){}
+    return COVERS;
+  });
+}
+// Named apart from setCover(), which is the page-coverage toggle and has
+// nothing to do with artwork.
+function saveCoverFor(b,dataUrl){
+  if(!b || !b.bookId) return Promise.resolve(false);
+  var had=Object.prototype.hasOwnProperty.call(COVERS,b.bookId), prev=COVERS[b.bookId];
+  // Set in memory first so the screen answers immediately, then put it back
+  // if the write did not land. The library's own storage layer learned this
+  // the hard way: a write that fails silently leaves the screen right and the
+  // disk wrong, and the app looks correct until the next reload throws the
+  // work away. A cover that cannot be stored says so instead.
+  function undo(msg){
+    if(had) COVERS[b.bookId]=prev; else delete COVERS[b.bookId];
+    try{ showToast(msg); }catch(e){}
+    try{ renderTable(); if(bpIdx>=0) renderBookPage(); }catch(e){}
+    return false;
+  }
+  if(dataUrl){
+    COVERS[b.bookId]=dataUrl;
+    return coverStore.put(b.bookId,dataUrl).then(function(done){
+      return done ? true : undo('Couldn’t save that cover — storage may be full.');
+    });
+  }
+  delete COVERS[b.bookId];
+  return coverStore.del(b.bookId).then(function(done){
+    return done ? true : undo('Couldn’t remove that cover.');
+  });
+}
+// A photo off his camera roll is several megabytes. Stored as it comes, a
+// dozen books would be larger than the entire library; redrawn at cover size
+// it lands around 30 KB.
+function shrinkImage(dataUrl,done){
+  try{
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var s=Math.min(1,420/(img.width||420));
+        var c=document.createElement('canvas');
+        c.width=Math.max(1,Math.round((img.width||420)*s));
+        c.height=Math.max(1,Math.round((img.height||630)*s));
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+        done(c.toDataURL('image/jpeg',0.82));
+      }catch(e){ done(dataUrl); }     // a tainted canvas still has a usable picture
+    };
+    img.onerror=function(){ done(dataUrl); };
+    img.crossOrigin='anonymous';
+    img.src=dataUrl;
+  }catch(e){ done(dataUrl); }
+}
+// Colours for the cover a book has no art for. Derived from the title so the
+// same book is always the same colour, rather than changing on every render.
+function coverHue(b){
+  var s=((b&&b.title)||'')+((b&&b.author)||''), h=0;
+  for(var i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))>>>0; }
+  return h%360;
+}
+function coverVars(b){
+  var h=coverHue(b);
+  return '--cv-a:hsl('+h+',26%,30%);--cv-b:hsl('+((h+24)%360)+',30%,13%)';
+}
+// Takes the cover found during lookup and makes it the book's, fetched down to
+// a stored picture so it survives going offline. A book that already has art
+// keeps it: a lookup refreshing a description must not silently replace a
+// cover he chose by hand.
+function adoptPendingCover(b){
+  var url=_lkPendingCover; _lkPendingCover='';
+  if(!url || !b || !b.bookId || coverOf(b)) return;
+  fetchCoverData(url).then(function(d){
+    if(d){ saveCoverFor(b,d); try{ renderTable(); }catch(e){} }
+  });
+}
+// Brings a remote cover down to a stored data URL. If the host refuses the
+// cross-origin read the picture is simply not kept — better a set cover than a
+// book whose artwork vanishes the moment he loses signal.
+function fetchCoverData(url){
+  if(!url) return Promise.resolve('');
+  return fetch(url,{mode:'cors'})
+    .then(function(r){ if(!r.ok) throw new Error(r.status); return r.blob(); })
+    .then(function(bl){ return new Promise(function(res,rej){
+      var fr=new FileReader();
+      fr.onload=function(){ res(String(fr.result)); };
+      fr.onerror=function(){ rej(fr.error); };
+      fr.readAsDataURL(bl);
+    });})
+    .then(function(d){ return new Promise(function(res){ shrinkImage(d,res); }); })
+    .catch(function(){ return ''; });
+}
+function coverHTML(b,cls){
+  var url=coverOf(b);
+  return '<div class="bcover'+(cls?' '+cls:'')+'" style="'+coverVars(b)+'">'
+    + '<div class="bcover-fb"><b>'+esc(b.title||'')+'</b><span>'+esc(b.author||'')+'</span></div>'
+    + (url?'<img alt="" loading="lazy" src="'+esc(url)+'"/>':'')
+  + '</div>';
+}
+
+// ── Choosing a cover ──────────────────────────────────────────────────────────
+// Google has no image-search API worth calling and scraping its results page
+// is both fragile and against its terms. Open Library is a plain JSON call
+// that returns many editions of the same book, which is what a cover picker
+// actually needs.
+var cpPending=null, cpTok=0;
+function openCoverPicker(){
+  var b=books[bpIdx]; if(!b) return;
+  var q=document.getElementById('cp-q');
+  q.value=b.title||'';
+  q.oninput=function(){ clearTimeout(cpPending&&cpPending._t); cpFindSoon(this.value); };
+  document.getElementById('cp-sheet').classList.remove('hidden');
+  cpFind(b.title||'');
+}
+function closeCoverPicker(){
+  cpHideConfirm();
+  var el=document.getElementById('cp-sheet'); if(el) el.classList.add('hidden');
+}
+var _cpTimer=null;
+function cpFindSoon(v){ clearTimeout(_cpTimer); _cpTimer=setTimeout(function(){ cpFind(v); },420); }
+function cpNote(t){ var n=document.getElementById('cp-note'); if(n) n.textContent=t; }
+function cpFind(title){
+  var tok=++cpTok, grid=document.getElementById('cp-grid');
+  if(!grid) return;
+  grid.innerHTML='';
+  cpNote('Looking…');
+  fetch('https://openlibrary.org/search.json?limit=24&fields=cover_i,title&title='
+        +encodeURIComponent(title||''))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(tok!==cpTok) return;
+      var ids=[];
+      ((d&&d.docs)||[]).forEach(function(x){
+        if(x.cover_i && ids.indexOf(x.cover_i)<0) ids.push(x.cover_i); });
+      if(!ids.length){
+        cpNote('No covers found for that title. Try adding the author’s name.');
+        return;
+      }
+      cpNote('Tap a cover to see it full size, then confirm.');
+      grid.innerHTML=ids.slice(0,24).map(function(id){
+        var u='https://covers.openlibrary.org/b/id/'+id+'-M.jpg';
+        return '<button class="cp-cand" onclick="cpChoose(this)" data-u="'
+          +esc('https://covers.openlibrary.org/b/id/'+id+'-L.jpg')+'">'
+          +'<img alt="" loading="lazy" src="'+esc(u)+'" onerror="this.closest(\'.cp-cand\').remove()"/>'
+          +'</button>';
+      }).join('');
+    })
+    .catch(function(){
+      if(tok!==cpTok) return;
+      cpNote('Couldn’t reach the cover search. Check your connection, or upload a picture instead.');
+    });
+}
+function cpPickFile(){ var f=document.getElementById('cp-file'); if(f) f.click(); }
+function cpFileChosen(input){
+  var f=input && input.files && input.files[0];
+  input.value='';
+  if(!f) return;
+  var fr=new FileReader();
+  fr.onload=function(){ shrinkImage(String(fr.result),function(d){ cpShow(d); }); };
+  fr.onerror=function(){ showToast('That image could not be read.'); };
+  fr.readAsDataURL(f);
+}
+function cpChoose(btn){ cpShow(btn.getAttribute('data-u'),true); }
+// One confirm step wherever the picture came from — the search or his photos.
+function cpShow(url,remote){
+  cpPending={url:url,remote:!!remote};
+  var b=books[bpIdx]||{};
+  var big=document.getElementById('cp-big');
+  big.setAttribute('style',coverVars(b));
+  big.innerHTML='<div class="bcover-fb"><b>'+esc(b.title||'')+'</b><span>'+esc(b.author||'')
+    +'</span></div><img alt="" src="'+esc(url)+'"/>';
+  document.getElementById('cp-confirm').classList.remove('hidden');
+}
+function cpHideConfirm(){
+  cpPending=null;
+  var el=document.getElementById('cp-confirm'); if(el) el.classList.add('hidden');
+}
+function cpUseIt(){
+  var b=books[bpIdx];
+  if(!cpPending || !b){ cpHideConfirm(); return; }
+  var p=cpPending; cpHideConfirm();
+  function done(data){
+    saveCoverFor(b,data).then(function(){
+      try{ renderBookPage(); renderTable(); }catch(e){}
+    });
+    closeCoverPicker();
+  }
+  if(!p.remote) return done(p.url);        // already a shrunk data URL
+  showToast('Saving cover…');
+  fetchCoverData(p.url).then(function(d){
+    if(d) return done(d);
+    // The picture is good but the host would not let us copy it. Keeping the
+    // link means the cover works online and quietly disappears offline, which
+    // is worse than saying so.
+    showToast('That cover could not be saved to your phone — try another.');
+  });
+}
+function cpClear(){
+  var b=books[bpIdx]; if(!b) return;
+  saveCoverFor(b,'').then(function(){
+    try{ renderBookPage(); renderTable(); }catch(e){}
+  });
+  closeCoverPicker();
+}
+
+// ── The book page ─────────────────────────────────────────────────────────────
+// One place holding everything about a book. The pieces it shows are the same
+// ones the old sheets edit — this reads, those write, so nothing that was
+// tested stops being the thing that saves.
+var bpIdx=-1, bpTh=0;
+function openBookPage(idx){
+  var b=books[idx]; if(!b) return;
+  bpIdx=idx; bpTh=-1;
+  renderBookPage();
+  document.getElementById('bp-sheet').classList.remove('hidden');
+}
+function closeBookPage(){
+  bpIdx=-1;
+  var el=document.getElementById('bp-sheet'); if(el) el.classList.add('hidden');
+}
+function bpToggleDesc(){
+  var d=document.getElementById('bp-desc'); if(!d) return;
+  var on=d.classList.toggle('clamped');
+  var m=document.getElementById('bp-more'); if(m) m.textContent=on?'Read more':'Show less';
+}
+// Every entry on the book, newest last, each remembering which read it came
+// from so a re-read can be told apart from a first impression.
+function bpThoughts(b){
+  var out=[];
+  (b.sessions||[]).forEach(function(r,ri){
+    noteEntries(r).forEach(function(e){
+      if(String(e.text||'').trim()) out.push({at:e.at,text:e.text,read:ri+1});
+    });
+  });
+  out.sort(function(x,y){ return String(x.at||'').localeCompare(String(y.at||'')); });
+  return out;
+}
+function bpGoThought(step){
+  var b=books[bpIdx]; if(!b) return;
+  var list=bpThoughts(b), n=bpTh+step;
+  if(n<0 || n>=list.length) return;
+  bpTh=n; renderBPThoughts();
+}
+function renderBPThoughts(){
+  var b=books[bpIdx], host=document.getElementById('bp-th');
+  if(!b || !host) return;
+  var list=bpThoughts(b);
+  if(!list.length){
+    host.innerHTML='<p class="bp-none">Nothing written yet. Tap Edit to add the first entry.</p>';
+    return;
+  }
+  if(bpTh<0 || bpTh>=list.length) bpTh=list.length-1;   // opens on the most recent
+  var t=list[bpTh], reads=(b.sessions||[]).length;
+  host.innerHTML=
+      '<div class="bp-thtop"><div><p class="bp-thdate">'+esc(longISO(t.at))+'</p>'
+    + (reads>1 ? '<p class="bp-thread">Read '+t.read+' of '+reads+'</p>' : '')
+    + '</div>'
+    + (list.length>1
+       ? '<div class="bp-thnav">'
+         +'<button class="rtn-b" onclick="bpGoThought(-1)"'+(bpTh<=0?' disabled':'')
+           +' title="Earlier entry">'+_CHEV_L+'</button>'
+         +'<span class="rtn-pos">'+(bpTh+1)+' / '+list.length+'</span>'
+         +'<button class="rtn-b" onclick="bpGoThought(1)"'+(bpTh>=list.length-1?' disabled':'')
+           +' title="Later entry">'+_CHEV_R+'</button></div>'
+       : '')
+    + '</div>'
+    + '<div class="bp-thbody">'+String(t.text).split(/\n{2,}/).map(function(par){
+        return '<p>'+esc(par)+'</p>'; }).join('')+'</div>'
+    + (list.length>1 ? '<div class="bp-thdots">'+list.map(function(_,i){
+        return '<i class="'+(i===bpTh?'on':'')+'"></i>'; }).join('')+'</div>' : '');
+}
+function renderBookPage(){
+  var b=books[bpIdx]; if(!b) return;
+  var r=curReadOf(b), audio=isAudioRead(r);
+  var tot=readTotal(b,r)||0, at=currentPageFor(b)||0;
+  var pct=tot?Math.min(1,at/tot):0;
+
+  document.getElementById('bp-coverwrap').innerHTML=coverHTML(b,'lg');
+  // The page takes its colour from the book, so 142 books light it 142 ways.
+  document.getElementById('bp-wash').setAttribute('style',coverVars(b));
+  document.getElementById('bp-title').textContent=b.title||'';
+  document.getElementById('bp-by').textContent=b.author||'';
+  var tr=document.getElementById('bp-trans');
+  tr.textContent=b.translator?('Translated by '+b.translator):'';
+  tr.classList.toggle('hidden',!b.translator);
+
+  var st=seriesText(b);
+  document.getElementById('bp-tags').innerHTML=
+      '<span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'
+    + '<span class="bp-tagtext">'+esc(b.genre||'')+'</span>'
+    + (st?'<span class="pill-s">'+esc(st)+'</span>':'')
+    + '<span class="pill-s">'+esc(readMediumName(b,r)||'')+'</span>'
+    + (tot?'<span class="pill-s">'+esc(audio?fmtMins(tot):(tot+' pages'))+'</span>':'');
+  // starsDisplayHTML already prints the number after the stars; adding another
+  // put "4.0 4.0" on the page.
+  document.getElementById('bp-stars').innerHTML=
+      starsDisplayHTML(b.myRating||0,'bp'+b.idx)
+    + (b.myRating?'':'<span class="bp-rv">Not rated</span>');
+
+  var go=document.getElementById('bp-go');
+  go.innerHTML=ICONS.play+' '+(b.isReading?'Reading now':'Start reading');
+  go.classList.toggle('on',!!b.isReading);
+  go.onclick=function(){ toggleReading(b.idx); renderBookPage(); };
+  document.getElementById('bp-log').onclick=function(){ openRL(b.idx); };
+
+  document.getElementById('bp-n').textContent=audio?fmtMins(at):String(at);
+  document.getElementById('bp-of').textContent=tot
+    ? ('of '+(audio?fmtMins(tot):(tot+' pages'))) : '';
+  document.getElementById('bp-left').textContent=!tot?''
+    :(pct>=1?'Finished':(at?Math.round(pct*100)+'% in':'Not started'));
+  document.getElementById('bp-fill').style.width=(pct*100)+'%';
+
+  var d=document.getElementById('bp-desc');
+  d.textContent=(b.summary||'').trim()||'No description yet.';
+  d.classList.add('clamped');
+  document.getElementById('bp-more').textContent='Read more';
+  document.getElementById('bp-more').classList.toggle('hidden',(b.summary||'').length<190);
+
+  renderBPThoughts();
+
+  var ts=(b.timerSessions||[]).slice().sort(function(x,y){
+    return (y.startTime||0)-(x.startTime||0); }).slice(0,4);
+  document.getElementById('bp-ses').innerHTML=ts.length
+    ? ts.map(function(x){
+        var sa=sessionIsAudio(b,x), amt=Math.max(0,(x.endPage||0)-(x.startPage||0));
+        var dt=x.startTime?new Date(x.startTime):null;
+        return '<div class="bp-srow"><span class="bp-sd">'
+          +(dt?esc(dt.toLocaleDateString(undefined,{month:'short',day:'numeric'})):'—')+'</span>'
+          +'<span class="bp-ss">'+(sa?(fmtMins(x.startPage||0)+'–'+fmtMins(x.endPage||0))
+                                     :('p.'+(x.startPage||0)+'–'+(x.endPage||0)))+'</span>'
+          +'<span class="bp-sdur">'+formatHMS(x.durationSec||0)+'</span></div>';
+      }).join('')
+    : '<p class="bp-none">No sessions timed yet.</p>';
+
+  var secs=(b.timerSessions||[]).reduce(function(n,x){ return n+(x.durationSec||0); },0);
+  document.getElementById('bp-stats').innerHTML=
+      '<div class="bp-stat"><b>'+(secs?formatHMS(secs):'—')+'</b><span>on this book</span></div>'
+    + '<div class="bp-stat"><b>'+((b.timerSessions||[]).length)+'</b><span>sittings</span></div>'
+    + '<div class="bp-stat"><b>'+((b.sessions||[]).length)+'</b><span>'
+      +((b.sessions||[]).length===1?'read':'reads')+'</span></div>';
+
+  var f=[['Author',b.author||'—']];
+  if(b.translator) f.push(['Translator',b.translator]);
+  if(st) f.push(['Series',st]);
+  f.push(['Genre',b.genre||'—'],['Format',readMediumName(b,r)||'—']);
+  if(tot) f.push([audio?'Runtime':'Length',audio?fmtMins(tot):(tot+' pages')]);
+  f.push(['Started',(r&&r.start)||'—'],['Finished',(r&&r.end)||'—'],
+         ['Reads',String((b.sessions||[]).length)],
+         ['Entries',String(noteCount(b))]);
+  document.getElementById('bp-facts').innerHTML=f.map(function(x){
+    return '<dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd>'; }).join('');
+}
+
 // ── A read's thoughts ─────────────────────────────────────────────────────────
 // A read used to hold one note. It now holds a list of dated entries, so a
 // book can carry what he thought at page 100 and again at the end.
@@ -4090,6 +4719,9 @@ function noteCount(b){
 // boxes above; these are the rest, held here until the form is submitted so a
 // half-typed version is never written to a book.
 var _edDraft={f:[],d:[]};
+// A cover found during lookup, held until the book is actually saved — so a
+// half-filled form never writes artwork to a book that is never created.
+var _lkPendingCover='';
 // Genre is a lookup, not a wall of pills: type a few letters and the genres
 // already in use are offered. Anything typed that matches nothing is simply a
 // new genre, so adding one costs no extra field.
@@ -5946,7 +6578,9 @@ function renderTable(){
     return '<div class="bk-card'+(isRead?' is-read':'')+(b.isReading?' is-reading':'')+'" data-bidx="'+b.idx+'">'
       +'<div class="bk-row1">'
         +'<button class="chk'+(isRead?' checked':'')+'" onclick="toggleRead('+b.idx+')" title="Mark read"></button>'
-        +'<div class="bk-id" onclick="openDescSheet('+b.idx+')" title="Show description">'
+        +'<div class="bk-coverwrap" onclick="openBookPage('+b.idx+')" title="Open book">'
+          +coverHTML(b,'bk-cover')+'</div>'
+        +'<div class="bk-id" onclick="openBookPage('+b.idx+')" title="Open book">'
           +'<div class="bk-title">'+esc(b.title)+inlineSeriesTag+(b.optional?'<span class="optional-tag">(optional)</span>':'')+sBadge+'</div>'
           +seriesLine
           +'<div class="bk-byline"><span class="bk-gdot" style="background:'+genreColor(b.genre)+'"></span>'+esc(b.genre)+' &middot; '+esc(b.author)+(b.translator?' &middot; <span class="bk-trans">trans. '+esc(b.translator)+'</span>':'')+(function(){var _t=lengthTag(b,curReadOf(b));return _t?' <span class="bk-audio">'+esc(_t)+'</span>':'';})()+'</div>'
@@ -6232,7 +6866,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v45';
+var BABEL_VERSION='babel-v48';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -6980,7 +7614,7 @@ function _lkDetails(r){
   }
   Promise.all([fetchJSON(G,'g'),fetchJSON(O,'o')]).then(function(res){
     var items=(res[0]&&res[0].items)||[], work=res[1]||null;
-    var descs=[], cats=[], pages=0, n=0;
+    var descs=[], cats=[], pages=0, n=0, pic='';
     // Open Library's community-written work description reads like a synopsis
     // rather than jacket copy, so it goes into the pool first.
     if(work){
@@ -6998,11 +7632,19 @@ function _lkDetails(r){
         if(va.indexOf(aStem)<0) return;
       }
       n++;
+      // The artwork was already in this response and was being dropped on the
+      // floor. Largest first: the thumbnail is 128px and looks like mush.
+      if(!pic && v.imageLinks){
+        var il=v.imageLinks;
+        pic = il.extraLarge || il.large || il.medium || il.small
+           || il.thumbnail || il.smallThumbnail || '';
+        if(pic) pic = pic.replace(/^http:/,'https:').replace(/&edge=curl/,'');
+      }
       if(v.description) descs.push(v.description);
       (v.categories||[]).forEach(function(c){ cats.push(c); });
       if(!pages && v.pageCount) pages=v.pageCount;
     });
-    var payload={desc:_lkBestDesc(descs),cats:cats,pages:pages,n:n,gErr:gErr};
+    var payload={desc:_lkBestDesc(descs),cats:cats,pages:pages,n:n,gErr:gErr,pic:pic};
     if(payload.desc||payload.cats.length||payload.pages) _lkCacheSet(ck,payload);
     _lkApplyDetails(payload,'live');
   });
@@ -7016,6 +7658,7 @@ function _lkApplyDetails(d,src){
   }
   var pf=document.getElementById('f-pages');
   if(pf && !pf.value && d.pages){ pf.value=d.pages; got.push('pages'); }
+  if(d.pic){ _lkPendingCover=d.pic; got.push('cover'); }
   if(got.length) _lkStatus('Filled '+got.join(', ')+(src==='cache'?' (cached)':''));
   else if(d.gErr==='429') _lkStatus('Google Books quota reached \u2014 try again tomorrow');
   else if(d.gErr==='403') _lkStatus('Google Books key rejected \u2014 check referrer restrictions');
@@ -7760,6 +8403,10 @@ function renderStreak(){
 storage.init().then(function(){
   loadP();
   loadAll();
+  // Covers come off the phone in the background. The library draws without
+  // them first and redraws once they arrive, so boot is never held up by
+  // several megabytes of artwork.
+  try{ loadCovers(); }catch(e){}
   // A fresh profile has no stored goal, so it falls back to 10. Pushing that
   // default up as authoritative is how a real 30-minute goal became 10
   // everywhere. Until this device has a goal of its own, it defers to the cloud.
