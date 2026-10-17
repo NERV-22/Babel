@@ -1,6 +1,6 @@
 /* Babel service worker — offline app shell.
    Bump CACHE on every release so clients pull the new files. */
-const CACHE = 'babel-v48';
+const CACHE = 'babel-v50';
 const ASSETS = [
   'Babel.html',
   'index.html',
@@ -59,8 +59,47 @@ self.addEventListener('message', (e) => {
 
 // Navigations: network-first (so a freshly hosted version shows up), fall back
 // to cache when offline. Other assets: cache-first with background refresh.
+// ── A cover shared in from another app ──────────────────────────────────────
+// Long-press an image anywhere in the browser — Google Images included — tap
+// Share and pick Babel, and Android hands the picture to this handler. Nothing
+// is scraped and no page is parsed: this is the system share sheet doing what
+// it is for. The picture is stashed where the app can pick it up, then the
+// request is answered with a redirect so a refresh cannot post it twice.
+const SHARE_PATH = 'babel-share-cover';
+function stashShared(file) {
+  return new Promise((resolve) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const open = indexedDB.open('rl_covers', 1);
+      open.onupgradeneeded = () => { try { open.result.createObjectStore('img'); } catch (err) {} };
+      open.onsuccess = () => {
+        try {
+          const tx = open.result.transaction('img', 'readwrite');
+          tx.objectStore('img').put(String(fr.result), '__shared__');
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => resolve(false);
+        } catch (err) { resolve(false); }
+      };
+      open.onerror = () => resolve(false);
+    };
+    fr.onerror = () => resolve(false);
+    fr.readAsDataURL(file);
+  });
+}
 self.addEventListener('fetch', (e) => {
   const req = e.request;
+  if (req.method === 'POST' && new URL(req.url).pathname.endsWith(SHARE_PATH)) {
+    e.respondWith((async () => {
+      let got = false;
+      try {
+        const form = await req.formData();
+        const file = form.get('cover') || form.getAll('cover')[0];
+        if (file && file.size) got = await stashShared(file);
+      } catch (err) {}
+      return Response.redirect('./?shared-cover=' + (got ? '1' : '0'), 303);
+    })());
+    return;
+  }
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   // The typeface is the one cross-origin thing worth keeping. Cache-first and

@@ -1035,7 +1035,7 @@ body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padd
 .cp-find input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;
   color:var(--text);font-family:var(--ui);font-size:14px;padding:11px 12px}
 .cp-find input:focus{border-color:var(--accent);outline:none}
-.cp-upload{width:100%;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;
+.cp-upload{width:100%;margin-top:9px;display:flex;align-items:center;justify-content:center;gap:8px;
   cursor:pointer;background:none;border:1px solid var(--accent);border-radius:10px;
   color:var(--accent);font-family:var(--ui);font-size:13.5px;padding:12px 14px}
 .cp-note{font-family:var(--ui);font-size:11.5px;color:var(--text-muted);line-height:1.5;margin:12px 0 0}
@@ -1681,8 +1681,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <div class="sheet cp-sheet">
     <div class="sheet-grab" onclick="closeCoverPicker()"></div>
     <div class="cp-head"><div class="desc-title">Choose a cover</div></div>
-    <div class="cp-find"><input id="cp-q" type="search" autocomplete="off" placeholder="Search by title"/></div>
-    <button class="cp-upload" onclick="cpPickFile()">Upload from your photos</button>
+    <div class="cp-find"><input id="cp-q" type="search" autocomplete="off" placeholder="Title, or the ISBN from the back"/></div>
+    <button class="cp-upload" onclick="findCoverOnline()">Search the web for this cover</button>
+    <button class="cp-upload cp-upload2" onclick="cpPickFile()">Upload from your photos</button>
     <input type="file" id="cp-file" accept="image/*" hidden onchange="cpFileChosen(this)"/>
     <p class="cp-note" id="cp-note">Or tap a cover below to see it full size, then confirm.</p>
     <div class="cp-grid" id="cp-grid"></div>
@@ -4329,6 +4330,7 @@ function coverOf(b){ return (b && b.bookId && COVERS[b.bookId]) || ''; }
 function loadCovers(){
   return coverStore.all().then(function(m){
     COVERS=m||{};
+    delete COVERS.__shared__;      // the share inbox, not a book's cover
     try{ renderTable(); }catch(e){}
     return COVERS;
   });
@@ -4427,6 +4429,89 @@ function coverHTML(b,cls){
   + '</div>';
 }
 
+// ── A cover found anywhere on the web ─────────────────────────────────────────
+// Google has no image-search API open to new keys any more, and reading its
+// results page is both against its terms and broken by every redesign. The way
+// that does work is the one the phone already provides: send him to the search
+// in his browser, and let Android's share sheet hand the picture back. He
+// long-presses the cover he wants, taps Share, picks Babel.
+//
+// For this to appear in the share sheet the installed app must declare itself
+// a share target in manifest.webmanifest — see SHARE-TARGET.md.
+var PENDING_KEY='rl_pendingCoverBook';
+function findCoverOnline(){
+  var b=books[bpIdx]; if(!b) return;
+  // Which book is waiting has to outlive leaving the app entirely.
+  try{ storage.setItem(PENDING_KEY,b.bookId||''); }catch(e){}
+  var q=encodeURIComponent((b.title||'')+' '+(b.author||'')+' book cover');
+  try{ window.open('https://www.google.com/search?tbm=isch&q='+q,'_blank','noopener'); }
+  catch(e){ location.href='https://www.google.com/search?tbm=isch&q='+q; }
+  showToast('Long-press the cover you want, then Share → Babel');
+}
+// The way in for the Android build. The installed-PWA route goes through the
+// service worker and the share_target manifest key; a Capacitor APK is a
+// native app, so the share sheet reaches it through an intent instead and
+// hands the picture to this. Either way it ends up in the same inbox and the
+// same confirm step — see HANDOFF-SHARE-APK.md.
+//
+// Takes a data URL, or a file:// / content:// uri, since the plugins differ on
+// which they give back.
+window.babelReceiveSharedCover=function(uriOrData){
+  var u=String(uriOrData||'');
+  if(!u) return Promise.resolve(false);
+  function stash(dataUrl){
+    return new Promise(function(res){
+      shrinkImage(dataUrl,function(small){
+        coverStore.put('__shared__',small).then(function(){ res(takeSharedCover()); });
+      });
+    });
+  }
+  if(u.slice(0,5)==='data:') return stash(u);
+  // A file or content uri is not loadable from the web layer as-is; Capacitor
+  // rewrites it to something the WebView can fetch.
+  var src=u;
+  try{
+    if(window.Capacitor && typeof window.Capacitor.convertFileSrc==='function')
+      src=window.Capacitor.convertFileSrc(u);
+  }catch(e){}
+  return fetch(src)
+    .then(function(r){ if(!r.ok) throw new Error(r.status); return r.blob(); })
+    .then(function(bl){ return new Promise(function(res,rej){
+      var fr=new FileReader();
+      fr.onload=function(){ res(String(fr.result)); };
+      fr.onerror=function(){ rej(fr.error); };
+      fr.readAsDataURL(bl);
+    });})
+    .then(stash)
+    .catch(function(){
+      showToast('That shared image couldn’t be read.');
+      return false;
+    });
+};
+// Called at boot. A picture waiting in the inbox is offered against whichever
+// book was open when he went looking, and confirmed before it is kept.
+function takeSharedCover(){
+  return coverStore.get('__shared__').then(function(data){
+    if(!data) return false;
+    coverStore.del('__shared__');
+    var id='';
+    try{ id=storage.getItem(PENDING_KEY)||''; }catch(e){}
+    try{ storage.removeItem(PENDING_KEY); }catch(e){}
+    var idx=books.findIndex(function(x){ return x.bookId===id; });
+    if(idx<0){
+      showToast('Open the book you want this cover on, then share it again.');
+      return false;
+    }
+    return new Promise(function(res){
+      shrinkImage(data,function(small){
+        openBookPage(idx);
+        cpShow(small,false);          // the same confirm step as any other cover
+        res(true);
+      });
+    });
+  }).catch(function(){ return false; });
+}
+
 // ── Choosing a cover ──────────────────────────────────────────────────────────
 // Google has no image-search API worth calling and scraping its results page
 // is both fragile and against its terms. Open Library is a plain JSON call
@@ -4448,36 +4533,70 @@ function closeCoverPicker(){
 var _cpTimer=null;
 function cpFindSoon(v){ clearTimeout(_cpTimer); _cpTimer=setTimeout(function(){ cpFind(v); },420); }
 function cpNote(t){ var n=document.getElementById('cp-note'); if(n) n.textContent=t; }
+// Open Library alone is thin, and for a book he owns the exact edition is what
+// matters. So: an ISBN typed from the back cover goes straight to that
+// edition, and a title query asks Google Books as well — he already has a key
+// for it, and it carries editions Open Library does not.
+function cpIsISBN(q){
+  var d=String(q||'').replace(/[^0-9Xx]/g,'');
+  return (d.length===10 || d.length===13) ? d : '';
+}
 function cpFind(title){
   var tok=++cpTok, grid=document.getElementById('cp-grid');
   if(!grid) return;
   grid.innerHTML='';
-  cpNote('Looking…');
-  fetch('https://openlibrary.org/search.json?limit=24&fields=cover_i,title&title='
-        +encodeURIComponent(title||''))
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      if(tok!==cpTok) return;
-      var ids=[];
-      ((d&&d.docs)||[]).forEach(function(x){
-        if(x.cover_i && ids.indexOf(x.cover_i)<0) ids.push(x.cover_i); });
-      if(!ids.length){
-        cpNote('No covers found for that title. Try adding the author’s name.');
-        return;
+  var isbn=cpIsISBN(title);
+  cpNote(isbn?'Looking up that edition\u2026':'Looking\u2026');
+  var urls=[];
+  if(isbn){
+    urls.push(['ol-isbn','https://openlibrary.org/search.json?limit=6&fields=cover_i&isbn='+encodeURIComponent(isbn)]);
+    urls.push(['gb','https://www.googleapis.com/books/v1/volumes?maxResults=10&q=isbn:'+encodeURIComponent(isbn)
+      +(typeof GBOOKS_KEY!=='undefined'&&GBOOKS_KEY?('&key='+GBOOKS_KEY):'')]);
+  } else {
+    urls.push(['ol','https://openlibrary.org/search.json?limit=24&fields=cover_i&title='+encodeURIComponent(title||'')]);
+    urls.push(['gb','https://www.googleapis.com/books/v1/volumes?maxResults=24&q=intitle:'+encodeURIComponent(title||'')
+      +(typeof GBOOKS_KEY!=='undefined'&&GBOOKS_KEY?('&key='+GBOOKS_KEY):'')]);
+  }
+  Promise.all(urls.map(function(u){
+    return fetch(u[1]).then(function(r){ return r.ok?r.json():null; })
+      .then(function(j){ return [u[0],j]; }).catch(function(){ return [u[0],null]; });
+  })).then(function(res){
+    if(tok!==cpTok) return;
+    var out=[], seen={};
+    function add(u){ if(u && !seen[u]){ seen[u]=1; out.push(u); } }
+    res.forEach(function(pair){
+      var kind=pair[0], j=pair[1];
+      if(!j) return;
+      if(kind==='ol' || kind==='ol-isbn'){
+        ((j.docs)||[]).forEach(function(d){
+          if(d.cover_i) add('https://covers.openlibrary.org/b/id/'+d.cover_i+'-L.jpg');
+        });
+      } else {
+        ((j.items)||[]).forEach(function(it){
+          var il=(it.volumeInfo||{}).imageLinks||{};
+          var u=il.extraLarge||il.large||il.medium||il.thumbnail||il.smallThumbnail||'';
+          if(u) add(u.replace(/^http:/,'https:').replace(/&edge=curl/,''));
+        });
       }
-      cpNote('Tap a cover to see it full size, then confirm.');
-      grid.innerHTML=ids.slice(0,24).map(function(id){
-        var u='https://covers.openlibrary.org/b/id/'+id+'-M.jpg';
-        return '<button class="cp-cand" onclick="cpChoose(this)" data-u="'
-          +esc('https://covers.openlibrary.org/b/id/'+id+'-L.jpg')+'">'
-          +'<img alt="" loading="lazy" src="'+esc(u)+'" onerror="this.closest(\'.cp-cand\').remove()"/>'
-          +'</button>';
-      }).join('');
-    })
-    .catch(function(){
-      if(tok!==cpTok) return;
-      cpNote('Couldn’t reach the cover search. Check your connection, or upload a picture instead.');
     });
+    // A plain cover-by-ISBN URL, in case neither index listed one.
+    if(isbn) add('https://covers.openlibrary.org/b/isbn/'+isbn+'-L.jpg?default=false');
+    if(!out.length){
+      cpNote(isbn
+        ? 'No cover filed for that ISBN. Try the title, or search the web.'
+        : 'No covers found. Try adding the author, the ISBN from the back cover, or search the web.');
+      return;
+    }
+    cpNote('Tap a cover to see it full size, then confirm.');
+    grid.innerHTML=out.slice(0,30).map(function(u){
+      return '<button class="cp-cand" onclick="cpChoose(this)" data-u="'+esc(u)+'">'
+        +'<img alt="" loading="lazy" src="'+esc(u)+'" onerror="this.closest(\'.cp-cand\').remove()"/>'
+        +'</button>';
+    }).join('');
+  }).catch(function(){
+    if(tok!==cpTok) return;
+    cpNote('Couldn\u2019t reach the cover search. Upload a picture, or search the web instead.');
+  });
 }
 function cpPickFile(){ var f=document.getElementById('cp-file'); if(f) f.click(); }
 function cpFileChosen(input){
@@ -6866,7 +6985,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v48';
+var BABEL_VERSION='babel-v50';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -8406,7 +8525,7 @@ storage.init().then(function(){
   // Covers come off the phone in the background. The library draws without
   // them first and redraws once they arrive, so boot is never held up by
   // several megabytes of artwork.
-  try{ loadCovers(); }catch(e){}
+  try{ loadCovers().then(function(){ return takeSharedCover(); }); }catch(e){}
   // A fresh profile has no stored goal, so it falls back to 10. Pushing that
   // default up as authoritative is how a real 30-minute goal became 10
   // everywhere. Until this device has a goal of its own, it defers to the cloud.
