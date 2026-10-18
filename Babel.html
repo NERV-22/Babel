@@ -1550,6 +1550,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
           <button class="set-row" onclick="babelCheckUpdate()"><span>Update Babel</span><span class="set-chev">&#8635;</span></button>
           <div class="set-row" style="cursor:default"><span>Version</span><span class="set-chev" id="set-version" style="font-size:.8em;opacity:.75">&hellip;</span></div>
           <button class="set-row" onclick="babelShowStorage(1)"><span>Storage</span><span class="set-chev" id="set-storage" style="font-size:.8em;opacity:.75">&hellip;</span></button>
+          <button class="set-row" onclick="babelCheckWebGPU(1)"><span>On-device AI</span><span class="set-chev" id="set-webgpu" style="font-size:.8em;opacity:.75">Tap to check</span></button>
           <div id="storage-alarm" style="display:none;margin:8px 2px 0;padding:10px 12px;border-radius:10px;background:#5a1d1d;color:#ffd9d9;font-size:.82em;line-height:1.4"></div>
         </div>
         <div class="set-group" id="signout-group" style="display:none">
@@ -6098,7 +6099,7 @@ function updS(i,field,val){
 
 // ── Update download ───────────────────────────────────────────────────────────
 function downloadUpdate(){
-  var url="https://raw.githubusercontent.com/NERV-22/Reading-List/refs/heads/main/index.html";
+  var url="https://raw.githubusercontent.com/NERV-22/Babel/refs/heads/main/Babel.html";
   showToast("Downloading latest version...");
   fetch(url)
     .then(function(r){
@@ -6109,7 +6110,7 @@ function downloadUpdate(){
       var a=document.createElement("a");
       var burl=URL.createObjectURL(blob);
       a.href=burl;
-      a.download="Reading_List.html";
+      a.download="Babel.html";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -6575,7 +6576,7 @@ function switchScreen(name){
   if(name==='stats') updateStats();
   if(name==='reading') renderReadingScreen();
   if(name==='hearth'){ renderHearth(); }
-  if(name==='settings'){ babelShowVersion(); babelShowStorage(0); }
+  if(name==='settings'){ babelShowVersion(); babelShowStorage(0); babelCheckWebGPU(0); }
   if(name==='timer') renderTimerTab();
   if(name==='library' && currentTab==='genre') renderGenreTab();
   try{ window.scrollTo(0,0); }catch(e){}
@@ -6783,8 +6784,18 @@ function loadHearth(){
   // grants. That is the evidence it is an established profile which could have
   // suffered the sync wipe — a fresh install never had 9 freezes to lose, and
   // must not be handed a repair for a loss that never happened.
+  // "Established" used to mean "has already had freezeGrant2", which was fine
+  // while only freezeRestore1 asked. Gating grant 2 itself on it would make
+  // that grant unreachable — the outer check is !freezeGrant2 and the inner
+  // would be !!freezeGrant2. So the test is now the thing it was always
+  // standing in for: does this device have a hearth at all. A fresh install
+  // has no rl_hearth key; any profile that has ever run Babel does.
   var _established=false;
-  try{ var r=storage.getItem('rl_hearth'); if(r){ var o=JSON.parse(r); _established=!!o.freezeGrant2; for(var k in o) babelHearth[k]=o[k]; } }catch(e){}
+  try{
+    var r=storage.getItem('rl_hearth');
+    _established = (r!==null && r!==undefined && String(r).length>0);
+    if(r){ var o=JSON.parse(r); for(var k in o) babelHearth[k]=o[k]; }
+  }catch(e){}
   babelHearthLoaded=true;   // from here on, saving is safe
   ['frozen','claims','unlocked','logins','claimedAch','metEver'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
   // One-time: tiers unlocked before achievements became claimable were paid
@@ -6819,28 +6830,40 @@ function loadHearth(){
   // achievement claims that were recorded but reverted on the next pull. Tops
   // the balance up to the agreed figure without ever reducing it.
   var _hMig=false;
+  // Every grant below repairs damage done to an EXISTING profile by a past
+  // sync bug. Run on a fresh install they are not repairs, they are 120 embers
+  // and 26 freezes handed to someone who has read nothing — so each one is
+  // gated on this device having a history, the way freezeRestore1 already was.
+  // The flags are still set either way: a new profile is marked as having had
+  // them so it can never be paid later, once it does have a history.
   if(!babelHearth.emberMakeGood){
-    var _owed=120-emBal();
-    if(_owed>0){ emGain(_owed); _hMig=true; }
+    if(_established){
+      var _owed=120-emBal();
+      if(_owed>0){ emGain(_owed); _hMig=true; }
+    }
     babelHearth.emberMakeGood=1;
   }
   emBal();
   // Make-good for a freeze lost to the sync bug above, plus the three spent
   // defending a streak that the de-duplication fix then erased.
   if(!babelHearth.freezeGrant2){
-    babelHearth.freezes=(babelHearth.freezes||0)+(babelHearth.freezeGrant1?3:4);
+    if(_established){
+      babelHearth.freezes=(babelHearth.freezes||0)+(babelHearth.freezeGrant1?3:4);
+      _hMig=true;
+    }
     babelHearth.freezeGrant1=1;
     babelHearth.freezeGrant2=1;
-    _hMig=true;
   }
   // One-time: 22 freezes added at Patrick's request. Additive and flagged, so
   // a spend afterwards is not undone and it cannot pay out twice. The flag
   // rides the sync merge below like the other grants — if an incoming copy
   // predating it were allowed to clear it, the next boot would pay 22 again.
   if(!babelHearth.freezeGrant3){
-    babelHearth.freezes=(babelHearth.freezes||0)+22;
+    if(_established){
+      babelHearth.freezes=(babelHearth.freezes||0)+22;
+      _hMig=true;
+    }
     babelHearth.freezeGrant3=1;
-    _hMig=true;
   }
   // One-time: 9 banked freezes went to 0 overnight, with no days newly frozen
   // and no spend notice. They were not spent — the sync merge let an incoming
@@ -6985,7 +7008,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v50';
+var BABEL_VERSION='babel-v51';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -7018,6 +7041,43 @@ function babelShowStorage(verbose){
           (mirr?(' (mirror: '+mirr+')'):'')+'.'; }
     }
   });
+}
+// ── Can this phone run a model locally? ───────────────────────────────────────
+// An in-browser LLM needs WebGPU, and whether a Capacitor WebView has it is
+// not something anyone can answer from a spec sheet — WebGPU is still not
+// Baseline, and even where navigator.gpu exists requestAdapter() can come back
+// empty. So rather than guess, this asks the device. Diagnostic only: nothing
+// here downloads a model or changes any behaviour.
+function babelCheckWebGPU(verbose){
+  var el=document.getElementById('set-webgpu'); if(!el) return;
+  function say(t){ el.textContent=t; }
+  if(typeof navigator==='undefined' || !navigator.gpu){
+    say('No \u2014 WebGPU missing');
+    if(verbose) showToast('This WebView has no WebGPU, so a local model cannot run here.');
+    return;
+  }
+  say('Checking\u2026');
+  var done=false;
+  // A request that never settles would leave it saying "Checking" forever.
+  setTimeout(function(){ if(!done){ done=true; say('No answer \u2014 timed out'); } },8000);
+  Promise.resolve()
+    .then(function(){ return navigator.gpu.requestAdapter(); })
+    .then(function(ad){
+      if(done) return; done=true;
+      if(!ad){
+        say('No \u2014 no GPU adapter');
+        if(verbose) showToast('WebGPU is present but this device offers no adapter.');
+        return;
+      }
+      var name='';
+      try{ name=(ad.info&&(ad.info.description||ad.info.vendor))||''; }catch(e){}
+      say('Yes'+(name?(' \u2014 '+String(name).slice(0,22)):''));
+      if(verbose) showToast('WebGPU works here \u2014 a local model is possible.');
+    })
+    .catch(function(e){
+      if(done) return; done=true;
+      say('No \u2014 '+((e&&(e.name||e.message))||'failed'));
+    });
 }
 function babelShowVersion(){
   var el=document.getElementById('set-version'); if(!el) return;
@@ -7886,11 +7946,26 @@ function closeYearBooks(){ document.getElementById('yearbooks-sheet').classList.
 // ratings) use the active list, matching the counters above them.
 function _allTimerSessions(){
   var out=[];
-  function grab(arr){(arr||[]).forEach(function(x){ if(x&&x.startTime&&x.durationSec&&!x.detached) out.push(x); });}
-  books.forEach(function(b){ grab(b.timerSessions); });
+  // An audio session's startPage/endPage are MINUTES, not pages. Anything here
+  // that counts pages has to be able to tell the two apart — without it a
+  // ten-hour audiobook adds six hundred "pages" to its month.
+  //
+  // The flag rides on a copy rather than the session itself: these objects are
+  // serialised straight into storage and synced, and a derived field has no
+  // business travelling with them.
+  function grab(b,arr){(arr||[]).forEach(function(x){
+    if(x && x.startTime && x.durationSec && !x.detached){
+      var c={}; for(var k in x) if(Object.prototype.hasOwnProperty.call(x,k)) c[k]=x[k];
+      c._audio = !!sessionIsAudio(b,x);
+      out.push(c);
+    }
+  });}
+  books.forEach(function(b){ grab(b,b.timerSessions); });
   lists.forEach(function(l){
     if(l.id===activeId) return;
-    try{ var raw=storage.getItem(listKey(l.id)); if(raw) JSON.parse(raw).forEach(function(b){ grab(b.timerSessions); }); }catch(e){}
+    // A closed list has not been through stampFormats, but its books come back
+    // whole, so sessionIsAudio can still bridge each session to its read.
+    try{ var raw=storage.getItem(listKey(l.id)); if(raw) JSON.parse(raw).forEach(function(b){ grab(b,b.timerSessions); }); }catch(e){}
   });
   return out;
 }
@@ -7919,6 +7994,7 @@ function renderDeepStats(){
   var MONS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], months=[];
   for(var i=11;i>=0;i--){ var d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({y:d.getFullYear(),m:d.getMonth(),l:MONS[d.getMonth()],p:0}); }
   ts.forEach(function(x){ var d2=new Date(x.startTime);
+    if(x._audio) return;                       // minutes, not pages
     for(var j=0;j<months.length;j++){ if(d2.getFullYear()===months[j].y&&d2.getMonth()===months[j].m){ months[j].p+=Math.max(0,(x.endPage||0)-(x.startPage||0)); break; } }
   });
   var maxP=1; months.forEach(function(m){ if(m.p>maxP) maxP=m.p; });
