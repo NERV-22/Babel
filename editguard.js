@@ -145,6 +145,30 @@
     return out;
   }
 
+  // "eye rolling" -> "eye-rolling" is two tokens becoming one, which the walk
+  // below would read as a substitution plus a deleted word, and a deleted word
+  // is disqualifying. So a real copy-edit got refused. The join is only treated
+  // as a fix when the letters match exactly either side of it, ignoring
+  // hyphens — nothing can be smuggled in or lost through this door.
+  function fuseCompounds(ops, A, B) {
+    var out = [], k = 0;
+    var bare = function (s) { return String(s || '').replace(/-/g, ''); };
+    while (k < ops.length) {
+      var o = ops[k], nx = ops[k + 1];
+      if (o.op === 'sub' && nx && nx.op === 'del' &&
+          bare(A[o.a].key) + bare(A[nx.a].key) === bare(B[o.b].key) && B[o.b].key) {
+        out.push({ op: 'join', a: o.a, a2: nx.a, b: o.b }); k += 2; continue;
+      }
+      // and the other way: "takeaway" -> "take away"
+      if (o.op === 'sub' && nx && nx.op === 'ins' &&
+          bare(A[o.a].key) === bare(B[o.b].key) + bare(B[nx.b].key) && A[o.a].key) {
+        out.push({ op: 'join', a: o.a, b: o.b, b2: nx.b }); k += 2; continue;
+      }
+      out.push(o); k++;
+    }
+    return out;
+  }
+
   function join(tokens) {
     return tokens.map(function (t) { return t.lead + t.core + t.trail; })
       .join(' ')
@@ -162,11 +186,19 @@
     if (!B.length) return { text: String(original || ''), rejected: true, reason: 'the model returned nothing',
                             reverts: [{ kind: 'empty' }], accepted: [], kept: 100, lost: [] };
 
-    var ops = pair(lcs(A, B));
+    var ops = fuseCompounds(pair(lcs(A, B)), A, B);
     var out = [], reverts = [], accepted = [], run = 0;
 
     ops.forEach(function (o) {
       if (o.op !== 'ins') run = 0;
+      if (o.op === 'join') {
+        out.push(B[o.b]);
+        if (typeof o.b2 === 'number') out.push(B[o.b2]);
+        accepted.push({ kind: 'compound',
+          from: A[o.a].raw + (typeof o.a2 === 'number' ? ' ' + A[o.a2].raw : ''),
+          to: B[o.b].raw + (typeof o.b2 === 'number' ? ' ' + B[o.b2].raw : '') });
+        return;
+      }
       if (o.op === 'same') {
         // Same word: take the model's copy, which carries its punctuation and
         // capitalisation. That is the whole of what it is allowed to fix.

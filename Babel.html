@@ -5072,7 +5072,7 @@ function llmRemove(){
 // they point at different fixes: dropping his words means the model deletes,
 // going over budget means it rewrites.
 function composeCounts(){
-  var done=0, left=0, dropped=0, over=0;
+  var done=0, left=0, dropped=0, over=0, echo=0;
   books.forEach(function(b){ (b.sessions||[]).forEach(function(r){ (r.notes||[]).forEach(function(e){
     if(!e || !String(e.text||'').trim()) return;
     if(thComposedValid(e)){ done++; return; }
@@ -5080,8 +5080,9 @@ function composeCounts(){
     left++;
     if(/were dropped/.test(d.reason||'')) dropped++;
     else if(/refused edits/.test(d.reason||'')) over++;
+    else if(/copied its own example/.test(d.reason||'')) echo++;
   }); }); });
-  return {done:done, left:left, dropped:dropped, over:over};
+  return {done:done, left:left, dropped:dropped, over:over, echo:echo};
 }
 function renderLlmRow(){
   var btn=document.getElementById('llm-btn'), sub=document.getElementById('llm-sub');
@@ -5098,8 +5099,12 @@ function renderLlmRow(){
   if(llmIsReady()){
     var c=composeCounts();
     btn.textContent='Remove';
+    var causes=[];
+    if(c.dropped) causes.push(c.dropped+' dropped words');
+    if(c.over) causes.push(c.over+' rewrites');
+    if(c.echo) causes.push(c.echo+' copied an example');
     sub.textContent='Ready · '+c.done+' composed · '+c.left+' left as written'
-      +(c.left ? ' ('+c.dropped+' dropped words, '+c.over+' rewrites)' : '');
+      +(causes.length ? ' ('+causes.join(', ')+')' : '');
     return;
   }
   btn.textContent='Download ('+LLM.SIZE+')';
@@ -5120,36 +5125,76 @@ function composeLog(){
   }
   return _composeLog;
 }
-function composeDeclined(e){ return (e && composeLog()[thTextKey(e.text)]) || null; }
+// A refusal stands for the guard and prompt that made it. When either changes,
+// COMPOSE_VER moves on and older refusals are tried again — "never re-run"
+// means never re-run the same judgement, not never look again.
+var COMPOSE_VER='2';
+function composeDeclined(e){
+  var rec=e && composeLog()[thTextKey(e.text)];
+  return (rec && rec.v===COMPOSE_VER) ? rec : null;
+}
 function composeRecordDecline(text, wanted, reason){
   var log=composeLog(), keys=Object.keys(log);
   if(keys.length>=400){
     keys.sort(function(a,b){ return (log[a].at||0)-(log[b].at||0); });
     keys.slice(0,keys.length-399).forEach(function(k){ delete log[k]; });
   }
-  log[thTextKey(text)]={wanted:String(wanted||''), reason:String(reason||''), at:Date.now()};
+  log[thTextKey(text)]={wanted:String(wanted||''), reason:String(reason||''), at:Date.now(), v:COMPOSE_VER};
   try{ storage.setItem(LLM_LOG_KEY, JSON.stringify(log)); }catch(e){}
 }
 
-// The prompt, then four demonstrations — small models copy an example far
-// more reliably than they follow a rule. No example's output is "nicer" than
-// its input; that is the whole point of them.
+// The prompt, then demonstrations — small models copy an example far more
+// reliably than they follow a rule. No example's output is "nicer" than its
+// input; that is the whole point of them.
 var COMPOSE_SYS='You are a copy-editor for a private reading journal. Fix only spelling, '
   +'capitalisation, punctuation and sentence breaks. Do not replace, remove, reorder or add '
   +'words, except to correct a misspelled word. Keep slang, profanity, blunt opinions and '
   +'chapter or page references exactly as written. If the text is already correct, return it '
   +'unchanged. Return only the corrected text.';
+// Stand-ins, used only until he has composed entries of his own. The old
+// "already correct" line ("I couldn't put it down…") is gone: given a long
+// entry, the model copied it back word for word.
 var COMPOSE_SHOTS=[
   ['chapters 7-8 were terrible. pacing fell apart', 'Chapters 7-8 were terrible. Pacing fell apart.'],
-  ['this book is kinda shit tbh', 'This book is kinda shit, tbh.'],
-  ['I couldn\'t put it down. The last chapter is brutal.', 'I couldn\'t put it down. The last chapter is brutal.'],
-  ['charcter feels like a devise', 'character feels like a device']
+  ['charcter feels like a devise', 'character feels like a device'],
+  ['this book is kinda shit tbh', 'This book is kinda shit, tbh.']
 ];
-// One entry's words and nothing else of his. max_tokens sits about 1.2x the
-// entry's length, which makes padding impossible rather than discouraged.
-function composeRequest(text){
+// His own entries make the best demonstrations: they carry his register and
+// length, and there is no tidy invented line to echo. They are read from his
+// library on this device when a request is built — never written into this
+// file, which is public. Only entries the guard already accepted are used, so
+// every demonstration's output is his words with nothing but spelling and
+// punctuation changed. Thoughts on the same book are left out: the model never
+// sees two of his entries about one book side by side.
+var SHOT_MAX=480;                     // characters; long demos slow every request
+function composeShots(job){
+  var clean=[], changed=[];
+  books.forEach(function(b){
+    if(job && b.bookId && b.bookId===job.bookId) return;
+    (b.sessions||[]).forEach(function(r){ (r.notes||[]).forEach(function(e){
+      if(!e || !thComposedValid(e)) return;
+      var t=String(e.text||''), c=String(e.composed||'');
+      if(t.trim().length<12 || t.length>SHOT_MAX || (job && t===job.text)) return;
+      (c===t ? clean : changed).push([t,c]);
+    }); });
+  });
+  var picks=[];
+  changed.sort(function(a,b){ return a[0].length-b[0].length; });
+  if(changed.length) picks.push(changed[0]);                         // short
+  if(changed.length>1) picks.push(changed[changed.length-1]);        // long
+  if(clean.length){                                                  // already right, comes back unchanged
+    clean.sort(function(a,b){ return Math.abs(a[0].length-120)-Math.abs(b[0].length-120); });
+    picks.push(clean[0]);
+  }
+  for(var i=0;i<COMPOSE_SHOTS.length && picks.length<3;i++) picks.push(COMPOSE_SHOTS[i]);
+  return picks;
+}
+// One entry's words to edit, after the demonstrations. max_tokens sits about
+// 1.2x the entry's length, which makes padding impossible rather than
+// discouraged.
+function composeRequest(text, shots){
   var msgs=[{role:'system', content:COMPOSE_SYS}];
-  COMPOSE_SHOTS.forEach(function(s){ msgs.push({role:'user', content:s[0]}, {role:'assistant', content:s[1]}); });
+  (shots||COMPOSE_SHOTS).forEach(function(s){ msgs.push({role:'user', content:s[0]}, {role:'assistant', content:s[1]}); });
   msgs.push({role:'user', content:String(text)});
   return {messages:msgs, temperature:0, max_tokens:Math.round(String(text).length/3.2)+48};
 }
@@ -5169,16 +5214,23 @@ function composeDrain(){
   // words, so nothing is composed at all.
   if(typeof EditGuard!=='function'){ LLM.queue=[]; return; }
   LLM.busy=true; composeRefresh();
+  var shots=composeShots(job);
   llmEngine(false)
-    .then(function(eng){ return eng.chat.completions.create(composeRequest(job.text)); })
+    .then(function(eng){ return eng.chat.completions.create(composeRequest(job.text, shots)); })
     .then(function(res){
       var out=(res&&res.choices&&res.choices[0]&&res.choices[0].message&&res.choices[0].message.content)||'';
-      composeApply(job, out);
+      composeApply(job, out, shots);
     })
     .catch(function(err){ composeFailed(job, err); })
     .then(function(){ LLM.busy=false; composeRefresh(); composeDrain(); });
 }
-function composeApply(job, out){
+function composeApply(job, out, shots){
+  // A copy of one of its own demonstrations is not an edit of his entry. Say
+  // so plainly, rather than letting it arrive as "145 of your words were dropped".
+  var norm=function(s){ return String(s||'').replace(/\s+/g,' ').trim(); };
+  if((shots||[]).some(function(s){ return norm(s[1])===norm(out) && norm(s[0])!==norm(job.text); })){
+    composeRecordDecline(job.text, out, 'the model copied its own example'); return;
+  }
   var g=EditGuard(job.text, out);
   if(g.rejected){ composeRecordDecline(job.text, out, g.reason); return; }
   thApply({listId:job.listId, idx:job.idx, bookId:job.bookId}, function(b){
@@ -7881,7 +7933,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v55';
+var BABEL_VERSION='babel-v56';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){

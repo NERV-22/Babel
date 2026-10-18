@@ -101,6 +101,27 @@ r = guard('ch 4 was slow but beautiful', 'Ch 4 was slow.');
 ok('a single dropped word is enough to refuse', r.rejected === true, JSON.stringify(r.reason));
 ok('"beautiful" is not lost', /beautiful/.test(r.text), r.text);
 
+console.log('\n== COMPOUND WORDS ARE A FIX, NOT A DELETION ==');
+// Found on the phone against the real model. Joining two words reads as a
+// substitution plus a deleted word, and a deleted word is disqualifying — so
+// a genuinely good copy-edit was refused.
+[['eye rolling', 'eye-rolling'], ['take away', 'takeaway'],
+ ['tooth ache', 'toothache'], ['self destructive', 'self-destructive']].forEach(function (p) {
+  const g1 = guard('the ' + p[0] + ' got to me', 'The ' + p[1] + ' got to me.');
+  ok(p[0] + ' -> ' + p[1] + ' is accepted', g1.rejected === false, JSON.stringify(g1.reason));
+  ok('  and the joined form is kept', new RegExp(p[1], 'i').test(g1.text), g1.text);
+});
+r = guard('it was takeaway food', 'It was take away food.');
+ok('splitting one word into two is allowed as well', r.rejected === false, JSON.stringify(r.reason));
+r = guard('it was takeaway food', 'It was take out food.');
+ok('but only when the letters match', !/take out/i.test(r.text), r.text);
+ok('  "takeaway" survives the attempt', /takeaway/i.test(r.text), r.text);
+// The door must not open any wider than that.
+r = guard('the eye rolling got to me', 'The eye-rolling sarcasm got to me.');
+ok('a word smuggled in beside a join is still refused', !/sarcasm/.test(r.text), r.text);
+r = guard('the eye rolling got to me', 'The eyebrow-rolling got to me.');
+ok('a join that changes the letters is refused', r.rejected === true, JSON.stringify(r.reason));
+
 console.log('\n== THE BUDGET STILL DOES ITS OWN JOB ==');
 // Every other rejection case here also drops a word, so the deletion rule would
 // catch them all and the budget would never be the thing deciding. This output

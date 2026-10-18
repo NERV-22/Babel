@@ -51,6 +51,7 @@ const EXPOSE=`;return {
   get ready(){return TH_COMPOSE_READY;}, set ready(v){TH_COMPOSE_READY=v;},
   set supportCache(v){_llmSupport=v;}, set logCache(v){_composeLog=v;},
   set thTarget(v){_thTarget=v;}, set thFresh(v){_thFresh=v;},
+  get COMPOSE_VER(){return COMPOSE_VER;}, COMPOSE_SHOTS, SHOT_MAX, composeShots,
   LLM, llmInit, llmEngine, llmButton, llmRemove, renderLlmRow, composeEnqueue, composeRequest,
   renderBPThoughts, bpSetView, bpComposeRest, thTextKey, thComposedText, noteWrite, noteEntries,
   syncNoteText, thLog, tmrSelectBook, tmrClosePicker, storage, listKey
@@ -194,8 +195,8 @@ async function runSuite(src, sw, quiet){
     ok('max_tokens scales with the entry', b.max_tokens>a.max_tokens, a.max_tokens+' vs '+b.max_tokens);
     ok('at about 1.2x its length', b.max_tokens===Math.round((E1+' '+E1).length/3.2)+48, b.max_tokens);
     ok('temperature is 0', a.temperature===0 && b.temperature===0);
-    ok('four demonstrations come before his entry', a.messages.length===10 && a.messages[0].role==='system');
-    ok('no demonstration is "nicer" than its input', (()=>{ for(let i=1;i<9;i+=2){ const g=GUARD(a.messages[i].content, a.messages[i+1].content); if(g.rejected||g.reverts.length) return false; } return true; })());
+    ok('with nothing of his composed yet, three stand-ins come before his entry', a.messages.length===8 && a.messages[0].role==='system', a.messages.length);
+    ok('no demonstration is "nicer" than its input', (()=>{ for(let i=1;i<a.messages.length-1;i+=2){ const g=GUARD(a.messages[i].content, a.messages[i+1].content); if(g.rejected||g.reverts.length) return false; } return true; })());
   });
 
   sec('COMPOSED ONCE, NEVER RE-RUN');
@@ -250,8 +251,8 @@ async function runSuite(src, sw, quiet){
     // The week-long diagnostic: refusals split by cause.
     T.books[0].sessions[0].notes=[{at:'2026-10-01',text:'kept'},{at:'2026-10-02',text:'dropped one'},{at:'2026-10-03',text:'rewritten one'}];
     T.books[0].sessions[0].notes[0].composed='Kept.'; T.books[0].sessions[0].notes[0].composedOf=T.thTextKey('kept');
-    const lg={}; lg[T.thTextKey('dropped one')]={wanted:'x',reason:'2 of your words were dropped (a, b)',at:1};
-    lg[T.thTextKey('rewritten one')]={wanted:'y',reason:'5 refused edits, over a budget of 3',at:2};
+    const lg={}; lg[T.thTextKey('dropped one')]={wanted:'x',reason:'2 of your words were dropped (a, b)',at:1,v:T.COMPOSE_VER};
+    lg[T.thTextKey('rewritten one')]={wanted:'y',reason:'5 refused edits, over a budget of 3',at:2,v:T.COMPOSE_VER};
     T.storage.setItem('rl_compose_log', J(lg)); T.logCache=null;
     T.renderLlmRow();
     ok('Settings counts composed and refused entries by cause',
@@ -263,6 +264,76 @@ async function runSuite(src, sw, quiet){
     setNav({});
   });
 
+  sec('HIS OWN ENTRIES BECOME THE DEMONSTRATIONS');
+  await guarded('shots',async()=>{
+    fresh(true);
+    const mk=(title,id,notes)=>({title, author:'A', bookId:id, pages:100, timerSessions:[], sessions:[{id:'r_'+id,start:'2026-09-01',end:'',rating:0,note:'',notes}]});
+    const C=(t,c)=>({at:'2026-09-02',text:t,composed:c,composedOf:T.thTextKey(t)});
+    const LONGT='the second half drags badly but the last chapter makes up for it, i didnt expect the ending at all and it reframes the whole thing';
+    T.books=[book('Piranesi','b1'),
+      mk('Gilead','b2',[C('its slow but beautiful',"It's slow but beautiful."), C(LONGT, LONGT.charAt(0).toUpperCase()+LONGT.slice(1)+'.')]),
+      mk('Kokoro','b3',[C('Just a masterpiece of quiet sadness.','Just a masterpiece of quiet sadness.'), C('x'.repeat(T.SHOT_MAX+5),'X'.repeat(T.SHOT_MAX+5))]),
+      mk('Demons','b4',[{at:'2026-09-03',text:'never composed, never a demo, and exactly the length that the picker likes best for an already-correct example here'}])];
+    T.books[0].sessions[0].notes=[C('same book, already composed','Same book, already composed.')];
+    const shots=T.composeShots({bookId:'b1', readId:'r_b1', at:'x', text:E2});
+    const ins=shots.map(s=>s[0]);
+    ok('a short entry of his, with its fixes, is a demonstration', ins.indexOf('its slow but beautiful')>=0, J(ins));
+    ok('so is a longer one', ins.indexOf(LONGT)>=0);
+    ok('and one he wrote correctly, which comes back unchanged', shots.some(s=>s[0]==='Just a masterpiece of quiet sadness.' && s[1]===s[0]));
+    ok('no stand-ins are needed once he has his own', shots.length===3 && !shots.some(s=>T.COMPOSE_SHOTS.some(c=>c[0]===s[0])), J(ins));
+    ok('nothing from the same book is ever shown', ins.indexOf('same book, already composed')<0);
+    ok('an entry nothing was composed for is never shown', !ins.some(t=>/never composed/.test(t)), J(ins));
+    ok('a very long entry is left out, to keep requests quick', !ins.some(t=>t.length>T.SHOT_MAX));
+    ok('every demonstration is his words with only allowed fixes', shots.every(s=>{ const g=GUARD(s[0],s[1]); return !g.rejected && !g.reverts.length; }));
+    const req=T.composeRequest(E2, shots);
+    ok('the entry being composed is the last message, alone', req.messages[req.messages.length-1].content===E2 && req.messages.length===8);
+    const self=T.composeShots({bookId:'b9', readId:'r', at:'x', text:'its slow but beautiful'});
+    ok('an entry is never its own demonstration', self.every(s=>s[0]!=='its slow but beautiful'));
+    // And the real request uses them, not the stand-ins.
+    calls=[]; reply=()=>GOOD2; T.thFresh=[];
+    box(E2); T.thLog(); T.tmrSelectBook(0); await flush();
+    const sent=calls.length?J(calls[0].messages):'';
+    ok('a real request carries his demonstrations', sent.indexOf('its slow but beautiful')>=0 && sent.indexOf('kinda shit')<0, calls.length);
+    fresh(true);
+    ok('with nothing composed yet, the stand-ins fill in', T.composeShots({bookId:'b1',text:E2}).length===3);
+    ok("and the echoed \"I couldn't put it down\" line is gone", !T.COMPOSE_SHOTS.some(s=>/put it down/.test(s[0])));
+  });
+
+  sec('A COPIED EXAMPLE IS NAMED, NOT STORED');
+  await guarded('echo',async()=>{
+    fresh(true);
+    reply=(req)=>req.messages[2].content;           // hand back the first demonstration's output
+    await log(E1, 0);
+    const e=entry(0);
+    ok('nothing is stored', !('composed' in e) && e.text===E1, J(e));
+    const lg=JSON.parse(T.storage.getItem('rl_compose_log')||'{}')[T.thTextKey(E1)]||{};
+    ok('the refusal says the model copied its own example', /copied its own example/.test(lg.reason||''), lg.reason);
+    T.renderLlmRow();
+    ok('and Settings counts it by that cause', /1 copied an example/.test(document.getElementById('llm-sub').textContent), document.getElementById('llm-sub').textContent);
+    fresh(true);
+    reply=()=> 'Chapters 7-8 were terrible. Pacing fell apart.';
+    await log('chapters 7-8 were terrible. pacing fell apart', 0);
+    ok('an entry that matches a demo input may still come back as that output', entry(0).composed==='Chapters 7-8 were terrible. Pacing fell apart.', J(entry(0)));
+  });
+
+  sec('A NEW GUARD LOOKS AGAIN AT OLD REFUSALS');
+  await guarded('retry',async()=>{
+    fresh(true);
+    reply=()=>GOOD2;
+    T.books[0].sessions[0].notes=[{at:'2026-10-01',text:E2}];
+    const lg={}; lg[T.thTextKey(E2)]={wanted:'old', reason:'1 of your words were dropped (rolling)', at:1};   // an older guard's: no version
+    T.storage.setItem('rl_compose_log', J(lg)); T.logCache=null;
+    T.bpView='composed'; T.renderBPThoughts();
+    ok('an old refusal no longer shows as "Left as written"', document.getElementById('bp-th').innerHTML.indexOf('Left as written')<0);
+    calls=[]; T.bpComposeRest(); await flush();
+    ok('and the entry is composed again under the current guard', calls.length===1 && entry(0).composed===GOOD2, calls.length+' '+J(entry(0)));
+    reply=()=>QWEN2;
+    T.books[0].sessions[0].notes=[{at:'2026-10-02',text:E1}];
+    T.bpComposeRest(); await flush();
+    calls=[]; T.bpComposeRest(); await flush();
+    ok('a refusal by the current guard is not retried', calls.length===0, calls.length);
+  });
+
   sec('PINNED, AND THE SERVICE WORKER KEEPS THE WEIGHTS');
   await guarded('pin',async()=>{
     ok('web-llm is pinned at 0.2.79', /@mlc-ai\/web-llm@0\.2\.79\//.test(T.LLM.LIB), T.LLM.LIB);
@@ -271,15 +342,15 @@ async function runSuite(src, sw, quiet){
   await guarded('sw',async()=>{
     const handlers={}, deleted=[];
     const self={ addEventListener:(t,f)=>{ handlers[t]=f; }, clients:{claim:()=>Promise.resolve()}, skipWaiting:()=>{}, location:{origin:'https://x'} };
-    const caches={ keys:()=>Promise.resolve(['babel-v54','babel-fonts','webllm/model','webllm/config','webllm/wasm','babel-v55','stale-thing']),
+    const caches={ keys:()=>Promise.resolve(['babel-v55','babel-fonts','webllm/model','webllm/config','webllm/wasm','babel-v56','stale-thing']),
       delete:(k)=>{ deleted.push(k); return Promise.resolve(true); }, open:()=>Promise.resolve({}) };
     const env=new Function('self','caches', sw+';return {CACHE, ASSETS};')(self, caches);
     let p; handlers.activate({waitUntil:(x)=>{ p=x; }}); await p;
-    ok('a release deletes the old app cache', deleted.indexOf('babel-v54')>=0 && deleted.indexOf('stale-thing')>=0, J(deleted));
+    ok('a release deletes the old app cache', deleted.indexOf('babel-v55')>=0 && deleted.indexOf('stale-thing')>=0, J(deleted));
     ok('but never the model’s caches', !deleted.some(k=>/^webllm\//.test(k)), J(deleted));
     ok('nor the fonts or the current cache', deleted.indexOf('babel-fonts')<0 && deleted.indexOf(env.CACHE)<0);
     ok('the guard is cached for offline use', env.ASSETS.indexOf('editguard.js')>=0);
-    ok('both version strings agree', env.CACHE==='babel-v55' && /var BABEL_VERSION='babel-v55'/.test(src), env.CACHE);
+    ok('both version strings agree', env.CACHE==='babel-v56' && /var BABEL_VERSION='babel-v56'/.test(src), env.CACHE);
   });
 
   if(!quiet) console.log(fail?'\n'+fail+' FAILED':'\nCOMPOSE CLEAN');
@@ -295,8 +366,8 @@ const MUTANTS=[
   ['composed text written into e.text', 'html',
    "thSetComposed(e, g.text);\n        return {entry:e};", "e.text=g.text; thSetComposed(e, g.text);\n        return {entry:e};"],
   ['entries batched into one request', 'html',
-   "return eng.chat.completions.create(composeRequest(job.text));",
-   "var _all=[job.text].concat(LLM.queue.splice(0).map(function(j){ return j.text; })); return eng.chat.completions.create(composeRequest(_all.join('\\n\\n')));"],
+   "return eng.chat.completions.create(composeRequest(job.text, shots));",
+   "var _all=[job.text].concat(LLM.queue.splice(0).map(function(j){ return j.text; })); return eng.chat.completions.create(composeRequest(_all.join('\\n\\n'), shots));"],
   ['max_tokens fixed', 'html',
    "max_tokens:Math.round(String(text).length/3.2)+48", "max_tokens:512"],
   ['temperature not 0', 'html',
@@ -325,6 +396,26 @@ const MUTANTS=[
    "  composeEnqueue({listId:res.listId, idx:ref.idx,", "  if(false) composeEnqueue({listId:res.listId, idx:ref.idx,"],
   ['refusals not split by cause', 'html',
    "if(/were dropped/.test(d.reason||'')) dropped++;", ""],
+  ['demos from the same book', 'html',
+   "if(job && b.bookId && b.bookId===job.bookId) return;\n    (b.sessions||[]).forEach(function(r){ (r.notes||[]).forEach(function(e){\n      if(!e || !thComposedValid(e)) return;",
+   "(b.sessions||[]).forEach(function(r){ (r.notes||[]).forEach(function(e){\n      if(!e || !thComposedValid(e)) return;"],
+  ['uncomposed entries used as demos', 'html',
+   "      if(!e || !thComposedValid(e)) return;\n      var t=String(e.text||''), c=String(e.composed||'');",
+   "      if(!e) return;\n      var t=String(e.text||''), c=String(e.composed||e.text||'');"],
+  ['no length cap on demos', 'html',
+   "if(t.trim().length<12 || t.length>SHOT_MAX || (job && t===job.text)) return;", "if(t.trim().length<12 || (job && t===job.text)) return;"],
+  ['an entry can be its own demo', 'html',
+   "if(t.trim().length<12 || t.length>SHOT_MAX || (job && t===job.text)) return;", "if(t.trim().length<12 || t.length>SHOT_MAX) return;"],
+  ['no already-clean demo', 'html',
+   "    picks.push(clean[0]);\n  }", "  }"],
+  ['stand-ins never fill in', 'html',
+   "for(var i=0;i<COMPOSE_SHOTS.length && picks.length<3;i++) picks.push(COMPOSE_SHOTS[i]);", ""],
+  ['stand-ins always used, never his own', 'html',
+   "  var shots=composeShots(job);", "  var shots=COMPOSE_SHOTS;"],
+  ['an echoed example is passed to the guard', 'html',
+   "    composeRecordDecline(job.text, out, 'the model copied its own example'); return;", "    "],
+  ['refusals never expire with a new guard', 'html',
+   "return (rec && rec.v===COMPOSE_VER) ? rec : null;", "return rec || null;"],
   ['the guard is not cached for offline', 'sw',
    "  'editguard.js',\n", ""],
 ];
