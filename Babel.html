@@ -833,11 +833,14 @@ body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padd
 .hm-s{font-family:var(--ui);font-size:11.5px;color:var(--text-muted)}
 .custom-genre-input,.genre-preview{display:none!important}
 .grow,.fr-v input,.fr-v textarea{scroll-margin-top:84px;scroll-margin-bottom:84px}
-.rt-note.grow{min-height:52px;max-height:200px;overflow-y:auto;resize:none}
+/* A thoughts entry is the main thing on screen while he writes, so it grows to
+   hold a real paragraph before scrolling. Still capped: an unbounded textarea
+   inside a scrolling sheet takes over the sheet's own scroll. */
+.rt-note.grow{min-height:52px;max-height:60vh;overflow-y:auto;resize:none}
 .grow-modal{min-height:140px;max-height:46vh;overflow-y:auto}
 .fr-v textarea.grow{min-height:44px;max-height:120px;overflow-y:auto;resize:none;
   font-family:var(--display);line-height:1.4}
-.fr-v textarea.grow-lg{max-height:184px}
+.fr-v textarea.grow-lg{max-height:60vh}
 .cover-btn{flex:none;background:none;border:1px solid var(--border);color:var(--text-muted);
   border-radius:999px;padding:7px 12px;font-family:var(--ui);font-size:12px;cursor:pointer;
   white-space:nowrap}
@@ -1334,6 +1337,41 @@ body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padd
 .tmr-pageform label.tmr-l2{margin-top:12px}
 .tmr-pf-btns{display:flex;gap:10px;margin-top:12px}
 .tmr-pf-btns .tmr-primary,.tmr-pf-btns .tmr-ghost{flex:1;width:auto;padding:13px}
+.tmr-row2 .tmr-ghost,.tmr-row2 .tmr-primary{padding-left:8px;padding-right:8px}
+/* ── Thoughts ── */
+.th-box{display:block;width:100%;min-height:96px;max-height:60vh;overflow-y:auto;resize:none;
+  padding:12px 13px;font-family:var(--display);font-size:15px;line-height:1.5;color:var(--text);
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;outline:none}
+.th-box:focus{border-color:var(--accent)}
+.tmr-pageform .th-box{min-height:64px;background:var(--bg1);font-size:14px}
+.th-where{font-family:var(--ui);font-size:12px;color:var(--text-muted);margin:9px 2px 10px;line-height:1.5}
+.th-where b{color:var(--text);font-weight:600}
+.th-x{background:none;border:none;padding:0 0 0 4px;color:var(--accent);font-family:var(--ui);font-size:12px;cursor:pointer;text-decoration:underline}
+.th-btns{display:flex;gap:10px}
+.th-btns .tmr-primary,.th-btns .tmr-ghost{flex:1;width:auto;padding:13px}
+.th-ask:disabled{opacity:.4;cursor:default}
+.th-asknote{font-family:var(--ui);font-size:11.5px;color:var(--text-muted);margin:8px 2px 0;text-align:right}
+.th-saved{display:flex;align-items:center;gap:10px;width:100%;margin-top:14px;padding:11px 13px;
+  border:1px solid var(--accent);border-radius:12px;background:none;color:var(--accent);
+  font-family:var(--ui);font-size:13px;text-align:left;cursor:pointer}
+.th-saved>span:first-child{flex:1;min-width:0}
+.th-saved b{font-weight:600}
+.th-move{flex:none;font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
+.th-h{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin:24px 2px 10px}
+.th-list{display:flex;flex-direction:column;gap:10px}
+.th-row{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px}
+.th-row.fresh{border-color:var(--accent)}
+.th-date{font-family:var(--ui);font-size:11px;color:var(--text-muted);margin-bottom:5px}
+.th-text{font-family:var(--display);font-size:14.5px;line-height:1.55;color:var(--text);white-space:pre-wrap;word-break:break-word;cursor:pointer}
+.th-text.clamp{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.th-on{display:flex;align-items:center;gap:10px;width:100%;margin-top:9px;padding:0;border:none;background:none;
+  color:var(--accent);font-family:var(--ui);font-size:12.5px;text-align:left;cursor:pointer}
+.th-on>span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lib-gear{flex:none;margin-left:auto;width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+  border:none;background:none;color:var(--text-muted);border-radius:50%;cursor:pointer}
+.lib-gear svg{width:22px;height:22px}
+.appbar-done{border:1px solid var(--border);background:none;color:var(--text);border-radius:999px;padding:7px 15px;
+  font-family:var(--ui);font-size:13px;font-weight:600;cursor:pointer}
 #timer-pick .sheet{max-height:82vh}
 #timer-pick-list{margin-top:2px;max-height:58vh;overflow-y:auto}
 .tp-search{width:100%;padding:11px 14px;margin:2px 0 8px;font-family:var(--ui);font-size:13.5px;border:1px solid var(--border);border-radius:10px;background:var(--bg1);color:var(--text);outline:none}
@@ -1395,6 +1433,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <div class="list-header">
     <span class="lib-hex"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><polygon points="12,1 21.5,6.5 21.5,17.5 12,23 2.5,17.5 2.5,6.5" stroke="currentColor" stroke-width="1.1" opacity="0.4"/><polygon points="12,5 18.1,8.5 18.1,15.5 12,19 5.9,15.5 5.9,8.5" stroke="currentColor" stroke-width="1.1" opacity="0.8"/><polygon points="12,8.5 15,10.25 15,13.75 12,15.5 9,13.75 9,10.25" stroke="currentColor" stroke-width="1.1"/><circle cx="12" cy="12" r="1" fill="var(--accent)"/></svg></span>
     <input class="h1-input" id="list-name-input" value="" placeholder="Name this list..." onchange="renameCurrentList(this.value)" onblur="renameCurrentList(this.value)"/>
+    <button class="lib-gear" onclick="switchScreen('settings')" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3 5.6 5.6"/></svg></button>
   </div>
   <div id="tab-list">
 
@@ -1507,8 +1546,12 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       </div>
       <div id="h-body"></div>
     </section>
+    <section class="screen hidden" id="screen-thoughts" data-screen-label="Thoughts">
+      <div class="appbar"><div class="appbar-title">Thoughts</div></div>
+      <div id="thoughts-body"></div>
+    </section>
     <section class="screen hidden" id="screen-settings" data-screen-label="Settings">
-      <div class="appbar"><div class="appbar-title">Settings</div></div>
+      <div class="appbar"><div class="appbar-title">Settings</div><button class="appbar-done" onclick="switchScreen('library')">Done</button></div>
       <div class="set-list">
         <div class="set-group">
           <div class="set-group-h">Appearance</div>
@@ -1567,7 +1610,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <button class="tab" data-screen="timer" onclick="switchScreen('timer')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5"/><path d="M9.5 2.5h5"/><path d="M19.2 6.8l1.2-1.2"/></svg><span>Timer</span></button>
     <button class="tab" data-screen="reading" onclick="switchScreen('reading')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Reading</span></button>
     <button class="tab" data-screen="hearth" onclick="switchScreen('hearth')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M12 2c.6 4.2-2.2 6-4 8.2C6.4 12.2 5.5 14 5.5 16c0 3.6 2.9 6 6.5 6s6.5-2.4 6.5-6c0-2.6-1.4-4.6-3-6.2-.4 1.3-1.3 2.2-2.4 2.5C14.4 8.6 15.5 4.6 12 2Z"/></svg><span>Hearth</span></button>
-    <button class="tab" data-screen="settings" onclick="switchScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3 5.6 5.6"/></svg><span>Settings</span></button>
+    <button class="tab" data-screen="thoughts" onclick="openThoughts()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-7.5L7 20v-3.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5z"/><path d="M8 9h8M8 12h5"/></svg><span>Thoughts</span></button>
   </nav>
 </div>
 <div class="sheet-overlay hidden" id="shop-sheet" onclick="if(event.target===this)closeShop()">
@@ -1743,7 +1786,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 <div class="sheet-overlay hidden" id="timer-pick" onclick="if(event.target===this)tmrClosePicker()">
   <div class="sheet">
     <div class="sheet-grab" onclick="tmrClosePicker()"></div>
-    <h2 class="sh-h">Choose a book</h2>
+    <h2 class="sh-h" id="timer-pick-h">Choose a book</h2>
     <input type="text" id="timer-pick-search" class="tp-search" placeholder="Search title, author, genre&hellip;" oninput="tmrRenderPickList()"/>
     <div id="timer-pick-list"></div>
   </div>
@@ -4660,13 +4703,71 @@ var bpIdx=-1, bpTh=0;
 function openBookPage(idx){
   var b=books[idx]; if(!b) return;
   bpIdx=idx; bpTh=-1;
+  bpDragReset();
   renderBookPage();
   document.getElementById('bp-sheet').classList.remove('hidden');
 }
 function closeBookPage(){
   bpIdx=-1;
   var el=document.getElementById('bp-sheet'); if(el) el.classList.add('hidden');
+  bpDragReset();
 }
+// ── Drag down from the top to close the book page ───────────────────────────
+// An addition to the grab bar and the background tap, not a replacement. The
+// gesture is armed only if the page is ALREADY at the top when the finger goes
+// down: deciding it mid-move would let an upward fling that bounces off the
+// top close the page while he is reading. A cancelled touch springs back, so
+// an interrupted drag can never strand the sheet half off the screen.
+var _bpDrag=null;
+function bpDragSheet(){ return document.querySelector('#bp-sheet .bp-sheet'); }
+function bpDragReset(){
+  _bpDrag=null;
+  var s=bpDragSheet(); if(!s) return;
+  s.style.transition=''; s.style.transform='';
+}
+function bpDragStart(e){
+  var s=bpDragSheet();
+  _bpDrag=null;
+  if(!s || !e.touches || e.touches.length!==1) return;
+  if(s.scrollTop>0) return;
+  // A finger that lands in a text box is there to type or select, not to close.
+  if(e.target && e.target.closest && e.target.closest('textarea,input,select,[contenteditable]')) return;
+  var t=e.touches[0];
+  _bpDrag={x0:t.clientX, y0:t.clientY, dy:0, on:false, ly:t.clientY, lt:Date.now(), v:0};
+}
+function bpDragMove(e){
+  var d=_bpDrag, s=bpDragSheet(); if(!d || !s) return;
+  var t=e.touches[0], dx=t.clientX-d.x0, dy=t.clientY-d.y0;
+  if(!d.on){
+    // Up, or more sideways than down: an ordinary scroll or swipe. Let it go.
+    if(dy<-4 || (Math.abs(dx)>8 && Math.abs(dx)>dy)){ _bpDrag=null; return; }
+    if(dy<8) return;
+    d.on=true; s.style.transition='none';
+  }
+  var now=Date.now(), dt=Math.max(1,now-d.lt);
+  d.v=0.7*((t.clientY-d.ly)/dt)+0.3*d.v;        // px per ms, smoothed
+  d.ly=t.clientY; d.lt=now;
+  d.dy=Math.max(0,dy);
+  s.style.transform='translateY('+d.dy+'px)';
+  if(e.cancelable) e.preventDefault();          // the sheet moves, the page does not
+}
+function bpDragEnd(cancelled){
+  var d=_bpDrag, s=bpDragSheet(); _bpDrag=null;
+  if(!d || !d.on || !s) return;
+  var h=s.offsetHeight||1;
+  var close=!cancelled && (d.dy>h*0.25 || (d.v>0.6 && d.dy>40));
+  s.style.transition='transform .22s cubic-bezier(.3,.9,.3,1)';
+  if(!close){ s.style.transform=''; return; }
+  s.style.transform='translateY('+h+'px)';
+  setTimeout(function(){ closeBookPage(); },200);
+}
+(function(){
+  var s=bpDragSheet(); if(!s) return;
+  s.addEventListener('touchstart',bpDragStart,{passive:true});
+  s.addEventListener('touchmove',bpDragMove,{passive:false});
+  s.addEventListener('touchend',function(){ bpDragEnd(false); },{passive:true});
+  s.addEventListener('touchcancel',function(){ bpDragEnd(true); },{passive:true});
+})();
 function bpToggleDesc(){
   var d=document.getElementById('bp-desc'); if(!d) return;
   var on=d.classList.toggle('clamped');
@@ -6000,7 +6101,7 @@ function noteBlockHTML(x,i){
   var es=noteEntries(x), k=noteIdx(x), e=es[k];
   var bar='';
   if(es.length){
-    bar='<div class="rtn-top"><span class="rtn-date">'+esc(longISO(e.at))+'</span>'
+    bar='<div class="rtn-top"><span class="rtn-date">'+esc(longISO(e.at))+(thPosText(e)?' · '+esc(thPosText(e)):'')+'</span>'
       +(es.length>1
         ? '<span class="rtn-nav">'
           +'<button class="rtn-b" onclick="noteGo('+i+',-1)"'+(k<=0?' disabled':'')
@@ -6064,6 +6165,301 @@ function noteDel(i){
   rtNote[x.id]=Math.max(0,k-1);
   syncNoteText(x);
   saveCurrentList(); fanOutBookMeta(smIdx); renderSM(); renderTable(); updateStats();
+}
+
+// ── Thoughts ─────────────────────────────────────────────────────────────────
+// One box: type a thought, Log it, and it is filed on a book. A logged thought
+// IS a reading-log entry — {at,text} pushed onto noteEntries() of the book's
+// current read, read.note rebuilt by syncNoteText, then saved and fanned out
+// exactly as noteWrite does — so a thought logged here and one typed into the
+// reading log are the same thing in the same place, indistinguishable after.
+//
+// Where it goes is never worked out from the text. A running timer names the
+// book; otherwise he picks one, and nothing is written until he does. Every
+// save says on screen where it landed, and that line moves it in one tap: a
+// thought quietly filed on the wrong book would only be found months later.
+var TH_ASK_READY=false;  // Ask arrives with the on-device model; until then it is shown, disabled
+var _thTarget=null;      // {bookId,idx} when opened pointed at one book
+var _thDraft='';         // the box keeps its text when he leaves the screen
+var _thLast=null;        // where the last save landed: the confirmation line
+var _thFresh=[];         // entries saved since the app opened, so they lead the list
+var _thRows=[];          // the rows on screen, for their Move buttons
+var _thMoving=null;      // the entry being moved while the picker is open
+
+// openThoughts(bookIdx) opens the section pointed at one book, so a later
+// "compile my thoughts on this book" on the book page has a way in. Opened
+// from the tab bar it points nowhere and the usual routing applies.
+function openThoughts(bookIdx){
+  _thTarget=(typeof bookIdx==='number' && books[bookIdx]) ? {bookId:books[bookIdx].bookId, idx:bookIdx} : null;
+  _thLast=null;
+  switchScreen('thoughts');
+}
+function thClearTarget(){ _thTarget=null; renderThoughts(); }
+// The book he read most recently: the latest timed session, else the first one
+// marked reading. Only ever the picker's first row, never a destination.
+function thLastReadIdx(){
+  var best=-1, bt=0;
+  books.forEach(function(b,i){
+    (b.timerSessions||[]).forEach(function(x){
+      if(x && !x.detached && (x.startTime||0)>bt){ bt=x.startTime; best=i; }
+    });
+  });
+  if(best<0) for(var i=0;i<books.length;i++){ if(books[i].isReading){ best=i; break; } }
+  return best;
+}
+// Where Log will file, decided only by state he can see on screen. null means
+// he chooses. A book he pointed the section at outranks a running timer.
+function thRoute(){
+  if(_thTarget) return {listId:activeId, idx:_thTarget.idx, bookId:_thTarget.bookId, why:'chosen'};
+  if(activeTimer){
+    var tb=tmrTimerBook();
+    return {listId:activeTimer.listId, idx:activeTimer.bookIdx, bookId:tb&&tb.bookId,
+            title:(tb&&tb.title)||activeTimer.bookTitle, why:'timer'};
+  }
+  return null;
+}
+// The book's index in the open list. The same book in another list shares its
+// bookId, and fanOutBookMeta carries a change made here to every copy.
+function _thIdxOf(ref){
+  if(!ref) return -1;
+  if(ref.bookId){
+    for(var i=0;i<books.length;i++) if(books[i] && books[i].bookId===ref.bookId) return i;
+    return -1;
+  }
+  return (ref.listId===activeId && books[ref.idx]) ? ref.idx : -1;
+}
+// Runs fn on the book and saves it the way the reading log does. The timer can
+// be running against a book that only exists in another list; that copy is
+// written where it lives and fanned out from there. fn returns what to hand
+// back, or nothing to save nothing.
+function thApply(ref, fn){
+  var i=_thIdxOf(ref);
+  if(i>=0){
+    var out=fn(books[i]); if(!out) return null;
+    saveCurrentList(); fanOutBookMeta(i);
+    try{ renderTable(); updateStats(); }catch(e){}
+    out.listId=activeId; return out;
+  }
+  if(!ref || !ref.bookId || !ref.listId || ref.listId===activeId) return null;
+  try{
+    var raw=storage.getItem(listKey(ref.listId)), arr=raw?JSON.parse(raw):[], j=-1;
+    for(var k=0;k<arr.length;k++) if(arr[k] && arr[k].bookId===ref.bookId){ j=k; break; }
+    if(j<0) return null;
+    var out2=fn(arr[j]); if(!out2) return null;
+    storage.setItem(listKey(ref.listId), JSON.stringify(arr));
+    try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(ref.listId); }catch(e){}
+    _thFanOutFrom(arr[j], ref.listId);
+    out2.listId=ref.listId; return out2;
+  }catch(e){ return null; }
+}
+// fanOutBookMeta, for a book that is not in the open list: every other copy
+// gets its reads. Without this a later edit in a third list would push its
+// older reads back over this one and the thought would be gone.
+function _thFanOutFrom(src, srcListId){
+  if(!src || !src.bookId) return;
+  var sess=JSON.stringify(src.sessions||[]);
+  lists.forEach(function(l){
+    if(l.id===srcListId || l.id===activeId) return;
+    try{
+      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+      var arr=JSON.parse(raw), hit=false;
+      arr.forEach(function(x){
+        if(!x || x.bookId!==src.bookId) return;
+        stampFormats(x); x.sessions=JSON.parse(sess); hit=true;
+      });
+      if(hit){
+        storage.setItem(listKey(l.id), JSON.stringify(arr));
+        try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(l.id); }catch(e){}
+      }
+    }catch(e){}
+  });
+}
+// Where the running sitting is, in the read's own unit: pages, or minutes for
+// audio. fmt says which, so a position can never be read as the other unit.
+function thPosNow(b){
+  if(!b || !activeTimer) return null;
+  var fmt=readFormat(curReadOf(b)), p=currentPageFor(b)||0;
+  if(activeTimer.fmt===fmt) p=Math.max(p, activeTimer.startPage||0);
+  return p>0 ? {pos:p, fmt:fmt} : null;
+}
+// Entries written before positions existed have none, and show nothing.
+function thPosText(e){
+  if(!e || !(e.pos>0)) return '';
+  return e.fmt==='audio' ? fmtMins(e.pos) : 'p.'+e.pos;
+}
+// One entry on the book's current read — exactly what noteWrite writes, plus
+// a position when there is one.
+function thAddEntry(b, text, stamp){
+  if(!b || !String(text||'').trim()) return null;
+  var had=(b.sessions||[]).length;
+  var rid=ensureCurrentRead(b), r=readById(b,rid); if(!r) return null;
+  if(b.sessions.length>had) _thMadeReads[(b.bookId||'')+'|'+rid]=1;
+  var e={at:todayISO(), text:String(text)};
+  if(stamp && stamp.pos>0){ e.pos=stamp.pos; e.fmt=stamp.fmt; }
+  noteEntries(r).push(e);
+  syncNoteText(r);
+  return {entry:e, readId:rid, bookId:b.bookId, title:b.title};
+}
+// A book never started has no read to hold a thought, so filing one starts a
+// read. If that thought is then moved away, the read it leaves is empty and
+// would show the book as begun today. Only a read made here, holding nothing
+// at all, is taken back; any read he made, or that holds anything, stays.
+var _thMadeReads={};
+function _thDropEmptyRead(b, rid){
+  var key=(b.bookId||'')+'|'+rid;
+  if(!_thMadeReads[key]) return;
+  var r=readById(b,rid); if(!r) return;
+  if(r.end || r.rating || String(r.note||'').trim()) return;
+  if((r.notes||[]).some(function(e){ return e && String(e.text||'').trim(); })) return;
+  if((b.timerSessions||[]).some(function(x){ return x && x.readId===rid; })) return;
+  b.sessions.splice(b.sessions.indexOf(r),1);
+  delete _thMadeReads[key];
+}
+// Files text on the book ref names. stamp: true takes the running sitting's
+// position; an object {pos,fmt} is used as given. Returns where it landed.
+function thFile(ref, text, stamp){
+  var res=thApply(ref, function(b){
+    return thAddEntry(b, text, stamp===true ? thPosNow(b) : (stamp||null));
+  });
+  if(!res) return null;
+  _thFresh.push(res.entry);
+  _thLast={listId:res.listId, bookId:res.bookId, readId:res.readId, title:res.title,
+           at:res.entry.at, text:res.entry.text, pos:res.entry.pos, fmt:res.entry.fmt};
+  return res;
+}
+function thLog(){
+  var ta=document.getElementById('th-box'), text=ta?ta.value:_thDraft;
+  if(!String(text||'').trim()){ showToast('Write something first'); try{ if(ta) ta.focus(); }catch(e){} return; }
+  var ref=thRoute();
+  if(!ref){ tmrOpenPicker('log'); return; }        // nothing is written until he picks
+  thLogTo(ref, text);
+}
+function thLogTo(ref, text){
+  if(!thFile(ref, text, ref.why==='timer')){
+    showToast('Could not save — your text is still in the box'); return;
+  }
+  // Empty the box itself, not just the draft: renderThoughts reads the box back.
+  var ta=document.getElementById('th-box'); if(ta) ta.value='';
+  _thDraft=''; renderThoughts();
+}
+// The picker hands back a book for a new thought or for one being moved.
+function thPicked(mode, i){
+  if(mode==='refile'){ thMoveTo(i); return; }
+  var b=books[i]; if(!b) return;
+  var ta=document.getElementById('th-box');
+  thLogTo({listId:activeId, idx:i, bookId:b.bookId}, ta?ta.value:_thDraft);
+}
+// Moving takes the entry off its read and puts it on the chosen book's current
+// read, keeping the day it was written. A position belonged to the old book,
+// so it does not travel. Exactly one copy exists afterwards.
+function thMove(n){ var row=_thRows[n]; if(!row) return; _thMoving=row; tmrOpenPicker('refile'); }
+function thMoveLast(){ if(!_thLast) return; _thMoving=_thLast; tmrOpenPicker('refile'); }
+function _thTake(b, loc){
+  var r=readById(b, loc.readId); if(!r) return null;
+  var es=noteEntries(r);
+  for(var k=es.length-1;k>=0;k--){
+    var e=es[k];
+    if(e && e.at===loc.at && e.text===loc.text && (e.pos||0)===(loc.pos||0)){
+      es.splice(k,1); syncNoteText(r);
+      return {entry:e};
+    }
+  }
+  return null;
+}
+function thMoveTo(i){
+  var src=_thMoving, dest=books[i]; _thMoving=null;
+  if(!src || !dest) return;
+  if(src.bookId && src.bookId===dest.bookId){ showToast('It is already on '+dest.title); return; }
+  var srcRef={listId:src.listId, idx:src.idx, bookId:src.bookId};
+  var taken=thApply(srcRef, function(b){ var t=_thTake(b, src); if(t) _thDropEmptyRead(b, src.readId); return t; });
+  if(!taken){ showToast('Could not find that thought — nothing was moved'); renderThoughts(); return; }
+  var moved=thApply({listId:activeId, idx:i, bookId:dest.bookId}, function(b){
+    var had=(b.sessions||[]).length;
+    var rid=ensureCurrentRead(b), r=readById(b,rid); if(!r) return null;
+    if(b.sessions.length>had) _thMadeReads[(b.bookId||'')+'|'+rid]=1;
+    var e={at:taken.entry.at, text:taken.entry.text};
+    noteEntries(r).push(e); syncNoteText(r);
+    return {entry:e, readId:rid, bookId:b.bookId, title:b.title};
+  });
+  if(!moved){
+    // Put it back rather than lose it.
+    thApply(srcRef, function(b){
+      var r=readById(b, src.readId); if(!r) return null;
+      noteEntries(r).push(taken.entry); syncNoteText(r); return {};
+    });
+    showToast('Could not move it — it is still on '+(src.title||'the old book')); renderThoughts(); return;
+  }
+  var fi=_thFresh.indexOf(taken.entry); if(fi>=0) _thFresh[fi]=moved.entry;
+  _thLast={listId:moved.listId, bookId:moved.bookId, readId:moved.readId, title:moved.title,
+           at:moved.entry.at, text:moved.entry.text};
+  showToast('Moved to '+moved.title);
+  renderThoughts();
+}
+// Every entry in the open list, newest first. Read without converting: a list
+// on screen must not rewrite the data it shows.
+function thRecent(){
+  var rows=[];
+  books.forEach(function(b,bi){
+    (b.sessions||[]).forEach(function(r){
+      if(!r) return;
+      var es=Array.isArray(r.notes) ? r.notes
+        : (String(r.note||'').trim() ? [{at:(r.end||r.start||todayISO()), text:r.note}] : []);
+      es.forEach(function(e,k){
+        if(!e || !String(e.text||'').trim()) return;
+        rows.push({listId:activeId, idx:bi, bookId:b.bookId, title:b.title, readId:r.id,
+                   at:e.at, text:e.text, pos:e.pos, fmt:e.fmt, k:k, fresh:_thFresh.indexOf(e)});
+      });
+    });
+  });
+  rows.sort(function(a,b){
+    if(a.fresh!==b.fresh) return b.fresh-a.fresh;   // saved since the app opened, latest first
+    if(a.at!==b.at) return a.at<b.at?1:-1;           // then by the day written
+    return b.k-a.k;                                  // later in a read = written later
+  });
+  return rows;
+}
+function renderThoughts(){
+  var body=document.getElementById('thoughts-body'); if(!body) return;
+  var ta=document.getElementById('th-box'); if(ta) _thDraft=ta.value;
+  var ref=thRoute(), where;
+  if(ref && ref.why==='timer') where='Files on <b>'+esc(ref.title||'')+'</b> — the timer is running';
+  else if(ref){
+    var tb=books[_thIdxOf(ref)];
+    where=tb ? 'Files on <b>'+esc(tb.title)+'</b> <button class="th-x" onclick="thClearTarget()">Choose instead</button>'
+             : 'You pick the book when you log it';
+  }
+  else where='You pick the book when you log it';
+  var h='<div class="th-compose">'
+    +'<textarea id="th-box" class="th-box grow" rows="3" placeholder="A thought, a line, a question…"'
+      +' oninput="_thDraft=this.value;autoGrow(this)">'+esc(_thDraft)+'</textarea>'
+    +'<div class="th-where">'+where+'</div>'
+    +'<div class="th-btns"><button class="tmr-primary" onclick="thLog()">Log</button>'
+      +'<button class="tmr-ghost th-ask"'+(TH_ASK_READY?' onclick="thAsk()"':' disabled')+'>Ask</button></div>'
+    +(TH_ASK_READY?'':'<div class="th-asknote">Ask arrives with the on-device model.</div>')
+    +'</div>';
+  if(_thLast){
+    var lp=thPosText(_thLast);
+    h+='<button class="th-saved" onclick="thMoveLast()"><span>Saved → <b>'+esc(_thLast.title||'')+'</b>'
+      +(lp?' · '+esc(lp):'')+'</span><span class="th-move">Move</span></button>';
+  }
+  _thRows=thRecent().slice(0,40);
+  h+='<div class="th-h">Recent</div>';
+  if(!_thRows.length){
+    h+='<div class="rd-empty">Nothing written yet. Thoughts you log here, and entries in any book’s reading log, show up below.</div>';
+  } else {
+    h+='<div class="th-list">'+_thRows.map(function(r,n){
+      var p=thPosText(r);
+      return '<div class="th-row'+(r.fresh>=0?' fresh':'')+'">'
+        +'<div class="th-date">'+esc(longISO(r.at))+'</div>'
+        +'<div class="th-text clamp" onclick="this.classList.toggle(\'clamp\')">'+esc(r.text)+'</div>'
+        +(r.readId
+          ? '<button class="th-on" onclick="thMove('+n+')"><span>→ '+esc(r.title||'')+(p?' · '+esc(p):'')+'</span><span class="th-move">Move</span></button>'
+          : '<div class="th-on"><span>→ '+esc(r.title||'')+'</span></div>')
+        +'</div>';
+    }).join('')+'</div>';
+  }
+  body.innerHTML=h;
+  try{ autoGrow(document.getElementById('th-box')); }catch(e){}
 }
 
 function addSession(){
@@ -6266,8 +6662,9 @@ function renderTimerTab(){
     var _sa=b?isAudioRead(curReadOf(b)):false;
     var _smax=b?curTotalOf(b):0;
     controls='<div class="tmr-pageform"><label>'+(_sa?'Starting position':'Starting page')+'</label>'+tmrPosField('tmr-startpage',_sa,b?(currentPageFor(b)||0):0,_smax)+'<div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrBegin()">Begin</button><button class="tmr-ghost" onclick="tmrCancelStart()">Cancel</button></div></div>'; }
-  else if(tmrMode==='running'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Pause</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
-  else if(tmrMode==='paused'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Resume</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
+  else if((tmrMode==='running'||tmrMode==='paused') && _tmrNote!=null){ controls=tmrNoteForm(); }
+  else if(tmrMode==='running'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Pause</button><button class="tmr-ghost" onclick="tmrNoteOpen()">Note</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
+  else if(tmrMode==='paused'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Resume</button><button class="tmr-ghost" onclick="tmrNoteOpen()">Note</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
   else if(tmrMode==='finishprompt'){
     // Resolve the timer's OWN book — the card above may be showing a different
     // one when the timer is running against another list.
@@ -6284,32 +6681,81 @@ function renderTimerTab(){
       +(_switched?'<div class="tmr-longnote">This session started as '+(_fa?'audio':'print')+', so it finishes in '+(_fa?'hours and minutes':'pages')+'. The format you just picked applies to the next one.</div>':'')
       +(_longRun?('<div class="tmr-longnote">This ran for '+formatHMS(_elapsed)+'. If the timer was left going, correct the time below \u2014 it saves exactly what you enter.</div>'
                  +'<label class="tmr-l2">Time read</label>'+tmrPosField('tmr-dur',true,Math.round(_elapsed/60),0)):'')
+      +'<label class="tmr-l2">Anything to note?</label>'
+      +'<textarea id="tmr-endnote" class="th-box grow" rows="2" placeholder="Optional" oninput="_tmrEndNote=this.value;autoGrow(this)">'+esc(_tmrEndNote||'')+'</textarea>'
       +'<div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrConfirmFinish()">Save session</button><button class="tmr-ghost" onclick="tmrKeepReading()">Keep reading</button></div></div>'; }
   body.innerHTML=card+circle+'<div class="tmr-controls">'+controls+'</div>';
   tmrPaint();
 }
 function tmrCircleTap(){ if(tmrMode==='idle') tmrStart(); else if(tmrMode==='running'||tmrMode==='paused') tmrPauseResume(); }
-function tmrOpenPicker(){
-  if(tmrMode!=='idle') return;
+// ── A note mid-sitting ──────────────────────────────────────────────────────
+// The box opens in place on the timer screen and saves through the same path
+// as Thoughts, onto the timer's own book at the page the sitting is on. Drafts
+// live in these, not just in the box, so a repaint while he types (a pause
+// from the notification, say) never throws his words away.
+var _tmrNote=null;      // null = closed; a string = open, holding the draft
+var _tmrEndNote='';     // the finish prompt's "anything to note?"
+function tmrNoteForm(){
+  var tb=tmrTimerBook(), p=thPosText(thPosNow(tb));
+  return '<div class="tmr-pageform tmr-noteform"><label>Note on '+esc((tb&&tb.title)||'this book')+(p?' · '+esc(p):'')+'</label>'
+    +'<textarea id="tmr-note" class="th-box grow" rows="3" placeholder="What just struck you?" oninput="_tmrNote=this.value;autoGrow(this)">'+esc(_tmrNote||'')+'</textarea>'
+    +'<div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrNoteSave()">Save note</button><button class="tmr-ghost" onclick="tmrNoteClose()">Cancel</button></div></div>';
+}
+function tmrNoteOpen(){
+  if(!activeTimer) return;
+  if(_tmrNote==null) _tmrNote='';
+  renderTimerTab();
+  var t=document.getElementById('tmr-note');
+  if(t) setTimeout(function(){ try{ autoGrow(t); t.focus(); }catch(e){} },50);
+}
+function tmrNoteClose(){ _tmrNote=null; renderTimerTab(); }
+function tmrNoteSave(){
+  var t=document.getElementById('tmr-note'), text=t?t.value:(_tmrNote||'');
+  if(!String(text).trim()){ tmrNoteClose(); return; }
+  if(!activeTimer){ showToast('The timer has stopped — log it from Thoughts'); return; }
+  var tb=tmrTimerBook();
+  var res=thFile({listId:activeTimer.listId, idx:activeTimer.bookIdx, bookId:tb&&tb.bookId, why:'timer'}, text, true);
+  if(!res){ showToast('Could not save the note — it is still here'); return; }
+  _tmrNote=null; renderTimerTab();
+  var p=thPosText(res.entry);
+  showToast('Noted on '+res.title+(p?' · '+p:''));
+}
+// The same picker files a thought: tmrOpenPicker('log') or ('refile'). Then a
+// tap hands the book to Thoughts instead of the timer, and closing the sheet
+// without tapping one writes nothing anywhere.
+var _tpFor=null;
+function tmrOpenPicker(forWhat){
+  if(!forWhat && tmrMode!=='idle') return;
   var sheet=document.getElementById('timer-pick'); if(!sheet) return;
+  _tpFor=forWhat||null;
+  var hd=document.getElementById('timer-pick-h');
+  if(hd) hd.textContent = _tpFor==='refile' ? 'Move this thought to…' : _tpFor ? 'File this thought on…' : 'Choose a book';
   var s=document.getElementById('timer-pick-search'); if(s) s.value='';
   tmrRenderPickList();
   sheet.classList.remove('hidden'); document.body.style.overflow='hidden';
-  if(s) setTimeout(function(){try{s.focus();}catch(e){}},60);
+  // Filing a thought, the book he last read is already at the top; the
+  // keyboard would only cover it.
+  if(s && !_tpFor) setTimeout(function(){try{s.focus();}catch(e){}},60);
 }
 function tmrRenderPickList(){
   var q=((document.getElementById('timer-pick-search')||{}).value||'').toLowerCase().trim();
   var rows=[];
-  for(var i=0;i<books.length;i++){
-    var b=books[i];
+  var order=[]; for(var oi=0;oi<books.length;oi++) order.push(oi);
+  var last=_tpFor ? thLastReadIdx() : -1;
+  if(last>=0){ order.splice(last,1); order.unshift(last); }
+  for(var n=0;n<order.length;n++){
+    var i=order[n], b=books[i];
     if(q && (b.title||'').toLowerCase().indexOf(q)<0 && (b.author||'').toLowerCase().indexOf(q)<0 && (b.genre||'').toLowerCase().indexOf(q)<0 && (b.seriesName||'').toLowerCase().indexOf(q)<0) continue;
     var pg=tmrFmtPagesLine(b);
-    rows.push('<button class="tp-item" onclick="tmrSelectBook('+i+')"><span class="tp-i-main"><span class="tp-i-title">'+esc(b.title)+(b.isReading?' <span class="tp-i-badge">reading</span>':'')+'</span><span class="tp-i-by">'+(seriesText(b)?esc(seriesText(b))+' \u00b7 ':'')+esc(b.author)+' \u00b7 '+curUnitStr(b,pg.cur)+'/'+curUnitStr(b,pg.total)+'</span></span></button>');
+    rows.push('<button class="tp-item" onclick="tmrSelectBook('+i+')"><span class="tp-i-main"><span class="tp-i-title">'+esc(b.title)+(i===last?' <span class="tp-i-badge">last read</span>':(b.isReading?' <span class="tp-i-badge">reading</span>':''))+'</span><span class="tp-i-by">'+(seriesText(b)?esc(seriesText(b))+' \u00b7 ':'')+esc(b.author)+' \u00b7 '+curUnitStr(b,pg.cur)+'/'+curUnitStr(b,pg.total)+'</span></span></button>');
   }
   document.getElementById('timer-pick-list').innerHTML = rows.join('') || '<p style="color:var(--text-muted);font-family:var(--ui);font-size:13px;padding:22px;text-align:center">No matches.</p>';
 }
-function tmrClosePicker(){ var s=document.getElementById('timer-pick'); if(s) s.classList.add('hidden'); document.body.style.overflow=''; }
-function tmrSelectBook(i){ tmrSelIdx=i; tmrClosePicker(); renderTimerTab(); }
+function tmrClosePicker(){ _tpFor=null; var s=document.getElementById('timer-pick'); if(s) s.classList.add('hidden'); document.body.style.overflow=''; }
+function tmrSelectBook(i){
+  if(_tpFor){ var f=_tpFor; tmrClosePicker(); thPicked(f,i); return; }
+  tmrSelIdx=i; tmrClosePicker(); renderTimerTab();
+}
 function tmrStart(){ var idx=tmrPickIdx(); if(idx<0){ showToast('Add a book first'); return; } tmrSelIdx=idx; tmrMode='startprompt'; renderTimerTab(); var inp=document.getElementById('tmr-startpage')||document.getElementById('tmr-startpage-h'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
 function tmrCancelStart(){ tmrMode='idle'; renderTimerTab(); }
 function tmrBegin(){
@@ -6329,12 +6775,21 @@ function tmrPauseResume(){
   if(activeTimer.pausedAt){ activeTimer.accumulatedSec=(activeTimer.accumulatedSec||0)+Math.max(0,Math.floor((activeTimer.pausedAt-activeTimer.startTime)/1000)); activeTimer.startTime=Date.now(); activeTimer.pausedAt=null; saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState(); }
   else { activeTimer.pausedAt=Date.now(); saveActiveTimer(); tmrStopTick(); tmrMode='paused'; renderTimerTab(); pushTimerState(); }
 }
-function tmrFinish(){ if(!activeTimer) return; _tmrFrozenSec=timerElapsedSec(); activeTimer.finishing=true; if(!activeTimer.pausedAt) activeTimer.pausedAt=Date.now(); saveActiveTimer(); tmrStopTick(); tmrMode='finishprompt'; renderTimerTab(); pushTimerState(); var inp=document.getElementById('tmr-endpage')||document.getElementById('tmr-endpage-h'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
-function tmrKeepReading(){ if(!activeTimer) return; activeTimer.finishing=false; activeTimer.accumulatedSec=_tmrFrozenSec; activeTimer.startTime=Date.now(); activeTimer.pausedAt=null; saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState(); }
+function tmrFinish(){ if(!activeTimer) return;
+  // A note half-written when he taps Finish moves into the finish prompt's box.
+  if(_tmrNote!=null){ if(String(_tmrNote).trim()) _tmrEndNote=_tmrNote; _tmrNote=null; }
+  _tmrFrozenSec=timerElapsedSec(); activeTimer.finishing=true; if(!activeTimer.pausedAt) activeTimer.pausedAt=Date.now(); saveActiveTimer(); tmrStopTick(); tmrMode='finishprompt'; renderTimerTab(); pushTimerState(); var inp=document.getElementById('tmr-endpage')||document.getElementById('tmr-endpage-h'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
+function tmrKeepReading(){ if(!activeTimer) return;
+  // Back to reading with a note typed at the finish: it reopens as a note
+  // rather than vanishing with the prompt.
+  var _ne=document.getElementById('tmr-endnote'), _nt=_ne?_ne.value:(_tmrEndNote||'');
+  _tmrEndNote=''; if(String(_nt||'').trim()) _tmrNote=_nt;
+  activeTimer.finishing=false; activeTimer.accumulatedSec=_tmrFrozenSec; activeTimer.startTime=Date.now(); activeTimer.pausedAt=null; saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState(); }
 function tmrConfirmFinish(){
   if(!activeTimer) return;
   var _fb=tmrTimerBook();
   var _cfmt=tmrSessionFmt(_fb);
+  var _ne=document.getElementById('tmr-endnote'), _endNote=_ne?_ne.value:(_tmrEndNote||'');
   var endPage=tmrPosRead('tmr-endpage',_cfmt==='audio');
   if(isNaN(endPage)){ tmrKeepReading(); return; }
   if(endPage<0) endPage=0;
@@ -6352,11 +6807,22 @@ function tmrConfirmFinish(){
   var session={ startTime:startTime, endTime:startTime+sec*1000, durationSec:sec, startPage:startPage, endPage:endPage, fmt:_cfmt };
   if(activeTimer.listId===activeId){ var b=books[idx]; if(b){ b.timerSessions=b.timerSessions||[]; tagSessionRead(b,session); b.timerSessions.push(session); saveCurrentList(); fanOutSession(b.bookId, session, activeId); } }
   else { try{ var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[]; if(arr[idx]){ arr[idx].timerSessions=arr[idx].timerSessions||[]; tagSessionRead(arr[idx],session); arr[idx].timerSessions.push(session); storage.setItem(listKey(activeTimer.listId), JSON.stringify(arr)); fanOutSession(arr[idx].bookId, session, activeTimer.listId); } }catch(e){} }
+  // The thought he had at the end of the sitting, filed where the sitting
+  // ended. Saved after the session, so a failure here can never cost him the
+  // session — and if it does fail, the words wait in the Thoughts box.
+  var _noted=null;
+  if(String(_endNote||'').trim()){
+    var _nb=tmrTimerBook();
+    _noted=thFile({listId:activeTimer.listId, idx:idx, bookId:_nb&&_nb.bookId, why:'timer'}, _endNote, {pos:endPage, fmt:_cfmt});
+    if(!_noted) _thDraft=(_thDraft?_thDraft+'\n\n':'')+_endNote;
+  }
+  _tmrEndNote=''; _tmrNote=null;
   activeTimer=null; saveActiveTimer(); tmrStopTick(); _tmrFrozenSec=0; tmrMode='idle'; pushTimerState(); pushWidgetSnapshot();
   updateStats(); renderTimerTab(); if(currentTab==='list') renderTable();
   var _tb=(tmrSelIdx>=0)?books[tmrSelIdx]:null;
   var _tr=_tb?readById(_tb,ensureCurrentRead(_tb)):null;
-  showToast('Logged '+formatHMS(sec)+' \u00b7 '+unitStr(_tr,Math.max(0,endPage-startPage)));
+  showToast('Logged '+formatHMS(sec)+' \u00b7 '+unitStr(_tr,Math.max(0,endPage-startPage))
+    +(_noted?' \u00b7 note saved':(String(_endNote||'').trim()?' \u00b7 note kept in Thoughts':'')));
 }
 function tmrStartFromReading(idx){ tmrSelIdx=idx; switchScreen('timer'); }
 /* A session running longer than this on reopening is treated as suspect rather
@@ -6567,7 +7033,7 @@ setInterval(function(){ if(_bridgeReady && activeTimer) tmrBridgeSync(true); }, 
 
 /* ===== Babel app shell logic ===== */
 function switchScreen(name){
-  ['library','stats','timer','reading','hearth','settings'].forEach(function(s){
+  ['library','stats','timer','reading','hearth','thoughts','settings'].forEach(function(s){
     var el=document.getElementById('screen-'+s); if(el) el.classList.toggle('hidden', s!==name);
   });
   document.querySelectorAll('.tabbar .tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-screen')===name); });
@@ -6578,6 +7044,7 @@ function switchScreen(name){
   if(name==='hearth'){ renderHearth(); }
   if(name==='settings'){ babelShowVersion(); babelShowStorage(0); babelCheckWebGPU(0); }
   if(name==='timer') renderTimerTab();
+  if(name==='thoughts') renderThoughts();
   if(name==='library' && currentTab==='genre') renderGenreTab();
   try{ window.scrollTo(0,0); }catch(e){}
   pushWidgetSnapshot();
@@ -6639,7 +7106,7 @@ function pushWidgetSnapshot(){
 window.addEventListener('load',function(){
   try{
     var tp=new URLSearchParams(location.search).get('tab');
-    if(tp && ['library','stats','timer','reading','hearth','settings'].indexOf(tp)>=0) switchScreen(tp);
+    if(tp && ['library','stats','timer','reading','hearth','thoughts','settings'].indexOf(tp)>=0) switchScreen(tp);
   }catch(e){}
 });
 function openAddSheet(){
@@ -7008,7 +7475,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v52';
+var BABEL_VERSION='babel-v53';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
