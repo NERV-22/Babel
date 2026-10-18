@@ -1036,6 +1036,7 @@ body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padd
 .bp-wanted p:last-child{margin:0}
 .bp-wanted-h{font-size:11px;text-transform:uppercase;letter-spacing:.06em}
 .bp-wanted-t{font-family:var(--display);font-size:14px;color:var(--text);white-space:pre-line}
+.bp-wanted-s{font-family:var(--display);font-size:13.5px;font-style:italic;color:var(--text-muted);margin-top:10px!important}
 .bp-composebar{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:-6px 0 16px;
   font-family:var(--ui);font-size:12px;color:var(--text-muted)}
 .bp-composing{font-family:var(--ui);font-size:12px;color:var(--accent);margin:-6px 0 16px}
@@ -2069,6 +2070,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
      an entry without passing through this. Kept as its own file so its tests
      run against exactly the code the app ships. -->
 <script src="editguard.js"></script>
+<!-- Lossless sentence splitting, for composing an entry a sentence at a time
+     when the whole entry is refused. Tested on its own like the guard. -->
+<script src="sentences.js"></script>
 <script>
 // ── Storage layer (IndexedDB with localStorage-compatible API) ────────────────
 // Backed by IndexedDB so we get ~1+ GB of room instead of localStorage's 5 MB.
@@ -4872,18 +4876,35 @@ function bpSetView(v){
 }
 function bpEntryHTML(t, composed){
   var p=thPosText(t), txt=composed?thComposedText(t.e):t.text;
-  // An entry the guard refused shows his words and says so, rather than
-  // silently doing nothing. Tapping shows what the model wanted to change.
-  var dec=(composed && !thComposedValid(t.e)) ? composeDeclined(t.e) : null;
+  // What the editor left alone is said plainly rather than silently: a whole
+  // entry, or the sentences inside one it otherwise composed. Tapping shows
+  // what the model wanted. A partial record only stands beside a composed
+  // copy, and a refusal only beside his raw words.
+  var dec=composed ? composeRecord(t.e) : null;
+  if(dec && (dec.kind==='partial')!==thComposedValid(t.e)) dec=null;
+  var label='', panel='';
+  if(dec){
+    label = dec.kind==='partial' ? (dec.pieces.length+' of '+dec.total+' sentences left as written')
+          : dec.kind==='veto'    ? 'Left as written — the sentences passed one by one, not together'
+          : dec.kind==='all'     ? ('Left as written — all '+dec.total+' sentences')
+          : 'Left as written';
+    var whole=(dec.kind!=='partial' && (dec.kind==='veto' || !(dec.pieces||[]).length));
+    panel=(whole ? '<p class="bp-wanted-h">'+(dec.kind==='veto'?'Put together, it read:':'The model wanted:')+'</p>'
+                   +'<p class="bp-wanted-t">'+esc(dec.wanted||'(nothing)')+'</p>'
+                   +'<p class="bp-wanted-why">Refused: '+esc(dec.reason||'')+'</p>' : '')
+      +(dec.pieces||[]).map(function(q){
+        return '<p class="bp-wanted-s">“'+esc(q.text)+'”</p>'
+          +'<p class="bp-wanted-h">The model wanted:</p><p class="bp-wanted-t">'+esc(q.wanted||'(nothing)')+'</p>'
+          +'<p class="bp-wanted-why">Refused: '+esc(q.reason||'')+'</p>';
+      }).join('');
+  }
   return '<article class="bp-log">'
     +'<div class="bp-loghd"><span class="bp-logn">Log '+t.n+'</span>'
       +'<span class="bp-logmeta">'+esc(longISO(t.at))+(p?' · '+esc(p):'')+'</span></div>'
     +'<div class="bp-thbody">'+String(txt).split(/\n{2,}/).map(function(par){
         return '<p>'+esc(par)+'</p>'; }).join('')+'</div>'
-    +(dec ? '<button class="bp-declined" onclick="bpToggleDeclined(this)">Left as written</button>'
-           +'<div class="bp-wanted hidden"><p class="bp-wanted-h">The model wanted:</p>'
-           +'<p class="bp-wanted-t">'+esc(dec.wanted||'(nothing)')+'</p>'
-           +'<p class="bp-wanted-why">Refused: '+esc(dec.reason||'')+'</p></div>' : '')
+    +(dec ? '<button class="bp-declined" onclick="bpToggleDeclined(this)">'+esc(label)+'</button>'
+           +'<div class="bp-wanted hidden">'+panel+'</div>' : '')
     +'</article>';
 }
 function bpReviewHTML(r, ri, multi){
@@ -5072,17 +5093,23 @@ function llmRemove(){
 // they point at different fixes: dropping his words means the model deletes,
 // going over budget means it rewrites.
 function composeCounts(){
-  var done=0, left=0, dropped=0, over=0, echo=0;
+  var done=0, left=0, dropped=0, over=0, echo=0, veto=0, sentences=0;
   books.forEach(function(b){ (b.sessions||[]).forEach(function(r){ (r.notes||[]).forEach(function(e){
     if(!e || !String(e.text||'').trim()) return;
-    if(thComposedValid(e)){ done++; return; }
-    var d=composeDeclined(e); if(!d) return;
-    left++;
-    if(/were dropped/.test(d.reason||'')) dropped++;
-    else if(/refused edits/.test(d.reason||'')) over++;
-    else if(/copied its own example/.test(d.reason||'')) echo++;
+    var rec=composeRecord(e);
+    if(thComposedValid(e)){
+      done++;
+      if(rec && rec.kind==='partial') sentences+=(rec.pieces||[]).length;
+      return;
+    }
+    if(!rec || rec.kind==='partial') return;
+    left++; sentences+=(rec.total||1);
+    if(rec.kind==='veto') veto++;
+    else if(/were dropped/.test(rec.reason||'')) dropped++;
+    else if(/refused edits/.test(rec.reason||'')) over++;
+    else if(/copied its own example/.test(rec.reason||'')) echo++;
   }); }); });
-  return {done:done, left:left, dropped:dropped, over:over, echo:echo};
+  return {done:done, left:left, dropped:dropped, over:over, echo:echo, veto:veto, sentences:sentences};
 }
 function renderLlmRow(){
   var btn=document.getElementById('llm-btn'), sub=document.getElementById('llm-sub');
@@ -5103,8 +5130,12 @@ function renderLlmRow(){
     if(c.dropped) causes.push(c.dropped+' dropped words');
     if(c.over) causes.push(c.over+' rewrites');
     if(c.echo) causes.push(c.echo+' copied an example');
+    if(c.veto) causes.push(c.veto+' vetoed whole');
+    // The number that matters now is sentences, not entries: a long entry can
+    // compose apart from the one sentence the model could not parse.
     sub.textContent='Ready · '+c.done+' composed · '+c.left+' left as written'
-      +(causes.length ? ' ('+causes.join(', ')+')' : '');
+      +(causes.length ? ' ('+causes.join(', ')+')' : '')
+      +(c.sentences ? ' · '+c.sentences+' sentence'+(c.sentences===1?'':'s')+' left as written' : '');
     return;
   }
   btn.textContent='Download ('+LLM.SIZE+')';
@@ -5128,18 +5159,28 @@ function composeLog(){
 // A refusal stands for the guard and prompt that made it. When either changes,
 // COMPOSE_VER moves on and older refusals are tried again — "never re-run"
 // means never re-run the same judgement, not never look again.
-var COMPOSE_VER='2';
-function composeDeclined(e){
+var COMPOSE_VER='3';
+// What the editor recorded for these exact words under the current guard and
+// prompt: an entry it left alone ('declined', 'all', 'veto'), or the sentences
+// it left alone inside an entry it otherwise composed ('partial').
+function composeRecord(e){
   var rec=e && composeLog()[thTextKey(e.text)];
   return (rec && rec.v===COMPOSE_VER) ? rec : null;
 }
-function composeRecordDecline(text, wanted, reason){
+// An entry that was not composed at all. A partly composed entry is composed.
+function composeDeclined(e){
+  var rec=composeRecord(e);
+  return (rec && rec.kind!=='partial') ? rec : null;
+}
+function composeRecordDecline(text, wanted, reason, extra){
   var log=composeLog(), keys=Object.keys(log);
   if(keys.length>=400){
     keys.sort(function(a,b){ return (log[a].at||0)-(log[b].at||0); });
     keys.slice(0,keys.length-399).forEach(function(k){ delete log[k]; });
   }
-  log[thTextKey(text)]={wanted:String(wanted||''), reason:String(reason||''), at:Date.now(), v:COMPOSE_VER};
+  var rec={wanted:String(wanted||''), reason:String(reason||''), at:Date.now(), v:COMPOSE_VER, kind:'declined'};
+  if(extra) Object.keys(extra).forEach(function(f){ rec[f]=extra[f]; });
+  log[thTextKey(text)]=rec;
   try{ storage.setItem(LLM_LOG_KEY, JSON.stringify(log)); }catch(e){}
 }
 
@@ -5150,7 +5191,8 @@ var COMPOSE_SYS='You are a copy-editor for a private reading journal. Fix only s
   +'capitalisation, punctuation and sentence breaks. Do not replace, remove, reorder or add '
   +'words, except to correct a misspelled word. Keep slang, profanity, blunt opinions and '
   +'chapter or page references exactly as written. If the text is already correct, return it '
-  +'unchanged. Return only the corrected text.';
+  +'unchanged. Return only the corrected text. If a phrase is garbled or you cannot parse it, '
+  +'leave it exactly as written. Never delete words you do not understand.';
 // Stand-ins, used only until he has composed entries of his own. The old
 // "already correct" line ("I couldn't put it down…") is gone: given a long
 // entry, the model copied it back word for word.
@@ -5216,36 +5258,131 @@ function composeDrain(){
   LLM.busy=true; composeRefresh();
   var shots=composeShots(job);
   llmEngine(false)
-    .then(function(eng){ return eng.chat.completions.create(composeRequest(job.text, shots)); })
-    .then(function(res){
-      var out=(res&&res.choices&&res.choices[0]&&res.choices[0].message&&res.choices[0].message.content)||'';
-      composeApply(job, out, shots);
-    })
+    .then(function(eng){ return composeEntry(eng, job, shots); })
     .catch(function(err){ composeFailed(job, err); })
     .then(function(){ LLM.busy=false; composeRefresh(); composeDrain(); });
 }
-function composeApply(job, out, shots){
-  // A copy of one of its own demonstrations is not an edit of his entry. Say
-  // so plainly, rather than letting it arrive as "145 of your words were dropped".
+// One request, for one piece of his writing: an entry, or one sentence of it.
+function composeAsk(eng, text, shots){
+  return eng.chat.completions.create(composeRequest(text, shots)).then(function(res){
+    return (res&&res.choices&&res.choices[0]&&res.choices[0].message&&res.choices[0].message.content)||'';
+  });
+}
+// The verdict on one piece. A copy of one of its own demonstrations is not an
+// edit of his writing; say so plainly, rather than letting it arrive as "145
+// of your words were dropped".
+function composeJudge(text, out, shots){
   var norm=function(s){ return String(s||'').replace(/\s+/g,' ').trim(); };
-  if((shots||[]).some(function(s){ return norm(s[1])===norm(out) && norm(s[0])!==norm(job.text); })){
-    composeRecordDecline(job.text, out, 'the model copied its own example'); return;
-  }
-  var g=EditGuard(job.text, out);
-  if(g.rejected){ composeRecordDecline(job.text, out, g.reason); return; }
-  thApply({listId:job.listId, idx:job.idx, bookId:job.bookId}, function(b){
+  if((shots||[]).some(function(s){ return norm(s[1])===norm(out) && norm(s[0])!==norm(text); }))
+    return {ok:false, reason:'the model copied its own example'};
+  var g=EditGuard(text, out);
+  if(g.rejected) return {ok:false, reason:g.reason};
+  return {ok:true, text:keepBreaks(text, g.text)};
+}
+// Two passes. The whole entry first, exactly as before: when the guard accepts
+// it, that is one request and done. Only when it refuses is the entry split
+// into sentences and each composed on its own, so one clause the model cannot
+// parse costs that sentence instead of the entry. Splitting every time would
+// re-read the demonstrations once per sentence and make the entries that
+// already work slower for nothing.
+function composeEntry(eng, job, shots){
+  return composeAsk(eng, job.text, shots).then(function(out){
+    var v=composeJudge(job.text, out, shots);
+    if(v.ok){ composeStore(job, v.text); return; }
+    var S=(typeof Sentences!=='undefined' && Sentences) ? Sentences : null;
+    var pieces=S ? S.split(job.text) : [job.text];
+    var total=S ? pieces.filter(function(p){ return !!S.body(p); }).length : 1;
+    if(total<2){ composeRecordDecline(job.text, out, v.reason); return; }
+    return composeSentences(eng, job, shots, pieces, total, out, v.reason);
+  });
+}
+// One sentence per request — never two in one prompt, the same rule as one
+// entry per request. A refused sentence stays exactly as he wrote it, byte for
+// byte. Nothing is stored until every sentence is back: a half-composed entry
+// is never written.
+function composeSentences(eng, job, shots, pieces, total, wholeOut, wholeReason){
+  var out=pieces.slice(), refused=[], chain=Promise.resolve();
+  pieces.forEach(function(piece, i){
+    var b=Sentences.body(piece); if(!b) return;
+    chain=chain.then(function(){
+      return composeAsk(eng, b, shots).then(function(got){
+        var v=composeJudge(b, got, shots);
+        if(v.ok) out[i]=Sentences.reclothe(piece, v.text);
+        else refused.push({i:i, text:b, wanted:got, reason:v.reason});
+      });
+    });
+  });
+  return chain.then(function(){
+    var extra={pieces:refused, total:total};
+    if(refused.length===total){
+      extra.kind='all';
+      composeRecordDecline(job.text, wholeOut, wholeReason, extra);
+      return;
+    }
+    // Per-sentence decisions, entry-level veto. A sentence's budget has a
+    // floor of two changes, generous for six words, so several sentences each
+    // slipping two in can add up to a rewrite no single sentence shows. The
+    // rejoined entry must pass the guard against what he wrote, with nothing
+    // left for it to undo, or none of it is kept.
+    var joined=Sentences.rejoin(out), G=EditGuard(job.text, joined);
+    if(G.rejected || G.reverts.length){
+      extra.kind='veto';
+      composeRecordDecline(job.text, joined, 'the sentences passed one by one but not together ('
+        +(G.rejected ? G.reason : G.reverts.length+' change'+(G.reverts.length===1?'':'s')+' refused across sentences')+')', extra);
+      return;
+    }
+    if(composeStore(job, joined) && refused.length){
+      extra.kind='partial';
+      composeRecordDecline(job.text, '', refused.length+' of '+total+' sentences left as written', extra);
+    }
+  });
+}
+// Writes the composed copy onto the entry, once, and only while the entry
+// still holds the exact words it was made from.
+function composeStore(job, text){
+  return !!thApply({listId:job.listId, idx:job.idx, bookId:job.bookId}, function(b){
     var r=readById(b, job.readId); if(!r) return null;
     var es=noteEntries(r);
     for(var k=es.length-1;k>=0;k--){
       var e=es[k];
       if(e && e.at===job.at && e.text===job.text){
         if(thComposedValid(e)) return null;          // composed once; never re-run over it
-        thSetComposed(e, g.text);
+        thSetComposed(e, text);
         return {entry:e};
       }
     }
     return null;                                     // his words changed meanwhile: store nothing
   });
+}
+// The guard rebuilds its text with single spaces, which folds his paragraphs
+// into one. Put back each line break he wrote after the word it followed.
+// Only whitespace moves; no word is touched.
+function keepBreaks(orig, text){
+  orig=String(orig||''); text=String(text||'');
+  if(!/\n/.test(orig) || !text) return text;
+  var key=function(w){ return w.toLowerCase().replace(/[^a-z0-9']/g,''); };
+  var A=[], re=/(\S+)(\s*)/g, m;
+  while((m=re.exec(orig))) A.push({k:key(m[1]), ws:m[2]});
+  var B=text.split(' '), K=B.map(key), n=A.length, nb=B.length, i, j, T=[];
+  for(i=0;i<=n;i++) T[i]=new Int32Array(nb+1);
+  for(i=n-1;i>=0;i--) for(j=nb-1;j>=0;j--)
+    T[i][j]=(A[i].k && A[i].k===K[j]) ? T[i+1][j+1]+1 : Math.max(T[i+1][j], T[i][j+1]);
+  var pairs=[]; i=0; j=0;
+  while(i<n && j<nb){
+    if(A[i].k && A[i].k===K[j]){ pairs.push([i,j]); i++; j++; }
+    else if(T[i+1][j]>=T[i][j+1]) i++; else j++;
+  }
+  // A word changed in place (a spelling fix) sits in a gap the same size on
+  // both sides; pair those positionally too.
+  var all=[], pi=-1, pj=-1;
+  pairs.concat([[n,nb]]).forEach(function(p){
+    if(p[0]-pi===p[1]-pj) for(var g=1; g<p[0]-pi; g++) all.push([pi+g, pj+g]);
+    if(p[0]<n) all.push(p);
+    pi=p[0]; pj=p[1];
+  });
+  var sep=B.map(function(){ return ' '; });
+  all.forEach(function(p){ if(/\n/.test(A[p[0]].ws) && p[1]<nb-1) sep[p[1]]=A[p[0]].ws; });
+  return B.map(function(w,k){ return w+(k<nb-1?sep[k]:''); }).join('');
 }
 function composeFailed(job, err){
   LLM.queue=[];                                      // a broken engine should not grind through the rest
@@ -7933,7 +8070,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v56';
+var BABEL_VERSION='babel-v57';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){

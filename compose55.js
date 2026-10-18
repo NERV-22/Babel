@@ -6,6 +6,7 @@ const fs=require('fs');
 const HTML=fs.readFileSync(__dirname+'/Babel.html','utf8');
 const SW=fs.readFileSync(__dirname+'/sw.js','utf8');
 const GUARD=require('./editguard.js');
+const SENT=require('./sentences.js');
 const mainScript=html=>{
   const blocks=html.match(/<script>([\s\S]*?)<\/script>/g).map(b=>b.replace(/<\/?script[^>]*>/g,''));
   return blocks.slice().sort((a,b)=>b.length-a.length)[0];
@@ -37,6 +38,7 @@ function installGlobals(){
   global.alert=()=>{}; global.confirm=()=>true; global.prompt=()=>null;
   global.getComputedStyle=()=>({getPropertyValue:()=>''});
   global.EditGuard=GUARD;
+  global.Sentences=SENT;
   if(!console._quiet){ const ce=console.error; console.error=(...a)=>{ if(/IndexedDB init failed/.test(String(a[0]))) return; ce(...a); }; console._quiet=1; }
 }
 const setNav=v=>Object.defineProperty(globalThis,'navigator',{value:v,configurable:true,writable:true});
@@ -52,6 +54,7 @@ const EXPOSE=`;return {
   set supportCache(v){_llmSupport=v;}, set logCache(v){_composeLog=v;},
   set thTarget(v){_thTarget=v;}, set thFresh(v){_thFresh=v;},
   get COMPOSE_VER(){return COMPOSE_VER;}, COMPOSE_SHOTS, SHOT_MAX, composeShots,
+  COMPOSE_SYS, keepBreaks,
   LLM, llmInit, llmEngine, llmButton, llmRemove, renderLlmRow, composeEnqueue, composeRequest,
   renderBPThoughts, bpSetView, bpComposeRest, thTextKey, thComposedText, noteWrite, noteEntries,
   syncNoteText, thLog, tmrSelectBook, tmrClosePicker, storage, listKey
@@ -334,6 +337,109 @@ async function runSuite(src, sw, quiet){
     ok('a refusal by the current guard is not retried', calls.length===0, calls.length);
   });
 
+  sec('TWO PASSES: THE WHOLE ENTRY, THEN SENTENCE BY SENTENCE');
+  const P1='chapters 7-8 were terrible. ', P2='pacing fell apart and the new character feels like a device. ', P3='losing interest honestly';
+  const FIX={'chapters 7-8 were terrible.':'Chapters 7-8 were terrible.',
+    'pacing fell apart and the new character feels like a device.':'Pacing fell apart, and the new character feels like a device.',
+    'losing interest honestly':'Losing interest, honestly.'};
+  const last=req=>req.messages[req.messages.length-1].content;
+  await guarded('one pass',async()=>{
+    fresh(true);
+    reply=()=>GOOD2;
+    await log(E2, 0);
+    ok('a whole-entry success costs one request', calls.length===1, calls.length);
+    ok('and is stored as before', entry(0).composed===GOOD2);
+  });
+  await guarded('second pass',async()=>{
+    fresh(true);
+    reply=req=>last(req)===E2 ? QWEN2 : (FIX[last(req)]||last(req));
+    await log(E2, 0);
+    ok('a whole-entry refusal falls back to sentences: 1 + 3 requests', calls.length===4, calls.length);
+    ok('each sentence is its own request, nothing more', calls.slice(1).map(last).join('|')===[P1,P2,P3].map(p=>p.trim()).join('|'), J(calls.slice(1).map(last)));
+    ok('the sentences come back together, spaces intact',
+       entry(0).composed==='Chapters 7-8 were terrible. Pacing fell apart, and the new character feels like a device. Losing interest, honestly.', J(entry(0).composed));
+    ok('his words are untouched', entry(0).text===E2);
+  });
+  await guarded('one refused',async()=>{
+    fresh(true);
+    reply=req=>last(req)===E2 ? QWEN2 : (last(req)===P2.trim() ? 'The pacing felt disjointed.' : (FIX[last(req)]||last(req)));
+    await log(E2, 0);
+    const c=entry(0).composed||'';
+    ok('the refused sentence is in the composed copy byte for byte', c.indexOf(P2)>=0, J(c));
+    ok('the others are composed', c.indexOf('Chapters 7-8 were terrible.')===0 && /Losing interest, honestly\.$/.test(c), J(c));
+    ok('the rewrite never arrives', c.indexOf('disjointed')<0);
+    T.bpView='composed'; T.renderBPThoughts();
+    const h=document.getElementById('bp-th').innerHTML;
+    ok('the page says 1 of 3 sentences was left as written', h.indexOf('1 of 3 sentences left as written')>=0, h.slice(0,300));
+    ok('and shows that sentence and what the model wanted', h.indexOf('“pacing fell apart and the new character feels like a device.”')>=0 && h.indexOf('The pacing felt disjointed.')>=0);
+    T.renderLlmRow();
+    ok('Settings counts it as a sentence, not an entry', /1 composed · 0 left as written · 1 sentence left as written/.test(document.getElementById('llm-sub').textContent), document.getElementById('llm-sub').textContent);
+  });
+  await guarded('all refused',async()=>{
+    fresh(true);
+    reply=()=>QWEN2;
+    await log(E2, 0);
+    ok('when every sentence is refused nothing is stored', !('composed' in entry(0)), J(entry(0)));
+    const lg=JSON.parse(T.storage.getItem('rl_compose_log')||'{}')[T.thTextKey(E2)]||{};
+    ok('the record says all 3 sentences', lg.kind==='all' && lg.total===3 && (lg.pieces||[]).length===3, J(lg).slice(0,200));
+  });
+  await guarded('veto',async()=>{
+    fresh(true);
+    const V='great book. loved it. would read again.';
+    // Each sentence picks up "and the" at its edges: harmless one at a time,
+    // a run of four function words where two of them meet.
+    const VP={'great book.':'great book. and the', 'loved it.':'and the loved it. and the', 'would read again.':'and the would read again.'};
+    reply=req=>last(req)===V ? 'great book.' : (VP[last(req)]||last(req));
+    await log(V, 0);
+    ok('pieces that pass one by one but not together are vetoed', !('composed' in entry(0)), J(entry(0)));
+    const lg=JSON.parse(T.storage.getItem('rl_compose_log')||'{}')[T.thTextKey(V)]||{};
+    ok('recorded as a veto, not an ordinary refusal', lg.kind==='veto', lg.kind);
+    T.bpView='composed'; T.renderBPThoughts();
+    ok('and the page says so in its own words', document.getElementById('bp-th').innerHTML.indexOf('passed one by one, not together')>=0);
+    fresh(true);
+    const V2='great book. loved it.';
+    reply=req=>last(req)===V2 ? 'great book.' : ({'great book.':'great book. and the','loved it.':'and the loved it.'}[last(req)]||last(req));
+    await log(V2, 0);
+    ok('even two changes the guard would undo across sentences are enough to veto', !('composed' in entry(0)), J(entry(0)));
+  });
+  await guarded('whitespace',async()=>{
+    fresh(true);
+    const W='Part 1 was slow.  Part 2 picked up!\n\nthen it ended';
+    reply=req=>last(req)===W ? 'Part 1 was slow.' : (last(req)==='then it ended' ? 'Then it ended.' : last(req));
+    await log(W, 0);
+    ok('double spaces and paragraph breaks survive the second pass', entry(0).composed==='Part 1 was slow.  Part 2 picked up!\n\nThen it ended.', J(entry(0).composed));
+  });
+  await guarded('one sentence',async()=>{
+    fresh(true);
+    reply=()=>'Chapters 7-8 were.';            // drops 'terrible': a real refusal
+    await log('chapters 7-8 were terrible', 0);
+    ok('a one-sentence entry gets one request, as in v56', calls.length===1, calls.length);
+    const lg=JSON.parse(T.storage.getItem('rl_compose_log')||'{}')[T.thTextKey('chapters 7-8 were terrible')]||{};
+    ok('and an ordinary refusal', lg.kind==='declined' && !lg.pieces, J(lg).slice(0,160));
+  });
+  await guarded('paragraphs',async()=>{
+    fresh(true);
+    const M='first part was slow\n\nsecond part was great';
+    reply=()=>'First part was slow. Second part was great.';
+    await log(M, 0);
+    ok('a whole entry composed in one pass keeps his paragraphs', entry(0).composed==='First part was slow.\n\nSecond part was great.', J(entry(0).composed));
+    ok('keepBreaks moves only whitespace', T.keepBreaks('a b\n\nc d', 'A b. C d.')==='A b.\n\nC d.' && T.keepBreaks('no break here', 'No break here.')==='No break here.');
+    ok('a spelling fix at the break still keeps it', T.keepBreaks('the charcter\n\nwas flat', 'The character was flat.')==='The character\n\nwas flat.', J(T.keepBreaks('the charcter\n\nwas flat', 'The character was flat.')));
+  });
+  await guarded('no partial store',async()=>{
+    fresh(true);
+    let n=0;
+    T.LLM.engine={ chat:{ completions:{ create:(req)=>{ n++; calls.push(JSON.parse(J(req)));
+      if(n===1) return Promise.resolve({choices:[{message:{content:QWEN2}}]});
+      if(n===3) return Promise.reject(new Error('device lost'));
+      return Promise.resolve({choices:[{message:{content:FIX[last(req)]||last(req)}}]}); } } }, unload(){} };
+    await log(E2, 0);
+    ok('a failure partway through stores nothing at all', !('composed' in entry(0)), J(entry(0)));
+  });
+  await guarded('prompt',async()=>{
+    ok('the prompt says to leave garbled phrases alone', /If a phrase is garbled or you cannot parse it, leave it exactly as written\. Never delete words you do not understand\./.test(T.COMPOSE_SYS));
+  });
+
   sec('PINNED, AND THE SERVICE WORKER KEEPS THE WEIGHTS');
   await guarded('pin',async()=>{
     ok('web-llm is pinned at 0.2.79', /@mlc-ai\/web-llm@0\.2\.79\//.test(T.LLM.LIB), T.LLM.LIB);
@@ -342,15 +448,16 @@ async function runSuite(src, sw, quiet){
   await guarded('sw',async()=>{
     const handlers={}, deleted=[];
     const self={ addEventListener:(t,f)=>{ handlers[t]=f; }, clients:{claim:()=>Promise.resolve()}, skipWaiting:()=>{}, location:{origin:'https://x'} };
-    const caches={ keys:()=>Promise.resolve(['babel-v55','babel-fonts','webllm/model','webllm/config','webllm/wasm','babel-v56','stale-thing']),
+    const caches={ keys:()=>Promise.resolve(['babel-v56','babel-fonts','webllm/model','webllm/config','webllm/wasm','babel-v57','stale-thing']),
       delete:(k)=>{ deleted.push(k); return Promise.resolve(true); }, open:()=>Promise.resolve({}) };
     const env=new Function('self','caches', sw+';return {CACHE, ASSETS};')(self, caches);
     let p; handlers.activate({waitUntil:(x)=>{ p=x; }}); await p;
-    ok('a release deletes the old app cache', deleted.indexOf('babel-v55')>=0 && deleted.indexOf('stale-thing')>=0, J(deleted));
+    ok('a release deletes the old app cache', deleted.indexOf('babel-v56')>=0 && deleted.indexOf('stale-thing')>=0, J(deleted));
     ok('but never the model’s caches', !deleted.some(k=>/^webllm\//.test(k)), J(deleted));
     ok('nor the fonts or the current cache', deleted.indexOf('babel-fonts')<0 && deleted.indexOf(env.CACHE)<0);
     ok('the guard is cached for offline use', env.ASSETS.indexOf('editguard.js')>=0);
-    ok('both version strings agree', env.CACHE==='babel-v56' && /var BABEL_VERSION='babel-v56'/.test(src), env.CACHE);
+    ok('so is the sentence splitter', env.ASSETS.indexOf('sentences.js')>=0);
+    ok('both version strings agree', env.CACHE==='babel-v57' && /var BABEL_VERSION='babel-v57'/.test(src), env.CACHE);
   });
 
   if(!quiet) console.log(fail?'\n'+fail+' FAILED':'\nCOMPOSE CLEAN');
@@ -360,14 +467,14 @@ async function runSuite(src, sw, quiet){
 // ── mutants: each breaks one behaviour; the suite must catch every one ──────
 const MUTANTS=[
   ['model output skips the guard', 'html',
-   "var g=EditGuard(job.text, out);", "var g={rejected:false, text:out};"],
+   "var g=EditGuard(text, out);", "var g={rejected:false, text:out, reverts:[]};"],
   ['a refused result is stored anyway', 'html',
-   "if(g.rejected){ composeRecordDecline(job.text, out, g.reason); return; }", "if(g.rejected){ composeRecordDecline(job.text, out, g.reason); }"],
+   "if(g.rejected) return {ok:false, reason:g.reason};", "if(false) return {ok:false, reason:g.reason};"],
   ['composed text written into e.text', 'html',
-   "thSetComposed(e, g.text);\n        return {entry:e};", "e.text=g.text; thSetComposed(e, g.text);\n        return {entry:e};"],
+   "thSetComposed(e, text);\n        return {entry:e};", "e.text=text; thSetComposed(e, text);\n        return {entry:e};"],
   ['entries batched into one request', 'html',
-   "return eng.chat.completions.create(composeRequest(job.text, shots));",
-   "var _all=[job.text].concat(LLM.queue.splice(0).map(function(j){ return j.text; })); return eng.chat.completions.create(composeRequest(_all.join('\\n\\n'), shots));"],
+   "return composeAsk(eng, job.text, shots).then(function(out){",
+   "var _all=[job.text].concat(LLM.queue.splice(0).map(function(j){ return j.text; })).join('\\n\\n'); return composeAsk(eng, _all, shots).then(function(out){"],
   ['max_tokens fixed', 'html',
    "max_tokens:Math.round(String(text).length/3.2)+48", "max_tokens:512"],
   ['temperature not 0', 'html',
@@ -385,7 +492,7 @@ const MUTANTS=[
   ['an edit is never re-composed', 'html',
    "if(we && _wb) composeEnqueue(", "if(false) composeEnqueue("],
   ['no "Left as written"', 'html',
-   "var dec=(composed && !thComposedValid(t.e)) ? composeDeclined(t.e) : null;", "var dec=null;"],
+   "var dec=composed ? composeRecord(t.e) : null;", "var dec=null;"],
   ['a composed entry is re-run', 'html',
    "if(thComposedValid(e)) return null;          // composed once; never re-run over it", ""],
   ['refusals forgotten, so retried forever', 'html',
@@ -395,7 +502,7 @@ const MUTANTS=[
   ['log time does not compose', 'html',
    "  composeEnqueue({listId:res.listId, idx:ref.idx,", "  if(false) composeEnqueue({listId:res.listId, idx:ref.idx,"],
   ['refusals not split by cause', 'html',
-   "if(/were dropped/.test(d.reason||'')) dropped++;", ""],
+   "else if(/were dropped/.test(rec.reason||'')) dropped++;", ""],
   ['demos from the same book', 'html',
    "if(job && b.bookId && b.bookId===job.bookId) return;\n    (b.sessions||[]).forEach(function(r){ (r.notes||[]).forEach(function(e){\n      if(!e || !thComposedValid(e)) return;",
    "(b.sessions||[]).forEach(function(r){ (r.notes||[]).forEach(function(e){\n      if(!e || !thComposedValid(e)) return;"],
@@ -413,9 +520,33 @@ const MUTANTS=[
   ['stand-ins always used, never his own', 'html',
    "  var shots=composeShots(job);", "  var shots=COMPOSE_SHOTS;"],
   ['an echoed example is passed to the guard', 'html',
-   "    composeRecordDecline(job.text, out, 'the model copied its own example'); return;", "    "],
+   "    return {ok:false, reason:'the model copied its own example'};", "    ;"],
   ['refusals never expire with a new guard', 'html',
    "return (rec && rec.v===COMPOSE_VER) ? rec : null;", "return rec || null;"],
+  ['always split into sentences', 'html',
+   "if(v.ok){ composeStore(job, v.text); return; }", "if(false){ composeStore(job, v.text); return; }"],
+  ['never a second pass', 'html',
+   "if(total<2){ composeRecordDecline(job.text, out, v.reason); return; }", "if(true){ composeRecordDecline(job.text, out, v.reason); return; }"],
+  ['a refused sentence takes the model text', 'html',
+   "else refused.push({i:i, text:b, wanted:got, reason:v.reason});", "else { out[i]=Sentences.reclothe(piece, got); refused.push({i:i, text:b, wanted:got, reason:v.reason}); }"],
+  ['no entry-level veto', 'html',
+   "if(G.rejected || G.reverts.length){", "if(false){"],
+  ['veto only on an outright rejection', 'html',
+   "if(G.rejected || G.reverts.length){", "if(G.rejected){"],
+  ['sentence not put back in its whitespace', 'html',
+   "if(v.ok) out[i]=Sentences.reclothe(piece, v.text);", "if(v.ok) out[i]=v.text;"],
+  ['sentences batched into one request', 'html',
+   "return composeAsk(eng, b, shots).then(function(got){", "return composeAsk(eng, pieces.map(Sentences.body).join(' '), shots).then(function(got){"],
+  ['partial composition stored as it goes', 'html',
+   "if(v.ok) out[i]=Sentences.reclothe(piece, v.text);", "if(v.ok){ out[i]=Sentences.reclothe(piece, v.text); composeStore(job, Sentences.rejoin(out)); }"],
+  ['paragraph breaks lost on the first pass', 'html',
+   "return {ok:true, text:keepBreaks(text, g.text)};", "return {ok:true, text:g.text};"],
+  ['no partial record', 'html',
+   "if(composeStore(job, joined) && refused.length){", "if(composeStore(job, joined) && false){"],
+  ['prompt line missing', 'html',
+   " If a phrase is garbled or you cannot parse it, '\n  +'leave it exactly as written. Never delete words you do not understand.'", "'"],
+  ['the splitter is not cached for offline', 'sw',
+   "  'sentences.js',\n", ""],
   ['the guard is not cached for offline', 'sw',
    "  'editguard.js',\n", ""],
 ];
