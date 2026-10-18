@@ -1008,18 +1008,29 @@ body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padd
 .bp-more{border:0;background:none;cursor:pointer;color:var(--accent);font-family:var(--ui);
   font-size:12.5px;padding:9px 0 0}
 .bp-none{font-family:var(--ui);font-size:13px;color:var(--text-muted);margin:0}
-/* The thoughts, one at a time, newest first. */
-.bp-thtop{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
-.bp-thdate{font-family:var(--display);font-size:15px;font-weight:600;margin:0;color:var(--text)}
-.bp-thread{font-family:var(--ui);font-size:11.5px;color:var(--text-muted);margin:3px 0 0}
-.bp-thnav{display:flex;align-items:center;gap:1px;flex:none}
+/* The thoughts as one thread, oldest first, read straight through. */
+.bp-secacts{display:flex;gap:16px}
+.bp-view{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-bottom:16px}
+.bp-seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;padding:2px}
+.bp-seg button{border:0;background:none;color:var(--text-muted);font-family:var(--ui);font-size:12px;
+  font-weight:600;padding:5px 13px;border-radius:999px;cursor:pointer}
+.bp-seg button.on{background:var(--surface);color:var(--text)}
+.bp-seg button:disabled{opacity:.4;cursor:default}
+.bp-viewnote{font-family:var(--ui);font-size:11.5px;color:var(--text-muted)}
+.bp-rgroup+.bp-rgroup{margin-top:26px}
+.bp-rlabel{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--text-muted);margin:0 0 12px}
+.bp-log{padding:0 0 18px;margin:0 0 18px;border-bottom:1px solid var(--border)}
+.bp-log:last-of-type{border-bottom:0;margin-bottom:0}
+.bp-loghd{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+.bp-logn{font-family:var(--ui);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.bp-logmeta{font-family:var(--ui);font-size:12px;color:var(--text-muted)}
 .bp-thbody{font-family:var(--display);font-size:15.5px;line-height:1.72;color:var(--text);max-width:62ch}
-.bp-thbody p{margin:0 0 .95em}
+.bp-thbody p{margin:0 0 .95em;white-space:pre-line}
 .bp-thbody p:last-child{margin-bottom:0}
-.bp-thdots{display:flex;gap:6px;margin-top:16px}
-.bp-thdots i{width:5px;height:5px;border-radius:50%;background:var(--border);
-  transition:background .25s,transform .25s}
-.bp-thdots i.on{background:var(--accent);transform:scale(1.3)}
+.bp-review{margin-top:18px}
+.bp-rvlabel{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin:0 0 8px}
+.bp-rvbox{min-height:84px}
 .bp-srow{display:flex;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
 .bp-srow:last-child{border-bottom:0}
 .bp-sd{font-family:var(--ui);font-size:12.5px;width:56px;flex:none;color:var(--text)}
@@ -1702,7 +1713,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       </section>
       <section class="bp-sec">
         <div class="bp-sech"><h3>My thoughts</h3>
-          <button class="bp-secact" onclick="openSM(bpIdx)">Edit</button></div>
+          <span class="bp-secacts"><button class="bp-secact" onclick="bpAddThought()">Add</button>
+          <button class="bp-secact" onclick="openSM(bpIdx)">Edit</button></span></div>
         <div class="bp-th" id="bp-th"></div>
       </section>
       <section class="bp-sec">
@@ -4293,7 +4305,7 @@ function mergeGhostReads(b){
   if(!b) return b;
   var ss=b.sessions||[]; if(ss.length<2) return b;
   function has(r){ return (b.timerSessions||[]).some(function(x){ return x && x.readId===r.id; }); }
-  function weight(r){ return ((r.note||'').trim()?2:0)+((r.rating||0)>0?1:0); }
+  function weight(r){ return ((r.note||'').trim()?2:0)+(String(r.review||'').trim()?2:0)+((r.rating||0)>0?1:0); }
   for(var i=ss.length-1;i>=0;i--){
     var dup=ss[i], end=(dup.end||'').trim(); if(!end || has(dup)) continue;
     for(var j=0;j<ss.length;j++){
@@ -4303,7 +4315,16 @@ function mergeGhostReads(b){
       // The survivor is whichever holds more of his writing.
       var winner=weight(dup)>weight(keep)?dup:keep, loser=winner===dup?keep:dup;
       (b.timerSessions||[]).forEach(function(x){ if(x && x.readId===loser.id) x.readId=winner.id; });
-      if(!(winner.note||'').trim() && (loser.note||'').trim()) winner.note=loser.note;
+      // Every entry he wrote on either copy survives, and so does his summary.
+      // Taking only the loser's note string when the winner had none dropped
+      // the loser's writing whenever both copies held some.
+      var _we=noteEntries(winner);
+      noteEntries(loser).forEach(function(e){
+        if(e && String(e.text||'').trim() && !_we.some(function(w){ return w && w.at===e.at && w.text===e.text; })) _we.push(e);
+      });
+      syncNoteText(winner);
+      var _lr=String(loser.review||''), _wr=String(winner.review||'');
+      if(_lr.trim()) winner.review = !_wr.trim() ? _lr : (_wr===_lr ? _wr : _wr+'\n\n'+_lr);
       if(!(winner.rating||0) && (loser.rating||0)) winner.rating=loser.rating;
       if(!(winner.start||'') || (loser.start||'') < (winner.start||'')) winner.start=loser.start||winner.start;
       ss.splice(ss.indexOf(loser),1);
@@ -4699,10 +4720,10 @@ function cpClear(){
 // One place holding everything about a book. The pieces it shows are the same
 // ones the old sheets edit — this reads, those write, so nothing that was
 // tested stops being the thing that saves.
-var bpIdx=-1, bpTh=0;
+var bpIdx=-1;
 function openBookPage(idx){
   var b=books[idx]; if(!b) return;
-  bpIdx=idx; bpTh=-1;
+  bpIdx=idx;
   bpDragReset();
   renderBookPage();
   document.getElementById('bp-sheet').classList.remove('hidden');
@@ -4773,51 +4794,123 @@ function bpToggleDesc(){
   var on=d.classList.toggle('clamped');
   var m=document.getElementById('bp-more'); if(m) m.textContent=on?'Read more':'Show less';
 }
-// Every entry on the book, newest last, each remembering which read it came
-// from so a re-read can be told apart from a first impression.
+// Every entry on the book, oldest first, grouped by read, and numbered across
+// the whole book so "Log 7" is the same entry wherever it is shown. Reads come
+// in the order they were logged; within a read, by date, ties kept in the
+// order written. Each row keeps its entry, for the position and composed text.
 function bpThoughts(b){
   var out=[];
   (b.sessions||[]).forEach(function(r,ri){
-    noteEntries(r).forEach(function(e){
-      if(String(e.text||'').trim()) out.push({at:e.at,text:e.text,read:ri+1});
+    var rows=[];
+    noteEntries(r).forEach(function(e,k){
+      if(e && String(e.text||'').trim()) rows.push({at:e.at,text:e.text,pos:e.pos,fmt:e.fmt,read:ri+1,k:k,e:e});
     });
+    rows.sort(function(x,y){ return String(x.at||'').localeCompare(String(y.at||'')) || (x.k-y.k); });
+    out=out.concat(rows);
   });
-  out.sort(function(x,y){ return String(x.at||'').localeCompare(String(y.at||'')); });
+  out.forEach(function(t,i){ t.n=i+1; });
   return out;
 }
-function bpGoThought(step){
-  var b=books[bpIdx]; if(!b) return;
-  var list=bpThoughts(b), n=bpTh+step;
-  if(n<0 || n>=list.length) return;
-  bpTh=n; renderBPThoughts();
+// ── Composed text: a cached derivative, never a replacement ─────────────────
+// What he wrote stays in e.text, untouched. A composed version lives beside
+// it in e.composed, with e.composedOf naming the exact text it was made from,
+// and is only ever shown while e.text is still that text: an edit makes it
+// stale on the spot, even through a path that forgot to clear it. Composing
+// arrives with the on-device model — one entry at a time, never the whole
+// book, so no two judgments can ever be averaged into one.
+var TH_COMPOSE_READY=false;
+function thTextKey(s){
+  s=String(s==null?'':s);
+  var h=0x811c9dc5;
+  for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; }
+  return s.length+':'+h.toString(16);
+}
+function thComposedValid(e){
+  return !!e && typeof e.composed==='string' && !!e.composed && e.composedOf===thTextKey(e.text);
+}
+function thComposedText(e){ return thComposedValid(e) ? e.composed : ((e&&e.text)||''); }
+function thSetComposed(e, text){ if(!e) return; e.composed=String(text); e.composedOf=thTextKey(e.text); }
+function thClearComposed(e){ if(e){ delete e.composed; delete e.composedOf; } }
+
+// ── The thread on the book page ─────────────────────────────────────────────
+// The whole arc, top to bottom: what he believed at chapter 4 sits above what
+// he knew by the end. A book read more than once is grouped by read; his
+// summary of a read sits under that read's entries, in its own field.
+var bpView='raw';
+function bpSetView(v){
+  if(v==='composed' && !TH_COMPOSE_READY) return;
+  bpView=(v==='composed')?'composed':'raw';
+  renderBPThoughts();
+}
+function bpEntryHTML(t, composed){
+  var p=thPosText(t), txt=composed?thComposedText(t.e):t.text;
+  return '<article class="bp-log">'
+    +'<div class="bp-loghd"><span class="bp-logn">Log '+t.n+'</span>'
+      +'<span class="bp-logmeta">'+esc(longISO(t.at))+(p?' · '+esc(p):'')+'</span></div>'
+    +'<div class="bp-thbody">'+String(txt).split(/\n{2,}/).map(function(par){
+        return '<p>'+esc(par)+'</p>'; }).join('')+'</div>'
+    +'</article>';
+}
+function bpReviewHTML(r, ri, multi){
+  return '<div class="bp-review"><p class="bp-rvlabel">'+(multi?'Your summary of read '+(ri+1):'Your summary')+'</p>'
+    +'<textarea class="th-box grow bp-rvbox" rows="3" placeholder="'
+      +((r.end||'').trim()?'Having read it back, what did you make of it?':'When you finish, write what you made of it.')+'"'
+      +' oninput="autoGrow(this)" onchange="bpSetReview('+ri+',\''+esc(String(r.id||''))+'\',this.value)">'
+      +esc(r.review||'')+'</textarea></div>';
+}
+// The summary is its own field on the read, never r.note: syncNoteText
+// rebuilds r.note from the entries on every log and would erase it.
+function bpSetReview(ri, rid, val){
+  var b=books[bpIdx]; if(!b || !b.sessions) return;
+  var r=(rid && readById(b,rid)) || b.sessions[ri]; if(!r) return;
+  var v=String(val==null?'':val);
+  if(v.trim()) r.review=v; else delete r.review;
+  saveCurrentList(); fanOutBookMeta(bpIdx);
+}
+function bpReadSpan(r){
+  var a=(r.start||'').trim(), z=(r.end||'').trim();
+  if(a && z) return longISO(a)+' – '+longISO(z);
+  if(a) return 'from '+longISO(a);
+  return z ? 'finished '+longISO(z) : '';
+}
+// Opens Thoughts already pointed at this book, so another entry does not mean
+// picking the book he is looking at.
+function bpAddThought(){
+  var i=bpIdx; if(i<0 || !books[i]) return;
+  closeBookPage();
+  openThoughts(i);
+  setTimeout(function(){ try{ var t=document.getElementById('th-box'); if(t) t.focus(); }catch(e){} },80);
 }
 function renderBPThoughts(){
   var b=books[bpIdx], host=document.getElementById('bp-th');
   if(!b || !host) return;
-  var list=bpThoughts(b);
-  if(!list.length){
-    host.innerHTML='<p class="bp-none">Nothing written yet. Tap Edit to add the first entry.</p>';
-    return;
+  var list=bpThoughts(b), reads=b.sessions||[], multi=reads.length>1, cur=currentReadIdx(b);
+  var composed=(bpView==='composed' && TH_COMPOSE_READY);
+  var none='<p class="bp-none">Nothing written yet. Tap Add to write the first thought.</p>';
+  var h='';
+  if(list.length){
+    h+='<div class="bp-view"><div class="bp-seg">'
+      +'<button class="'+(composed?'':'on')+'" onclick="bpSetView(\'raw\')">Raw</button>'
+      +'<button class="'+(composed?'on':'')+'"'+(TH_COMPOSE_READY?' onclick="bpSetView(\'composed\')"':' disabled')+'>Composed</button>'
+      +'</div>'+(TH_COMPOSE_READY?'':'<span class="bp-viewnote">Composed arrives with the on-device model.</span>')+'</div>';
   }
-  if(bpTh<0 || bpTh>=list.length) bpTh=list.length-1;   // opens on the most recent
-  var t=list[bpTh], reads=(b.sessions||[]).length;
-  host.innerHTML=
-      '<div class="bp-thtop"><div><p class="bp-thdate">'+esc(longISO(t.at))+'</p>'
-    + (reads>1 ? '<p class="bp-thread">Read '+t.read+' of '+reads+'</p>' : '')
-    + '</div>'
-    + (list.length>1
-       ? '<div class="bp-thnav">'
-         +'<button class="rtn-b" onclick="bpGoThought(-1)"'+(bpTh<=0?' disabled':'')
-           +' title="Earlier entry">'+_CHEV_L+'</button>'
-         +'<span class="rtn-pos">'+(bpTh+1)+' / '+list.length+'</span>'
-         +'<button class="rtn-b" onclick="bpGoThought(1)"'+(bpTh>=list.length-1?' disabled':'')
-           +' title="Later entry">'+_CHEV_R+'</button></div>'
-       : '')
-    + '</div>'
-    + '<div class="bp-thbody">'+String(t.text).split(/\n{2,}/).map(function(par){
-        return '<p>'+esc(par)+'</p>'; }).join('')+'</div>'
-    + (list.length>1 ? '<div class="bp-thdots">'+list.map(function(_,i){
-        return '<i class="'+(i===bpTh?'on':'')+'"></i>'; }).join('')+'</div>' : '');
+  if(!reads.length){ host.innerHTML=none; return; }
+  reads.forEach(function(r,ri){
+    var rows=list.filter(function(t){ return t.read===ri+1; });
+    var wantReview=(ri===cur) || !!(r.end||'').trim() || !!String(r.review||'').trim();
+    if(multi && !rows.length && !wantReview) return;
+    h+='<div class="bp-rgroup">';
+    if(multi){
+      var span=bpReadSpan(r);
+      h+='<p class="bp-rlabel">Read '+(ri+1)+' of '+reads.length+(span?' · '+esc(span):'')+'</p>';
+    }
+    h+= rows.length ? rows.map(function(t){ return bpEntryHTML(t,composed); }).join('')
+                    : (multi?'<p class="bp-none">Nothing written on this read.</p>':none);
+    if(wantReview) h+=bpReviewHTML(r,ri,multi);
+    h+='</div>';
+  });
+  host.innerHTML=h;
+  try{ host.querySelectorAll('textarea.bp-rvbox').forEach(function(t){ autoGrow(t); }); }catch(e){}
 }
 function renderBookPage(){
   var b=books[bpIdx]; if(!b) return;
@@ -6136,6 +6229,8 @@ function noteWrite(i,val){
     if(!String(val).trim()) return;
     es.push({at:todayISO(),text:String(val)}); rtNote[x.id]=0;
   } else {
+    // A composed version was made from the old words; it goes with them.
+    if(es[k].text!==String(val)) thClearComposed(es[k]);
     es[k].text=String(val);
   }
   syncNoteText(x);
@@ -6378,6 +6473,8 @@ function thMoveTo(i){
     var rid=ensureCurrentRead(b), r=readById(b,rid); if(!r) return null;
     if(b.sessions.length>had) _thMadeReads[(b.bookId||'')+'|'+rid]=1;
     var e={at:taken.entry.at, text:taken.entry.text};
+    // Same words, so a composed version made from them still holds.
+    if(thComposedValid(taken.entry)){ e.composed=taken.entry.composed; e.composedOf=taken.entry.composedOf; }
     noteEntries(r).push(e); syncNoteText(r);
     return {entry:e, readId:rid, bookId:b.bookId, title:b.title};
   });
@@ -7475,7 +7572,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v53';
+var BABEL_VERSION='babel-v54';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
