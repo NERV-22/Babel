@@ -161,7 +161,7 @@ function runSuite(src, quiet){
     T.thSetComposed(T.books[0].sessions[0].notes[0],'COMPOSED');
     let h=thread();
     ok('Composed is shown but disabled until the model exists', /<button class=""\s*disabled>Composed<\/button>/.test(h), h.slice(0,300));
-    ok('with one line saying so', h.indexOf('arrives with the on-device model')>=0);
+    ok('with one line saying so', /on-device (model|editor)/.test(h));
     T.bpSetView('composed'); h=thread();
     ok('asking for it anyway still shows the raw words', h.indexOf('raw')>=0 && h.indexOf('COMPOSED')<0);
     ok('and leaves the view on Raw, so nothing flips when a model arrives', T.bpView==='raw', T.bpView);

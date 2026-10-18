@@ -1,9 +1,10 @@
 /* Babel service worker — offline app shell.
    Bump CACHE on every release so clients pull the new files. */
-const CACHE = 'babel-v54';
+const CACHE = 'babel-v55';
 const ASSETS = [
   'Babel.html',
   'index.html',
+  'editguard.js',
   'manifest.webmanifest',
   'icons/babel-192.png',
   'icons/babel-512.png',
@@ -35,11 +36,16 @@ self.addEventListener('install', (e) => {
 // re-downloaded on every update — and a release installed offline would come
 // up in the fallback font.
 const FONTS = 'babel-fonts';
+// The on-device editor's model lives in caches web-llm names itself:
+// webllm/model, webllm/config and webllm/wasm. That is an 800 MB download he
+// asked for once. Deleting it here would make every release quietly throw it
+// away and leave the editor broken until he downloads it again.
+const isModelCache = (k) => /^webllm\//.test(k);
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(
-        keys.filter((k) => k !== CACHE && k !== FONTS).map((k) => caches.delete(k))))
+        keys.filter((k) => k !== CACHE && k !== FONTS && !isModelCache(k)).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
