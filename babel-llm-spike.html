@@ -60,11 +60,17 @@ label{display:block;font-size:.8rem;color:var(--muted);margin:12px 0 5px;text-tr
 
 <h2>2 · Pick a model</h2>
 <div class="card">
+  <label for="ver">Library version</label>
+  <select id="ver">
+    <option value="0.2.79" selected>0.2.79 — before the Adreno regression</option>
+    <option value="0.2.85">0.2.85 — what failed last time</option>
+    <option value="0.2.86">0.2.86 — newest</option>
+  </select>
+  <p class="note">web-llm issue #836 reports Adreno GPUs losing the device on 0.2.80+, where CPU work moved onto GPU kernels. 0.2.79 is the last build before that. Changing this reloads the page.</p>
   <label for="pick">Model</label>
   <select id="pick"><option>Loading list…</option></select>
   <p class="note" id="picknote">Bigger models argue better and are far more likely to be killed by Android. Start small, then try the next one up.</p>
   <button class="primary" id="go" disabled>Load model</button>
-  <button class="ghost" id="free" disabled>Free up space (keeps the selected model)</button>
   <div class="bar hide" id="barwrap"><i id="bar"></i></div>
   <div class="log hide" id="log"></div>
 </div>
@@ -121,11 +127,6 @@ async function readDevice() {
   const gb = n => n ? (n / 1073741824).toFixed(2) + ' GB' : '—';
   out.push(['Max buffer', gb(L.maxBufferSize)]);
   out.push(['Max storage binding', gb(L.maxStorageBufferBindingSize)]);
-  // The q4f16 builds compute in 16-bit floats. A driver that advertises this
-  // but gets it wrong is a classic way for a model to load and then fault.
-  let f16 = false;
-  try { f16 = !!(ad.features && ad.features.has('shader-f16')); } catch (e) {}
-  out.push(['shader-f16', f16 ? 'advertised' : 'not advertised']);
   try {
     const q = await navigator.storage.estimate();
     out.push(['Storage free', q.quota ? ((q.quota - (q.usage || 0)) / 1073741824).toFixed(1) + ' GB' : 'unknown']);
@@ -138,9 +139,17 @@ async function readDevice() {
 // Model ids change between releases. Asking the library what it actually has
 // means a renamed model shows up as a missing option rather than a crash.
 let webllm = null;
+// The version is a variable because it is a suspect, not a constant: issue #836
+// points at a regression in 0.2.80, and the only way to know is to run the same
+// models on either side of it. Remembered so a reload keeps the choice.
+function libVersion() {
+  let v = '';
+  try { v = localStorage.getItem('spike_ver') || ''; } catch (e) {}
+  return /^0\.2\.(79|8[0-9])$/.test(v) ? v : '0.2.79';
+}
 async function loadLib() {
   try {
-    webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.85/+esm');
+    webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@' + libVersion() + '/+esm');
     return true;
   } catch (e) {
     $('picknote').innerHTML = '<span class="no">Could not load the library: ' + e.message +
@@ -168,38 +177,10 @@ function fillPicker() {
     if (hit) picks.push(hit);
   });
   const final = picks.length ? picks : usable.slice(0, 4);
-  const opt = (m, sel) =>
-    `<option value="${m.model_id}"${sel ? ' selected' : ''}>${m.model_id} — ${(m.vram_required_MB / 1024).toFixed(1)} GB</option>`;
-  // The same models built for 32-bit float math. Larger and slower, but they
-  // skip the 16-bit shader path entirely, which is the first suspect when a
-  // model loads and then faults the GPU on its first token.
-  const f32 = final
-    .map(m => list.find(x => x.model_id === m.model_id.replace('q4f16', 'q4f32')))
-    .filter(Boolean);
-  $('pick').innerHTML =
-    '<optgroup label="16-bit (q4f16)">' + final.map((m, i) => opt(m, i === 0)).join('') + '</optgroup>' +
-    (f32.length ? '<optgroup label="32-bit (q4f32)">' + f32.map(m => opt(m, false)).join('') + '</optgroup>' : '');
+  $('pick').innerHTML = final.map((m, i) =>
+    `<option value="${m.model_id}"${i === 0 ? ' selected' : ''}>${m.model_id} — ${(m.vram_required_MB / 1024).toFixed(1)} GB</option>`
+  ).join('');
   $('go').disabled = false;
-  $('free').disabled = false;
-}
-
-// ── Storage: the site gets a fixed allowance, and models fill it fast ───────
-// Every model tried stays cached. Deleting the ones not being tested is what
-// lets the next one download at all.
-async function freeSpace() {
-  const keep = $('pick').value;
-  const ids = [...$('pick').options].map(o => o.value).filter(v => v && v !== keep);
-  $('free').disabled = true; $('free').textContent = 'Freeing…';
-  let n = 0;
-  for (const id of ids) {
-    try {
-      if (await webllm.hasModelInCache(id)) { await webllm.deleteModelAllInfoInCache(id); n++; say('Deleted cached ' + id); }
-    } catch (e) { say('Could not delete ' + id + ': ' + (e && e.message)); }
-  }
-  say(n ? 'Freed ' + n + ' cached model' + (n === 1 ? '' : 's') + '.' : 'Nothing else was cached.');
-  await readDevice();
-  $('free').textContent = 'Free up space (keeps the selected model)';
-  $('free').disabled = false;
 }
 
 // ── 3. Load, with every failure said out loud ───────────────────────────────
@@ -208,7 +189,8 @@ async function load() {
   $('go').disabled = true; $('go').textContent = 'Loading…';
   $('barwrap').classList.remove('hide');
   $('log').textContent = '';
-  say('Model: ' + id);
+  say('Library: web-llm ' + libVersion());
+    say('Model: ' + id);
   say('First run downloads the weights. Later runs read them from storage.');
   const t0 = performance.now();
   try {
@@ -249,7 +231,7 @@ async function compose(text) {
   const sec = (performance.now() - t0) / 1000;
   const out = (r.choices && r.choices[0] && r.choices[0].message.content) || '';
   const toks = (r.usage && r.usage.completion_tokens) || 0;
-  return { out: out.trim(), sec, toks };
+  return { out: out.trim(), sec, toks, inLen: text.length };
 }
 
 async function run() {
@@ -278,43 +260,46 @@ async function run() {
   }
   $('run').textContent = 'Compose both'; $('run').disabled = false;
 
-  // The thing that decides whether this feature is worth building: did each
-  // entry keep its own verdict, or did the model flatten them?
-  const all = got.map(g => g.out).join(' ').toLowerCase();
-  const kept1 = /good|excit|like|work/.test((got[0] || {}).out?.toLowerCase() || '');
-  const kept2 = /terribl|fell apart|device|losing interest|poor|bad/.test((got[1] || {}).out?.toLowerCase() || '');
-  const mushy = /mixed (feelings|reaction)|overall/.test(all);
+  // Only mechanical facts here. The first version of this panel scored quality
+  // by keyword and cheerfully printed "This works" over output that replied to
+  // the user instead of rewriting their entry — a test that passes broken work
+  // is worse than no test. Whether the writing is any good is a judgement, and
+  // it is made by reading it.
   const avgSec = got.reduce((n, g) => n + g.sec, 0) / (got.length || 1);
   const avgTok = got.reduce((n, g) => n + (g.sec ? g.toks / g.sec : 0), 0) / (got.length || 1);
-  const lenOK = got.every(g => g.out.length > 40);
+  const ratio = got.map(g => g.out.length / Math.max(1, g.inLen));
 
   rows($('verdict'), [
+    ['Library', libVersion(), 'acc'],
     ['Model', loadedId, 'acc'],
     ['Loaded in', loadSec.toFixed(1) + 's'],
     ['Speed', avgTok.toFixed(1) + ' tok/s · ' + avgSec.toFixed(1) + 's per entry'],
-    ['Entry 1 kept its verdict', kept1 ? 'yes' : 'check by eye', kept1 ? 'ok' : ''],
-    ['Entry 2 kept its verdict', kept2 ? 'yes' : 'check by eye', kept2 ? 'ok' : ''],
-    ['Flattened into "mixed"', mushy ? 'YES — bad sign' : 'no', mushy ? 'no' : 'ok'],
-    ['Usable length', lenOK ? 'yes' : 'too short', lenOK ? 'ok' : 'no'],
-    ['Survived', 'yes — you are reading this', 'ok']
+    ['Length vs original', ratio.map(r => r.toFixed(1) + '×').join(' · ') +
+      (ratio.some(r => r > 2.5) ? '  (padded)' : '')],
+    ['Generated without faulting', 'yes', 'ok']
   ]);
   const v = document.createElement('p');
   v.className = 'verdict';
   v.style.marginTop = '12px';
-  v.textContent = (kept1 && kept2 && !mushy && lenOK)
-    ? 'This works. Read the two outputs above — if they sound right to you, the feature is worth building.'
-    : 'It ran, but read the outputs closely before trusting it. If the verdicts blurred together, this model is too small.';
+  v.textContent = 'It ran. Now read the two outputs — that part is yours to judge, not mine.';
   $('verdict').appendChild(v);
   const n = document.createElement('p');
   n.className = 'note';
-  n.textContent = 'Screenshot this panel and the two outputs. Then try the next model up — the interesting question is whether the bigger one survives.';
+  n.innerHTML = 'Three ways it can be wrong even though it ran: it <b>replies to you</b> ' +
+    '("I\'m glad to hear…") instead of rewriting; it <b>invents</b> things you never said; ' +
+    'it <b>repeats itself</b> until it runs out of room. Any of those means this model is too ' +
+    'small for the job, whatever the numbers above say.';
   $('verdict').appendChild(n);
   $('verdict').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 $('go').addEventListener('click', load);
-$('free').addEventListener('click', freeSpace);
 $('run').addEventListener('click', run);
+$('ver').value = libVersion();
+$('ver').addEventListener('change', function () {
+  try { localStorage.setItem('spike_ver', this.value); } catch (e) {}
+  location.reload();
+});
 
 (async function () {
   const ad = await readDevice();
