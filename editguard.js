@@ -24,9 +24,28 @@
   // moving one around cannot change what the writer said.
   var FREE = {};
   ('a an the and or but of to in on at for with that this it its is are was were ' +
-   'be been am as so i my me he she they them his her you your we our not no do ' +
+   'be been am as so i my me he she they them his her you your we our do ' +
    'does did have has had will would can could just then than there here').split(' ')
     .forEach(function (w) { FREE[w] = 1; });
+
+  // Negations are NOT function words, however much they look like one. "not"
+  // and "no" used to sit in the list above, so the model could turn "it helped
+  // me reflect" into "it did not help me reflect" and the guard would wave the
+  // inserted "not" through as harmless grammar. That is the worst thing this
+  // file can do: report that it preserved his words while reversing what he
+  // said. Any edit that adds or removes one is disqualifying, in either
+  // direction — adding a negation and deleting one are equally a reversal.
+  //
+  // The apostrophe-less spellings are here because he writes "havent" and
+  // "isnt" that way, so a rule keyed only on "n't" would miss half of them.
+  var NEG = {};
+  ('not no never none nothing nobody nowhere neither nor without cannot ' +
+   'cant dont doesnt didnt isnt arent wasnt werent wont wouldnt couldnt ' +
+   'shouldnt havent hasnt hadnt aint barely hardly scarcely')
+    .split(' ').forEach(function (w) { NEG[w] = 1; });
+  function isNeg(key) {
+    return NEG[key] === 1 || /n't$/.test(key);
+  }
 
   // ── tokenising ────────────────────────────────────────────────────────────
   // A token keeps its own punctuation on the side, so "terrible." and
@@ -44,7 +63,10 @@
         lead: m ? m[1] : '',
         core: core,
         trail: m ? m[3] : '',
-        key: core.toLowerCase().replace(/[^a-z0-9'\-]/g, '')
+        // Curly apostrophes are normalised rather than stripped, so "don’t"
+        // and "don't" both end in "n't" and the negation test can rely on it
+        // without also matching "want" or "point".
+        key: core.toLowerCase().replace(/[’ʼ]/g, "'").replace(/[^a-z0-9'\-]/g, '')
       });
     });
     return out;
@@ -187,7 +209,17 @@
                             reverts: [{ kind: 'empty' }], accepted: [], kept: 100, lost: [] };
 
     var ops = fuseCompounds(pair(lcs(A, B)), A, B);
-    var out = [], reverts = [], accepted = [], run = 0;
+    var out = [], reverts = [], accepted = [], flipped = [], run = 0;
+
+    // A negation appearing, vanishing, or being swapped in or out is recorded
+    // wherever it happens. Dropping the inserted word would in fact leave his
+    // text intact, but silently — and he should be told the model tried to
+    // reverse him, not handed a quietly repaired sentence.
+    function watchNeg(from, to) {
+      var f = from ? isNeg(from.key) : false, t = to ? isNeg(to.key) : false;
+      if (f === t) return;
+      flipped.push(f ? '"' + from.core + '" removed' : '"' + to.core + '" added');
+    }
 
     ops.forEach(function (o) {
       if (o.op !== 'ins') run = 0;
@@ -209,6 +241,7 @@
       }
       if (o.op === 'sub') {
         var fa = A[o.a], fb = B[o.b];
+        watchNeg(fa, fb);
         if (!isLocked(fa) && isSpellingFix(fa.key, fb.key)) {
           out.push(fb); accepted.push({ kind: 'spelling', from: fa.raw, to: fb.raw });
         } else {
@@ -220,6 +253,7 @@
       }
       if (o.op === 'del') {
         var td = A[o.a];
+        watchNeg(td, null);
         if (isFree(td) && !isLocked(td)) { accepted.push({ kind: 'dropped-function', from: td.raw }); return; }
         out.push(td);
         reverts.push({ kind: 'deletion', from: td.raw });
@@ -227,6 +261,7 @@
       }
       // insertion
       var ti = B[o.b];
+      watchNeg(null, ti);
       // A grammar fix adds "the" or "and the". Three function words in a row is
       // padding wearing a grammar costume, so the run is capped.
       if (isFree(ti) && !isLocked(ti) && run < 2) {
@@ -251,10 +286,12 @@
     // real model; the budget alone let it through at 4 reverts against 5.
     var dropped = reverts.filter(function (r) { return r.kind === 'deletion'; });
     var budget = Math.max(2, Math.round(A.length * 0.15));
-    if (dropped.length || reverts.length > budget) {
+    if (flipped.length || dropped.length || reverts.length > budget) {
       return {
         text: String(original || ''), rejected: true,
-        reason: dropped.length
+        reason: flipped.length
+          ? 'it tried to reverse your meaning (' + flipped.join(', ') + ')'
+          : dropped.length
           ? dropped.length + ' of your words were dropped (' +
             dropped.slice(0, 5).map(function (r) { return r.from; }).join(', ') + ')'
           : reverts.length + ' refused edits, over a budget of ' + budget,

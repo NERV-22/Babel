@@ -101,6 +101,41 @@ r = guard('ch 4 was slow but beautiful', 'Ch 4 was slow.');
 ok('a single dropped word is enough to refuse', r.rejected === true, JSON.stringify(r.reason));
 ok('"beautiful" is not lost', /beautiful/.test(r.text), r.text);
 
+console.log('\n== A REVERSED MEANING IS REFUSED ==');
+// Found by Claude Code on the phone. "not" and "no" were in the function-word
+// list, so inserting one counted as a harmless grammar fix and the guard would
+// report that it had preserved his words while saying the opposite of what he
+// wrote. On Kokoro the model genuinely attempted this.
+[['it was good', 'It was not good.', 'added'],
+ ['it helped me reflect on my own life', 'It did not help me reflect on my own life.', 'added'],
+ ['i wasnt impressed by the ending', 'I was impressed by the ending.', 'removed'],
+ ['i havent read much gothic stuff', 'I have read much gothic stuff.', 'removed'],
+ ['it never dragged', 'It dragged.', 'removed'],
+ ['nothing about it worked', 'Something about it worked.', 'removed']
+].forEach(function (c) {
+  const g1 = guard(c[0], c[1]);
+  ok('refused: ' + c[1], g1.rejected === true, JSON.stringify(g1.reason));
+  ok('  the reason says so', /reverse your meaning/.test(g1.reason || ''), g1.reason);
+  ok('  his sentence is returned untouched', g1.text === c[0], g1.text);
+});
+
+// It must not fire on words that merely look like negations, or the feature
+// refuses everything he writes.
+ok('"want" is not a negation', !/reverse/.test(guard('i want the ending to land',
+   'I want the ending to land.').reason || ''));
+ok('"point" and "front" are safe', guard('the point was the front half',
+   'The point was the front half.').rejected === false);
+r = guard('i dont like it', 'I don’t like it.');
+ok('a curly apostrophe is still the same word', r.rejected === false, JSON.stringify(r.reason));
+r = guard('it wasnt bad', 'It wasn’t bad.');
+ok('and adding the apostrophe is an accepted fix', r.rejected === false, JSON.stringify(r.reason));
+// A contraction outside the explicit list, typed with a curly apostrophe: only
+// normalising the apostrophe lets the n't rule see it as a negation at all.
+r = guard('i mustn’t forget this', 'I must forget this.');
+ok('a curly-apostrophe contraction is still a negation', r.rejected === true,
+   JSON.stringify(r.reason));
+ok('  and it is named as a reversal', /reverse your meaning/.test(r.reason || ''), r.reason);
+
 console.log('\n== COMPOUND WORDS ARE A FIX, NOT A DELETION ==');
 // Found on the phone against the real model. Joining two words reads as a
 // substitution plus a deleted word, and a deleted word is disqualifying — so

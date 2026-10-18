@@ -440,6 +440,34 @@ async function runSuite(src, sw, quiet){
     ok('the prompt says to leave garbled phrases alone', /If a phrase is garbled or you cannot parse it, leave it exactly as written\. Never delete words you do not understand\./.test(T.COMPOSE_SYS));
   });
 
+  sec('A REVERSED MEANING IS NEVER COMPOSED');
+  // Guard v4. On Kokoro the model tried "it helped me reflect" -> "it did not
+  // help me reflect"; v3 counted "not" as grammar and would have let it through.
+  await guarded('reversal',async()=>{
+    fresh(true);
+    reply=()=>'It was not good.';
+    await log('it was good', 0);
+    ok('a one-sentence flip is not stored', !('composed' in entry(0)), J(entry(0)));
+    const lg=JSON.parse(T.storage.getItem('rl_compose_log')||'{}')[T.thTextKey('it was good')]||{};
+    ok('and is recorded as a reversal', /reverse your meaning \("not" added\)/.test(lg.reason||''), lg.reason);
+    T.renderLlmRow();
+    ok('Settings names the cause', /0 composed · 1 left as written \(1 reversed meaning\)/.test(document.getElementById('llm-sub').textContent), document.getElementById('llm-sub').textContent);
+    fresh(true);
+    reply=req=>last(req)===E2 ? 'Chapters 7-8 were not terrible. Pacing fell apart, and the new character feels like a device. Losing interest, honestly.'
+      : (last(req)===P1.trim() ? 'Chapters 7-8 were not terrible.' : (FIX[last(req)]||last(req)));
+    await log(E2, 0);
+    const c=entry(0).composed||'';
+    ok('a flipped sentence stays his inside a composed entry', c.indexOf(P1)===0 && !/\bnot\b/.test(c), J(c));
+    ok('the rest is composed', /Pacing fell apart, and/.test(c) && /Losing interest, honestly\.$/.test(c), J(c));
+    T.bpView='composed'; T.renderBPThoughts();
+    const h=document.getElementById('bp-th').innerHTML;
+    ok('the page says why', h.indexOf('1 of 3 sentences left as written')>=0 && h.indexOf('reverse your meaning')>=0, h.slice(0,300));
+    fresh(true);
+    reply=()=>'I wasn’t sure about the ending.';
+    await log('i wasnt sure about the ending', 0);
+    ok('his apostrophe-less "wasnt" may still gain its apostrophe', entry(0).composed==='I wasn’t sure about the ending.', J(entry(0)));
+  });
+
   sec('PINNED, AND THE SERVICE WORKER KEEPS THE WEIGHTS');
   await guarded('pin',async()=>{
     ok('web-llm is pinned at 0.2.79', /@mlc-ai\/web-llm@0\.2\.79\//.test(T.LLM.LIB), T.LLM.LIB);
@@ -457,7 +485,7 @@ async function runSuite(src, sw, quiet){
     ok('nor the fonts or the current cache', deleted.indexOf('babel-fonts')<0 && deleted.indexOf(env.CACHE)<0);
     ok('the guard is cached for offline use', env.ASSETS.indexOf('editguard.js')>=0);
     ok('so is the sentence splitter', env.ASSETS.indexOf('sentences.js')>=0);
-    ok('both version strings agree', env.CACHE==='babel-v57' && /var BABEL_VERSION='babel-v57'/.test(src), env.CACHE);
+    ok('both version strings agree', env.CACHE==='babel-v58' && /var BABEL_VERSION='babel-v58'/.test(src), env.CACHE);
   });
 
   if(!quiet) console.log(fail?'\n'+fail+' FAILED':'\nCOMPOSE CLEAN');
@@ -545,6 +573,10 @@ const MUTANTS=[
    "if(composeStore(job, joined) && refused.length){", "if(composeStore(job, joined) && false){"],
   ['prompt line missing', 'html',
    " If a phrase is garbled or you cannot parse it, '\n  +'leave it exactly as written. Never delete words you do not understand.'", "'"],
+  ['reversals not counted', 'html',
+   "    else if(/reverse your meaning/.test(rec.reason||'')) reversed++;", ""],
+  ['reversal cause not shown', 'html',
+   "    if(c.reversed) causes.push(c.reversed+' reversed meaning');", ""],
   ['the splitter is not cached for offline', 'sw',
    "  'sentences.js',\n", ""],
   ['the guard is not cached for offline', 'sw',
