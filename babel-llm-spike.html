@@ -64,6 +64,7 @@ label{display:block;font-size:.8rem;color:var(--muted);margin:12px 0 5px;text-tr
   <select id="pick"><option>Loading list…</option></select>
   <p class="note" id="picknote">Bigger models argue better and are far more likely to be killed by Android. Start small, then try the next one up.</p>
   <button class="primary" id="go" disabled>Load model</button>
+  <button class="ghost" id="free" disabled>Free up space (keeps the selected model)</button>
   <div class="bar hide" id="barwrap"><i id="bar"></i></div>
   <div class="log hide" id="log"></div>
 </div>
@@ -120,6 +121,11 @@ async function readDevice() {
   const gb = n => n ? (n / 1073741824).toFixed(2) + ' GB' : '—';
   out.push(['Max buffer', gb(L.maxBufferSize)]);
   out.push(['Max storage binding', gb(L.maxStorageBufferBindingSize)]);
+  // The q4f16 builds compute in 16-bit floats. A driver that advertises this
+  // but gets it wrong is a classic way for a model to load and then fault.
+  let f16 = false;
+  try { f16 = !!(ad.features && ad.features.has('shader-f16')); } catch (e) {}
+  out.push(['shader-f16', f16 ? 'advertised' : 'not advertised']);
   try {
     const q = await navigator.storage.estimate();
     out.push(['Storage free', q.quota ? ((q.quota - (q.usage || 0)) / 1073741824).toFixed(1) + ' GB' : 'unknown']);
@@ -162,10 +168,38 @@ function fillPicker() {
     if (hit) picks.push(hit);
   });
   const final = picks.length ? picks : usable.slice(0, 4);
-  $('pick').innerHTML = final.map((m, i) =>
-    `<option value="${m.model_id}"${i === 0 ? ' selected' : ''}>${m.model_id} — ${(m.vram_required_MB / 1024).toFixed(1)} GB</option>`
-  ).join('');
+  const opt = (m, sel) =>
+    `<option value="${m.model_id}"${sel ? ' selected' : ''}>${m.model_id} — ${(m.vram_required_MB / 1024).toFixed(1)} GB</option>`;
+  // The same models built for 32-bit float math. Larger and slower, but they
+  // skip the 16-bit shader path entirely, which is the first suspect when a
+  // model loads and then faults the GPU on its first token.
+  const f32 = final
+    .map(m => list.find(x => x.model_id === m.model_id.replace('q4f16', 'q4f32')))
+    .filter(Boolean);
+  $('pick').innerHTML =
+    '<optgroup label="16-bit (q4f16)">' + final.map((m, i) => opt(m, i === 0)).join('') + '</optgroup>' +
+    (f32.length ? '<optgroup label="32-bit (q4f32)">' + f32.map(m => opt(m, false)).join('') + '</optgroup>' : '');
   $('go').disabled = false;
+  $('free').disabled = false;
+}
+
+// ── Storage: the site gets a fixed allowance, and models fill it fast ───────
+// Every model tried stays cached. Deleting the ones not being tested is what
+// lets the next one download at all.
+async function freeSpace() {
+  const keep = $('pick').value;
+  const ids = [...$('pick').options].map(o => o.value).filter(v => v && v !== keep);
+  $('free').disabled = true; $('free').textContent = 'Freeing…';
+  let n = 0;
+  for (const id of ids) {
+    try {
+      if (await webllm.hasModelInCache(id)) { await webllm.deleteModelAllInfoInCache(id); n++; say('Deleted cached ' + id); }
+    } catch (e) { say('Could not delete ' + id + ': ' + (e && e.message)); }
+  }
+  say(n ? 'Freed ' + n + ' cached model' + (n === 1 ? '' : 's') + '.' : 'Nothing else was cached.');
+  await readDevice();
+  $('free').textContent = 'Free up space (keeps the selected model)';
+  $('free').disabled = false;
 }
 
 // ── 3. Load, with every failure said out loud ───────────────────────────────
@@ -279,6 +313,7 @@ async function run() {
 }
 
 $('go').addEventListener('click', load);
+$('free').addEventListener('click', freeSpace);
 $('run').addEventListener('click', run);
 
 (async function () {
