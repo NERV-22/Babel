@@ -5068,13 +5068,20 @@ function llmRemove(){
           function(err){ showToast('Could not remove every file: '+String((err&&err.message)||err).slice(0,80)); })
     .then(composeRefresh);
 }
+// How often the editor earns its keep. Refusals are split by cause, because
+// they point at different fixes: dropping his words means the model deletes,
+// going over budget means it rewrites.
 function composeCounts(){
-  var done=0, left=0;
+  var done=0, left=0, dropped=0, over=0;
   books.forEach(function(b){ (b.sessions||[]).forEach(function(r){ (r.notes||[]).forEach(function(e){
     if(!e || !String(e.text||'').trim()) return;
-    if(thComposedValid(e)) done++; else if(composeDeclined(e)) left++;
+    if(thComposedValid(e)){ done++; return; }
+    var d=composeDeclined(e); if(!d) return;
+    left++;
+    if(/were dropped/.test(d.reason||'')) dropped++;
+    else if(/refused edits/.test(d.reason||'')) over++;
   }); }); });
-  return {done:done, left:left};
+  return {done:done, left:left, dropped:dropped, over:over};
 }
 function renderLlmRow(){
   var btn=document.getElementById('llm-btn'), sub=document.getElementById('llm-sub');
@@ -5091,7 +5098,8 @@ function renderLlmRow(){
   if(llmIsReady()){
     var c=composeCounts();
     btn.textContent='Remove';
-    sub.textContent='Ready · '+c.done+' composed · '+c.left+' left as written';
+    sub.textContent='Ready · '+c.done+' composed · '+c.left+' left as written'
+      +(c.left ? ' ('+c.dropped+' dropped words, '+c.over+' rewrites)' : '');
     return;
   }
   btn.textContent='Download ('+LLM.SIZE+')';

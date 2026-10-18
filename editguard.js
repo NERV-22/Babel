@@ -120,12 +120,27 @@
   // A deletion immediately followed by an insertion is one word swapped for
   // another, not two separate edits. Pairing them is what lets the spelling
   // test see both halves at once.
+  // A run of changes comes out of the aligner as all the removals and then all
+  // the additions, not neatly alternating. Pairing only an adjacent del+ins
+  // would read three swapped words as three deletions and three insertions,
+  // and the guard would then refuse them for the wrong reason. Zip each run
+  // instead: equal halves are substitutions, and whatever is left over really
+  // was dropped or really was invented.
   function pair(ops) {
     var out = [], k = 0;
     while (k < ops.length) {
-      if (ops[k].op === 'del' && ops[k + 1] && ops[k + 1].op === 'ins') {
-        out.push({ op: 'sub', a: ops[k].a, b: ops[k + 1].b }); k += 2;
-      } else { out.push(ops[k]); k++; }
+      if (ops[k].op === 'del' || ops[k].op === 'ins') {
+        var dels = [], inss = [], i;
+        while (k < ops.length && (ops[k].op === 'del' || ops[k].op === 'ins')) {
+          (ops[k].op === 'del' ? dels : inss).push(ops[k]); k++;
+        }
+        var m = Math.min(dels.length, inss.length);
+        for (i = 0; i < m; i++) out.push({ op: 'sub', a: dels[i].a, b: inss[i].b });
+        for (i = m; i < dels.length; i++) out.push(dels[i]);
+        for (i = m; i < inss.length; i++) out.push(inss[i]);
+        continue;
+      }
+      out.push(ops[k]); k++;
     }
     return out;
   }
@@ -194,11 +209,23 @@
     // copy-edit in the first place; past a handful of refused changes the
     // honest answer is that the model did not do the job, and his own text
     // stands untouched.
+    // A deleted content word is disqualifying on its own, however few there are.
+    // Fixing spelling, punctuation or sentence breaks never requires removing a
+    // word, so a deletion means the model did something other than copy-edit.
+    // And unlike an invented word — which can simply be dropped — putting a
+    // deleted word back inserts it into a sentence that has shifted around it:
+    // "chapters 1-4 were good. really makes excited The rest." Every word is
+    // present and the sentence is wreckage. Found by Claude Code against the
+    // real model; the budget alone let it through at 4 reverts against 5.
+    var dropped = reverts.filter(function (r) { return r.kind === 'deletion'; });
     var budget = Math.max(2, Math.round(A.length * 0.15));
-    if (reverts.length > budget) {
+    if (dropped.length || reverts.length > budget) {
       return {
         text: String(original || ''), rejected: true,
-        reason: reverts.length + ' refused edits, over a budget of ' + budget,
+        reason: dropped.length
+          ? dropped.length + ' of your words were dropped (' +
+            dropped.slice(0, 5).map(function (r) { return r.from; }).join(', ') + ')'
+          : reverts.length + ' refused edits, over a budget of ' + budget,
         reverts: reverts, accepted: [], kept: 100, lost: []
       };
     }

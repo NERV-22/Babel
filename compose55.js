@@ -247,6 +247,16 @@ async function runSuite(src, sw, quiet){
     ok('and turns the editor on', T.ready===true && T.storage.getItem('rl_llm_ready')==='1');
     T.renderLlmRow();
     ok('Settings then offers Remove', document.getElementById('llm-btn').textContent==='Remove');
+    // The week-long diagnostic: refusals split by cause.
+    T.books[0].sessions[0].notes=[{at:'2026-10-01',text:'kept'},{at:'2026-10-02',text:'dropped one'},{at:'2026-10-03',text:'rewritten one'}];
+    T.books[0].sessions[0].notes[0].composed='Kept.'; T.books[0].sessions[0].notes[0].composedOf=T.thTextKey('kept');
+    const lg={}; lg[T.thTextKey('dropped one')]={wanted:'x',reason:'2 of your words were dropped (a, b)',at:1};
+    lg[T.thTextKey('rewritten one')]={wanted:'y',reason:'5 refused edits, over a budget of 3',at:2};
+    T.storage.setItem('rl_compose_log', J(lg)); T.logCache=null;
+    T.renderLlmRow();
+    ok('Settings counts composed and refused entries by cause',
+       /1 composed · 2 left as written \(1 dropped words, 1 rewrites\)/.test(document.getElementById('llm-sub').textContent),
+       document.getElementById('llm-sub').textContent);
     T.llmButton(); await flush();
     ok('Remove deletes the cached model', removed===1, removed);
     ok('and turns the editor off', T.ready===false && T.storage.getItem('rl_llm_ready')===null);
@@ -313,6 +323,8 @@ const MUTANTS=[
    "llmLib().then(function(w){ return w.deleteModelAllInfoInCache(LLM.MODEL); })", "llmLib().then(function(w){ return null; })"],
   ['log time does not compose', 'html',
    "  composeEnqueue({listId:res.listId, idx:ref.idx,", "  if(false) composeEnqueue({listId:res.listId, idx:ref.idx,"],
+  ['refusals not split by cause', 'html',
+   "if(/were dropped/.test(d.reason||'')) dropped++;", ""],
   ['the guard is not cached for offline', 'sw',
    "  'editguard.js',\n", ""],
 ];

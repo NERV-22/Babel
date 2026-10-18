@@ -26,7 +26,7 @@ let r = guard(E2, QWEN2);
 ok('it is rejected, not patched up', r.rejected === true, JSON.stringify(r.reason));
 ok('his own text comes back byte for byte', r.text === E2, r.text);
 ok('no function-word debris is left behind', !/\bin the of my\b|\band to a of\b/i.test(r.text), r.text);
-ok('the reason says how many edits were refused', /refused edits/.test(r.reason || ''), r.reason);
+ok('the reason explains itself', /refused edits|were dropped/.test(r.reason || ''), r.reason);
 ok('"terrible" is still there, because nothing was touched', /terrible/.test(r.text));
 
 console.log('\n== THE REAL MISTRAL OUTPUT (8.5x padding) ==');
@@ -83,6 +83,51 @@ ok('it is accepted despite one bad swap', r.rejected === false, JSON.stringify(r
 ok('the one swap is undone', /terrible/.test(r.text) && !/awful/.test(r.text), r.text);
 ok('the punctuation fixes are kept', /Pacing fell apart, and/.test(r.text), r.text);
 ok('and it reads properly', r.text === 'Chapters 7-8 were terrible. Pacing fell apart, and the new character feels like a device. Losing interest, honestly.', r.text);
+
+console.log('\n== A DROPPED CLAUSE IS DISQUALIFYING ==');
+// Found by Claude Code running the real model. The model quietly deleted the
+// whole excitement clause. Only 4 reverts, under a budget of 5, so the budget
+// waved it through — and putting those words back produced
+// "Chapters 1-4 were good. really makes excited The rest. setup with..."
+// A copy-edit never deletes a content word, so one deletion is enough to refuse.
+const DROPPED = 'Chapters 1-4 were good. The setup with the two families is doing a lot of work and I like how little the narrator explains.';
+r = guard(E1, DROPPED);
+ok('it is rejected despite being within budget', r.rejected === true, JSON.stringify(r.reason));
+ok('his entry comes back byte for byte', r.text === E1, r.text);
+ok('the reason names the dropped words', /were dropped/.test(r.reason || ''), r.reason);
+ok('no wreckage is produced', !/really makes excited/i.test(r.text), r.text.slice(0, 80));
+// One deletion is enough — it does not need to reach the budget.
+r = guard('ch 4 was slow but beautiful', 'Ch 4 was slow.');
+ok('a single dropped word is enough to refuse', r.rejected === true, JSON.stringify(r.reason));
+ok('"beautiful" is not lost', /beautiful/.test(r.text), r.text);
+
+console.log('\n== THE BUDGET STILL DOES ITS OWN JOB ==');
+// Every other rejection case here also drops a word, so the deletion rule would
+// catch them all and the budget would never be the thing deciding. This output
+// deletes nothing and inserts nothing — it only swaps word for word, ten times.
+// Only the budget can refuse it.
+const SWAPPED = 'chapters 7-8 were awful. tempo collapsed apart and the fresh persona seems like a gadget. dropping attention truthfully';
+r = guard(E2, SWAPPED);
+ok('a swap-only rewrite is rejected', r.rejected === true, JSON.stringify(r.reason));
+ok('and it is the budget that says so', /refused edits/.test(r.reason || ''), r.reason);
+ok('nothing was dropped, so the deletion rule was not the cause',
+   !r.reverts.some(x => x.kind === 'deletion'), JSON.stringify(r.reverts.map(x => x.kind)));
+ok('his words come back', r.text === E2, r.text);
+// And the budget has to be tight, not merely present. Five swapped words in an
+// eighteen-word entry is a rewrite. A looser budget would wave this through.
+r = guard(E2, 'chapters 7-8 were awful. pacing fell apart and the fresh persona seems like a gadget. losing interest honestly');
+ok('a moderate rewrite is rejected too', r.rejected === true, JSON.stringify(r.reason));
+ok('five changes is already too many', /over a budget of 3/.test(r.reason || ''), r.reason);
+ok('"terrible" survives it', /terrible/.test(r.text), r.text);
+
+console.log('\n== THE RULE MUST NOT EAT THE GOOD CASES ==');
+// This is a real accepted output from the model on the phone. It drops "and",
+// which is a function word — the deletion rule must not mistake that for a lost
+// judgement, or the feature refuses everything and is worthless.
+r = guard(E2, 'Chapters 7-8 were terrible. Pacing fell apart. The new character feels like a device. Losing interest honestly.');
+ok('dropping "and" is still allowed', r.rejected === false, JSON.stringify(r.reason));
+ok('the sentence split is kept', /apart\. The new/.test(r.text), r.text);
+ok('"terrible" is intact', /terrible/.test(r.text), r.text);
 
 console.log('\n== A RUN OF FILLER IS CAPPED ==');
 // Padding that is made entirely of function words would otherwise slip past
