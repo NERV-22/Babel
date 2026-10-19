@@ -1,4 +1,5 @@
-/* v54 — the thought thread on the book page, composed text, the final summary.
+/* v60 removed the on-device editor and the Thoughts tab; their sections here went with them.
+   v54 — the thought thread on the book page, composed text, the final summary.
    node thread54.js            run the suite against Babel.html
    node thread54.js --mutate   break each behaviour on purpose; every mutant must FAIL the suite */
 const fs=require('fs');
@@ -41,12 +42,9 @@ const EXPOSE=`;return {
   get activeId(){return activeId;}, set activeId(v){activeId=v;},
   set activeTimer(v){activeTimer=v;},
   set bpIdx(v){bpIdx=v;}, set smIdx(v){smIdx=v;},
-  set composeReady(v){TH_COMPOSE_READY=v;}, set bpView(v){bpView=v;}, get bpView(){return bpView;},
-  set thTarget(v){_thTarget=v;}, set thFresh(v){_thFresh=v;},
-  get thRoute(){return thRoute;},
-  bpThoughts, renderBPThoughts, bpSetView, bpSetReview, bpAddThought,
-  thSetComposed, thComposedText, thTextKey, noteWrite, noteEntries, syncNoteText, mergeGhostReads,
-  thLog, tmrSelectBook, tmrClosePicker, storage, listKey, todayISO
+  bpThoughts, renderBPThoughts, bpSetReview, noteAdd,
+  noteWrite, noteEntries, syncNoteText, mergeGhostReads,
+  tmrClosePicker, storage, listKey, todayISO
 };`;
 
 // syncNoteText exactly as v53 shipped it: r.note must not change behaviour.
@@ -74,7 +72,7 @@ function runSuite(src, quiet){
     T.lists=[{id:'L1',name:'One'},{id:'L2',name:'Two'}]; T.activeId='L1';
     T.books=bks; T.books.forEach(b=>(b.sessions||[]).forEach(r=>T.syncNoteText(r)));
     T.storage.setItem(T.listKey('L1'), J(T.books)); T.storage.setItem(T.listKey('L2'), J([]));
-    T.activeTimer=null; T.thTarget=null; T.thFresh=[]; T.composeReady=false; T.bpView='raw';
+    T.activeTimer=null;
     T.tmrClosePicker(); T.bpIdx=0;
   }
   const thread=()=>{ T.renderBPThoughts(); return document.getElementById('bp-th').innerHTML; };
@@ -127,46 +125,6 @@ function runSuite(src, quiet){
     ok('audio shows time, never pages', h.indexOf('1h 35m')>=0 && h.indexOf('p.95')<0);
   });
 
-  sec('COMPOSED TEXT NEVER OUTLIVES ITS SOURCE');
-  guard('stale',()=>{
-    const e={at:'2026-07-01',text:'chapters 1-4 were good, im excited'};
-    T.thSetComposed(e,'Chapters 1–4 were good; I am excited.');
-    ok('fresh composed text is used', T.thComposedText(e)==='Chapters 1–4 were good; I am excited.');
-    ok('the raw text is untouched by composing', e.text==='chapters 1-4 were good, im excited');
-    e.text='chapters 1-4 were good, 5 was not';
-    ok('once the words change, the old composed text is never read', T.thComposedText(e)==='chapters 1-4 were good, 5 was not');
-  });
-  guard('edit clears',()=>{
-    fresh([{title:'Demons', bookId:'b5', pages:768, timerSessions:[], sessions:[read('r1','2026-07-01','',[{at:'2026-07-01',text:'Original words.'}])]}]);
-    const e=T.books[0].sessions[0].notes[0];
-    T.thSetComposed(e,'Composed from the original.');
-    T.smIdx=0; T.noteWrite(0,'Edited words.');
-    ok('editing in the reading log clears it', !('composed' in e) && !('composedOf' in e), J(e));
-    ok('and the edit is what is kept', e.text==='Edited words.');
-  });
-  guard('composed view',()=>{
-    fresh([{title:'Demons', bookId:'b5', pages:768, timerSessions:[], sessions:[read('r1','2026-07-01','',[
-      {at:'2026-07-01',text:'raw one'},{at:'2026-07-02',text:'raw two'}])]}]);
-    const es=T.books[0].sessions[0].notes;
-    T.thSetComposed(es[0],'Composed one.');
-    T.thSetComposed(es[1],'Composed two.'); es[1].text='raw two, edited';
-    T.composeReady=true; T.bpView='composed';
-    const h=thread();
-    ok('composed view uses composed text where it holds', h.indexOf('Composed one.')>=0 && h.indexOf('raw one')<0);
-    ok('and falls back to the raw words where it is stale', h.indexOf('raw two, edited')>=0 && h.indexOf('Composed two.')<0);
-    ok('in the same order, same numbering', order(h,['Log 1','Composed one.','Log 2','raw two, edited']));
-  });
-  guard('disabled',()=>{
-    fresh([{title:'Demons', bookId:'b5', pages:768, timerSessions:[], sessions:[read('r1','2026-07-01','',[{at:'2026-07-01',text:'raw'}])]}]);
-    T.thSetComposed(T.books[0].sessions[0].notes[0],'COMPOSED');
-    let h=thread();
-    ok('Composed is shown but disabled until the model exists', /<button class=""\s*disabled>Composed<\/button>/.test(h), h.slice(0,300));
-    ok('with one line saying so', /on-device (model|editor)/.test(h));
-    T.bpSetView('composed'); h=thread();
-    ok('asking for it anyway still shows the raw words', h.indexOf('raw')>=0 && h.indexOf('COMPOSED')<0);
-    ok('and leaves the view on Raw, so nothing flips when a model arrives', T.bpView==='raw', T.bpView);
-  });
-
   sec('THE SUMMARY IS HIS, AND STAYS');
   guard('review',()=>{
     fresh([{title:'Piranesi', bookId:'b1', pages:272, timerSessions:[], sessions:[read('r1','2026-03-01','2026-03-20',[{at:'2026-03-02',text:'An entry.'}])]}]);
@@ -178,8 +136,8 @@ function runSuite(src, quiet){
     ok('and not in r.note', r.note==='An entry.', J(r.note));
     const disk=JSON.parse(T.storage.getItem(T.listKey('L1')))[0].sessions[0];
     ok('it is saved to the list', disk.review==='My summary, in full.');
-    document.getElementById('th-box').value='A later thought.'; T.thLog(); T.tmrSelectBook(0);
-    ok('logging a new entry leaves it alone', r.review==='My summary, in full.' && (r.notes||[]).length===2, J(r));
+    T.smIdx=0; T.noteAdd(0); T.noteWrite(0,'A later thought.',(T.books[0].sessions[0].notes||[]).length-1);
+    ok('adding an entry in the reading log leaves it alone', r.review==='My summary, in full.' && (r.notes||[]).length===2, J(r));
     T.syncNoteText(r);
     ok('syncNoteText leaves it alone', r.review==='My summary, in full.');
     h=thread();
@@ -228,7 +186,7 @@ function runSuite(src, quiet){
   guard('note',()=>{
     const fixtures=[
       {notes:[{at:'a',text:'One.'},{at:'b',text:'  '},{at:'c',text:'Two.\nwith a line'}]},
-      {notes:[{at:'a',text:'Raw words.',composed:'Composed words.',composedOf:T.thTextKey('Raw words.'),pos:4,fmt:'print'}]},
+      {notes:[{at:'a',text:'Raw words.',composed:'Composed words.',composedOf:'10:abc',pos:4,fmt:'print'}]},
       {notes:[]}, {notes:[{at:'a',text:''},{at:'b'}]}, {note:'legacy only'},
       {notes:[{at:'a',text:'x'}], review:'A summary that must not leak into note.'}];
     fixtures.forEach((f,i)=>{
@@ -236,17 +194,6 @@ function runSuite(src, quiet){
       T.syncNoteText(a); v53Sync(b);
       ok('fixture '+(i+1)+': same r.note as v53', a.note===b.note, J(a.note)+' vs '+J(b.note));
     });
-  });
-
-  sec('A WAY IN FROM THE BOOK PAGE');
-  guard('add',()=>{
-    fresh([{title:'Piranesi', bookId:'b1', pages:272, timerSessions:[], sessions:[read('r1','2026-03-01','',[])]},
-           {title:'Gilead', bookId:'b3', pages:247, timerSessions:[], sessions:[read('r3','2026-03-01','',[])]}]);
-    T.bpIdx=1; T.bpAddThought();
-    const ref=T.thRoute();
-    ok('Add opens Thoughts pointed at the book on screen', !!ref && ref.bookId==='b3' && ref.why==='chosen', J(ref));
-    document.getElementById('th-box').value='Straight onto Gilead.'; T.thLog();
-    ok('and a thought logged there lands on it, no picking', (T.books[1].sessions[0].notes||[]).length===1 && !(T.books[0].sessions[0].notes||[]).length);
   });
 
   if(!quiet) console.log(fail?'\n'+fail+' FAILED':'\nTHREAD CLEAN');
@@ -269,28 +216,14 @@ const MUTANTS=[
    "function syncNoteText(r){\n  if(!r) return;\n  r.note =", "function syncNoteText(r){\n  if(!r) return;\n  r.review = r.note ="],
   ['summary stored in r.note',
    "if(v.trim()) r.review=v; else delete r.review;", "if(v.trim()) r.note=v; else delete r.note;"],
-  ['stale composed text still read',
-   "return !!e && typeof e.composed==='string' && !!e.composed && e.composedOf===thTextKey(e.text);",
-   "return !!e && typeof e.composed==='string' && !!e.composed;"],
-  ['composing overwrites the raw text',
-   "function thSetComposed(e, text){ if(!e) return; e.composed=String(text); e.composedOf=thTextKey(e.text); }",
-   "function thSetComposed(e, text){ if(!e) return; e.text=String(text); e.composed=String(text); e.composedOf=thTextKey(e.text); }"],
-  ['reading-log edit keeps the old composed text',
-   "if(es[k].text!==String(val)) thClearComposed(es[k]);", ""],
-  ['Composed toggle enabled with no model',
-   "+(TH_COMPOSE_READY?' onclick=\"bpSetView(\\'composed\\')\"':' disabled')+", "+' onclick=\"bpSetView(\\'composed\\')\"'+"],
-  ['Composed view honoured with no model',
-   "if(v==='composed' && !TH_COMPOSE_READY) return;\n  bpView=", "bpView="],
   ['position missing from the thread',
-   "var p=thPosText(t), txt=composed?thComposedText(t.e):t.text;", "var p='', txt=composed?thComposedText(t.e):t.text;"],
+   "function bpEntryHTML(t){\n  var p=thPosText(t);", "function bpEntryHTML(t){\n  var p='';"],
   ['no summary box on the read',
    "if(wantReview) h+=bpReviewHTML(r,ri,multi);", ""],
   ['summary lost in the duplicate-read merge',
    "if(_lr.trim()) winner.review = !_wr.trim() ? _lr : (_wr===_lr ? _wr : _wr+'\\n\\n'+_lr);", ""],
   ['entries lost in the duplicate-read merge',
    "if(e && String(e.text||'').trim() && !_we.some(function(w){ return w && w.at===e.at && w.text===e.text; })) _we.push(e);", ""],
-  ['Add does not point Thoughts at the book',
-   "closeBookPage();\n  openThoughts(i);", "closeBookPage();\n  openThoughts();"],
 ];
 
 if(process.argv.includes('--mutate')){

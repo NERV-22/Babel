@@ -2309,7 +2309,7 @@ var clipboardBook=null;
 // Reading-Log timer state. activeTimer is {listId, bookTitle, bookAuthor,
 // bookPages, startTime, startPage, accumulatedSec, pausedAt} or null.
 // rlOpenIdx is which book's Reading Log modal is currently open (-1 = closed).
-var activeTimer=null, rlOpenIdx=-1, _timerTickInterval=null;
+var activeTimer=null, rlOpenIdx=-1, _rlId=null, _timerTickInterval=null;
 
 // ── Icon set ──────────────────────────────────────────────────────────────────
 // All UI icons live here so they share a stroke weight (1.4px) and use
@@ -2550,6 +2550,34 @@ function fanOutBookMeta(idx){
   });
 }
 function listKey(id){return "rl_books_"+id;}
+// Favourite, reading now, and read. The same book in two lists "counts once"
+// and its reads, rating, details and sittings already reached every copy —
+// but these three stayed behind, so ticking a book read in one list left it
+// unread and "in progress" in the other. The read tick lives in each list's
+// own index set, so it is written there too.
+function fanOutBookFlags(idx){
+  var b=books[idx]; if(!b||!b.bookId) return;
+  var isRead=readSet.has(idx);
+  lists.forEach(function(l){
+    if(l.id===activeId) return;
+    try{
+      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+      var arr=JSON.parse(raw), rr=storage.getItem(readKey(l.id)), rs=new Set(rr?JSON.parse(rr):[]), hit=false;
+      arr.forEach(function(x,i){
+        if(!x || x.bookId!==b.bookId) return;
+        x.isFav=!!b.isFav; x.isReading=!!b.isReading;
+        if(isRead){ rs.add(i); if(b.finishedAt) x.finishedAt=b.finishedAt; }
+        else { rs.delete(i); delete x.finishedAt; }
+        hit=true;
+      });
+      if(hit){
+        storage.setItem(listKey(l.id), JSON.stringify(arr));
+        storage.setItem(readKey(l.id), JSON.stringify([...rs]));
+        try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(l.id); }catch(e){}
+      }
+    }catch(e){}
+  });
+}
 function readKey(id){return "rl_read_"+id;}
 
 function saveCurrentList(){
@@ -2586,10 +2614,26 @@ function _rovViews(){
     ['screen-reading',  function(){ return true; },                                               renderReadingScreen]
   ];
 }
+// Positions move: a delete closes a gap, a paste or undo puts a book at the
+// top, a cloud pull can reorder the list. A sheet holding a bare position
+// would then redraw as the neighbour. Each sheet remembers its book's id, is
+// moved to wherever that book now sits, and closes if the book is gone.
+function _idxOfId(idx,id){
+  if(!id) return (typeof idx==='number' && books[idx]) ? idx : -1;
+  if(typeof idx==='number' && books[idx] && books[idx].bookId===id) return idx;
+  for(var k=0;k<books.length;k++) if(books[k] && books[k].bookId===id) return k;
+  return -1;
+}
+function _reseatOpenViews(){
+  if(bpIdx>=0){ var a=_idxOfId(bpIdx,_bpId); if(a<0) closeBookPage(); else bpIdx=a; }
+  if(smIdx>=0){ var s=_idxOfId(smIdx,_smId); if(s<0) closeSM(); else smIdx=s; }
+  if(rlOpenIdx>=0){ var r=_idxOfId(rlOpenIdx,_rlId); if(r<0) closeRL(); else rlOpenIdx=r; }
+}
 function refreshOpenViews(){
   if(_rovBusy) return;
   _rovBusy=true;
   try{
+    _reseatOpenViews();
     _rovViews().forEach(function(v){
       if(!_rovShown(v[0]) || !v[1]()){ delete _rovStale[v[0]]; return; }
       if(_rovTyping(v[0])){ _rovStale[v[0]]=1; return; }
@@ -2697,7 +2741,7 @@ function switchList(id){
   if(id===activeId)return;
   saveCurrentList();
   hideToast();deletedBook=null;deletedIdx=-1;
-  selectedFormGenre="";modalIdx=-1;closeModal();closeSM();closeDetailsModal();closeRowMenu();closePasteChooser();closeRL();
+  selectedFormGenre="";modalIdx=-1;closeModal();closeSM();closeDetailsModal();closeRowMenu();closePasteChooser();closeRL();closeBookPage();
   // Reset UI state
   activeGenreFilter="";sortKey="title";sortDir=1;currentTab="list";
   document.getElementById("search-input").value="";
@@ -2728,7 +2772,7 @@ function activeList(){return lists.find(function(l){return l.id===activeId;})||l
 function createList(){
   saveCurrentList();
   hideToast();deletedBook=null;deletedIdx=-1;
-  selectedFormGenre="";modalIdx=-1;closeModal();closeSM();closeDetailsModal();closeRowMenu();closePasteChooser();closeRL();
+  selectedFormGenre="";modalIdx=-1;closeModal();closeSM();closeDetailsModal();closeRowMenu();closePasteChooser();closeRL();closeBookPage();
   if(!document.getElementById("add-form").classList.contains("hidden"))toggleAddForm();
   ["f-title","f-author","f-pages","f-series","f-series-name","f-summary","f-custom-genre","f-genre-input"].forEach(function(id){document.getElementById(id).value="";});
   document.getElementById("genre-preview").classList.add("hidden");
@@ -3369,7 +3413,7 @@ function closeDescSheet(){
 function toggleRead(idx){
   var wasReading = books[idx].isReading;
   if(readSet.has(idx)){readSet.delete(idx);delete books[idx].finishedAt;}else{readSet.add(idx);books[idx].isReading=false;if(!books[idx].finishedAt)books[idx].finishedAt=Date.now();}
-  saveCurrentList();updateStats();
+  saveCurrentList();fanOutBookFlags(idx);updateStats();
   // Animation: pop the checkbox; if the book was just marked READ, fire a
   // one-time glow burst on its card. Deferred so it runs after any re-render.
   var _nowRead=readSet.has(idx);
@@ -3609,7 +3653,7 @@ function rowMenuAction(action){
   if(action==="edit")        openDetailsModal(idx);
   else if(action==="copy")   copyBook(idx);
   else if(action==="reading")toggleReading(idx);
-  else if(action==="log"){ tmrSelIdx=idx; switchScreen('timer'); }
+  else if(action==="log"){ tmrSel(idx); switchScreen('timer'); }
   else if(action==="sessions")openSM(idx);
   else if(action==="delete") deleteBook(idx);
 }
@@ -3797,6 +3841,9 @@ function confirmPaste(mode){
     newBook.sessions=[]; newBook.timerSessions=[];
   }
   normalizeBook(newBook);
+  // Covers are stored by id, so a fresh copy with its own id came up blank.
+  // The cover describes the book; it travels with the details.
+  if(mode!=="inherit" && c.bookId && COVERS[c.bookId]) saveCoverFor(newBook, COVERS[c.bookId]);
   // Insert at the top of the array so it's findable when no sort is applied.
   books.unshift(newBook);
   // readSet stores array indexes — every existing entry shifts up by one.
@@ -4031,7 +4078,7 @@ function saveP(){storage.setItem(LS_DEL,JSON.stringify(delBuiltins));storage.set
 // ── Favourites ────────────────────────────────────────────────────────────────
 function toggleFav(idx){
   books[idx].isFav = !books[idx].isFav;
-  saveCurrentList();
+  saveCurrentList(); fanOutBookFlags(idx);
   // Favourite state doesn't affect sort, filter, or stats — surgical update only.
   if(currentTab==="list") patchRowFav(idx);
   else renderGenreTab();
@@ -4041,7 +4088,7 @@ function toggleFav(idx){
 function toggleReading(idx){
   books[idx].isReading=!books[idx].isReading;
   if(books[idx].isReading)readSet.delete(idx);
-  saveCurrentList();updateStats();
+  saveCurrentList();fanOutBookFlags(idx);updateStats();
   currentTab==="list"?renderTable():renderGenreTab();
   pushWidgetSnapshot();  // widgets track currently-reading — refresh on toggle
 }
@@ -4743,10 +4790,14 @@ function cpClear(){
 // One place holding everything about a book. The pieces it shows are the same
 // ones the old sheets edit — this reads, those write, so nothing that was
 // tested stops being the thing that saves.
-var bpIdx=-1;
+var bpIdx=-1, _bpId=null;
+// Whether he opened the description. The page now redraws after every save,
+// and the clamp lived only in the DOM, so rating a book with its description
+// open snapped it shut. Reset when a book page opens.
+var bpDescOpen=false;
 function openBookPage(idx){
   var b=books[idx]; if(!b) return;
-  bpIdx=idx;
+  bpIdx=idx; _bpId=b.bookId||null; bpDescOpen=false;
   bpDragReset();
   renderBookPage();
   document.getElementById('bp-sheet').classList.remove('hidden');
@@ -4814,7 +4865,7 @@ function bpDragEnd(cancelled){
 })();
 function bpToggleDesc(){
   var d=document.getElementById('bp-desc'); if(!d) return;
-  var on=d.classList.toggle('clamped');
+  var on=d.classList.toggle('clamped'); bpDescOpen=!on;
   var m=document.getElementById('bp-more'); if(m) m.textContent=on?'Read more':'Show less';
 }
 // Every entry on the book, oldest first, grouped by read, and numbered across
@@ -4936,8 +4987,8 @@ function renderBookPage(){
 
   var d=document.getElementById('bp-desc');
   d.textContent=(b.summary||'').trim()||'No description yet.';
-  d.classList.add('clamped');
-  document.getElementById('bp-more').textContent='Read more';
+  d.classList.toggle('clamped',!bpDescOpen);
+  document.getElementById('bp-more').textContent=bpDescOpen?'Show less':'Read more';
   document.getElementById('bp-more').classList.toggle('hidden',(b.summary||'').length<190);
 
   renderBPThoughts();
@@ -5251,7 +5302,7 @@ function startTimer(idx){
       accumulatedSec: 0, pausedAt: null
     };
     saveActiveTimer();
-    if(!b.isReading){ b.isReading=true; saveCurrentList(); }  // Option B auto-toggle
+    if(!b.isReading){ b.isReading=true; saveCurrentList(); fanOutBookFlags(idx); }  // Option B auto-toggle
     renderRLModal();
     renderTimerWidget();
     startTimerTick();
@@ -5731,7 +5782,7 @@ function renderEtaTarget(){
 }
 
 function openRL(idx){
-  rlOpenIdx = idx;
+  rlOpenIdx = idx; _rlId=(books[idx]&&books[idx].bookId)||null;
   cancelPagePrompt();
   renderRLModal();
   document.getElementById("rl-modal").classList.remove("hidden");
@@ -6015,9 +6066,9 @@ document.getElementById("rl-widget-top").addEventListener("click",function(){
 });
 
 
-var smIdx=-1;
+var smIdx=-1, _smId=null;
 function openSM(idx){
-  smIdx=idx;
+  smIdx=idx; _smId=(books[idx]&&books[idx].bookId)||null;
   renderSM();
   document.getElementById("sessions-modal").classList.remove("hidden");
 }
@@ -6337,7 +6388,11 @@ function downloadUpdate(){
 // the app run, so every loadP() / loadAll() / etc. sees fully-populated data.
 
 /* ================= Reading Timer (dedicated tab) ================= */
-var _tmrTick=null, tmrSelIdx=-1, tmrMode='idle', _tmrFrozenSec=0;
+var _tmrTick=null, tmrSelIdx=-1, _tmrSelId=null, tmrMode='idle', _tmrFrozenSec=0;
+// The book picked on the timer screen. It was a bare position, so deleting or
+// pasting a book above it, or switching lists, quietly put a different book
+// under the Start button. The id rides along and wins.
+function tmrSel(i){ tmrSelIdx=(typeof i==='number')?i:-1; _tmrSelId=(tmrSelIdx>=0 && books[tmrSelIdx] && books[tmrSelIdx].bookId)||null; }
 function tmrLapColors(){ var a=(getComputedStyle(document.documentElement).getPropertyValue('--accent')||'#c2a878').trim(); return [a,'#a78bfa','#5ec2a8','#e0789a','#f59e0b','#5b8def']; }
 function tmrLapColor(n){ var c=tmrLapColors(); return n<=0?c[0]:c[(n-1)%(c.length-1)+1]; }
 function tmrSyncMode(){ if(activeTimer){ tmrMode = activeTimer.finishing ? 'finishprompt' : (activeTimer.pausedAt ? 'paused' : 'running'); } else if(tmrMode!=='startprompt') tmrMode='idle'; }
@@ -6346,7 +6401,7 @@ function tmrStopTick(){ if(_tmrTick){ clearInterval(_tmrTick); _tmrTick=null; } 
 function tmrElapsedDisplaySec(){ return tmrMode==='finishprompt' ? _tmrFrozenSec : timerElapsedSec(); }
 function tmrPickIdx(){
   if(activeTimer && activeTimer.listId===activeId){ var _ti=tmrBookIdx(); if(_ti>=0) return _ti; }
-  if(tmrSelIdx>=0 && tmrSelIdx<books.length) return tmrSelIdx;
+  if(tmrSelIdx>=0){ var _si=_idxOfId(tmrSelIdx,_tmrSelId); if(_si>=0){ tmrSelIdx=_si; return _si; } tmrSel(-1); }
   for(var i=0;i<books.length;i++){ if(books[i].isReading) return i; }
   return books.length?0:-1;
 }
@@ -6373,7 +6428,7 @@ function tmrNav(dir){
   if(tmrMode!=='idle') return;              // never switch mid-session
   var pool=tmrCandidates(); if(pool.length<2) return;
   var pos=pool.indexOf(tmrPickIdx());       // -1 (not in pool) lands on pool[0] going forward
-  tmrSelIdx=pool[(pos+dir+pool.length)%pool.length];
+  tmrSel(pool[(pos+dir+pool.length)%pool.length]);
   renderTimerTab();
 }
 // Horizontal swipe on the card = prev/next. Vertical-ish drags are ignored
@@ -6422,7 +6477,14 @@ function tmrBookIdx(){
 // because the timer can be running against a book in another list.
 function tmrTimerBook(){
   if(!activeTimer) return null;
-  var i=tmrBookIdx(); if(i<0) return null;
+  var i=tmrBookIdx();
+  // Deleted from its own list but still in another: that copy is where the
+  // sitting will be saved, so its format and length are the ones that count.
+  if(i<0){
+    var loc=_tmrLocate(); if(!loc) return null;
+    if(loc.listId===activeId) return books[loc.idx]||null;
+    try{ var raw0=storage.getItem(listKey(loc.listId)); return (raw0?JSON.parse(raw0):[])[loc.idx]||null; }catch(e){ return null; }
+  }
   if(activeTimer.listId===activeId) return books[i]||null;
   try{ var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[]; return arr[i]||null; }catch(e){ return null; }
 }
@@ -6483,7 +6545,8 @@ function renderTimerTab(){
   tmrSyncMode();
   var idx=tmrPickIdx(), b=(idx>=0)?books[idx]:null;
   var card;
-  if(activeTimer && activeTimer.listId!==activeId){
+  // The timer's own book, never whatever now sits at its old position.
+  if(activeTimer && (activeTimer.listId!==activeId || tmrBookIdx()<0)){
     card='<div class="tmr-book locked"><div class="tmr-book-main"><div class="tmr-book-title">'+esc(activeTimer.bookTitle)+'</div><div class="tmr-book-by">by '+esc(activeTimer.bookAuthor)+'</div></div></div>';
   } else if(b){
     var pg=tmrFmtPagesLine(b), locked=(tmrMode!=='idle');
@@ -6566,9 +6629,9 @@ function tmrRenderPickList(){
 }
 function tmrClosePicker(){ var s=document.getElementById('timer-pick'); if(s) s.classList.add('hidden'); document.body.style.overflow=''; }
 function tmrSelectBook(i){
-  tmrSelIdx=i; tmrClosePicker(); renderTimerTab();
+  tmrSel(i); tmrClosePicker(); renderTimerTab();
 }
-function tmrStart(){ var idx=tmrPickIdx(); if(idx<0){ showToast('Add a book first'); return; } tmrSelIdx=idx; tmrMode='startprompt'; renderTimerTab(); var inp=document.getElementById('tmr-startpage')||document.getElementById('tmr-startpage-h'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
+function tmrStart(){ var idx=tmrPickIdx(); if(idx<0){ showToast('Add a book first'); return; } tmrSel(idx); tmrMode='startprompt'; renderTimerTab(); var inp=document.getElementById('tmr-startpage')||document.getElementById('tmr-startpage-h'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
 function tmrCancelStart(){ tmrMode='idle'; renderTimerTab(); }
 function tmrBegin(){
   var idx=tmrPickIdx(); if(idx<0) return; var b=books[idx];
@@ -6578,7 +6641,7 @@ function tmrBegin(){
   // is actually starting on, not books[tmrSelIdx], which is -1 until he picks.
   var _capS=curTotalOf(b); if(_capS>0 && page>_capS) page=_capS;
   activeTimer={ listId:activeId, bookIdx:idx, bookId:b.bookId, bookTitle:b.title, bookAuthor:b.author, bookPages:b.pages, fmt:readFormat(curReadOf(b)), startTime:Date.now(), startPage:page, accumulatedSec:0, pausedAt:null, finishing:false };
-  if(!b.isReading){ b.isReading=true; saveCurrentList(); if(currentTab==='list') renderTable(); }
+  if(!b.isReading){ b.isReading=true; saveCurrentList(); fanOutBookFlags(idx); if(currentTab==='list') renderTable(); }
   saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState();
 }
 function tmrPauseResume(){
@@ -6646,7 +6709,7 @@ function tmrConfirmFinish(){
   // screen had selected, and quietly gave that book an empty read if it had none.
   showToast('Logged '+formatHMS(sec)+' \u00b7 '+unitStr({format:_cfmt},Math.max(0,endPage-startPage)));
 }
-function tmrStartFromReading(idx){ tmrSelIdx=idx; switchScreen('timer'); }
+function tmrStartFromReading(idx){ tmrSel(idx); switchScreen('timer'); }
 /* A session running longer than this on reopening is treated as suspect rather
    than banked silently. Change this one number to move the threshold. */
 var MAX_PLAUSIBLE_SESSION_HOURS = 3;
@@ -6705,7 +6768,7 @@ function tmrInit(){
   // still right at this moment (nothing has moved since it was loaded), so
   // record the book's id now and it stays attached from here on.
   if(activeTimer && !activeTimer.bookId){ var _tb0=tmrTimerBook(); if(_tb0 && _tb0.bookId){ activeTimer.bookId=_tb0.bookId; saveActiveTimer(); } }
-  if(activeTimer){ tmrSelIdx=(activeTimer.listId===activeId)?tmrBookIdx():-1; tmrSyncMode(); if(tmrMode==='running') tmrStartTick(); } }
+  if(activeTimer){ tmrSel((activeTimer.listId===activeId)?tmrBookIdx():-1); tmrSyncMode(); if(tmrMode==='running') tmrStartTick(); } }
 
 /* ── Native timer bridge (floating bubble) ──────────────────────────────────
    Web is the single source of truth. Every timer transition mirrors state to
@@ -6889,9 +6952,10 @@ function pushWidgetSnapshot(){
       var l=activeList(), t=(l&&l.theme)||{};
       // Currently-reading books across ALL lists — the widget shouldn't
       // change contents just because a different list is open in the app.
-      var reading=[];
+      var reading=[], _wSeen={};
       function _scanReading(arr){(arr||[]).forEach(function(b){
         if(!b||!b.isReading) return;
+        if(b.bookId){ if(_wSeen[b.bookId]) return; _wSeen[b.bookId]=1; }   // a book in two lists, once
         var cur=currentPageFor(b)||0, last=0;
         (b.timerSessions||[]).forEach(function(x){ if(x&&x.startTime>last) last=x.startTime; });
         var _wt=curTotalOf(b);
@@ -7014,9 +7078,36 @@ function renderTable(){
   var scc=document.getElementById('showing-count'); if(scc) scc.textContent='Showing '+list.length+' of '+books.length+' book'+(books.length!==1?'s':'');
 }
 
+// Books in progress in every list, each once. The screen showed the open list
+// only, so with My Reading List open the three books in progress on Physical
+// Books were missing — while the widget, the streak and the goal above them
+// already counted every list. A book in the open list keeps its index (its
+// card opens in place); one only elsewhere carries its list to switch to.
+function _readingEverywhere(){
+  var out=[], seen={};
+  books.forEach(function(b,i){ if(b && b.bookId) seen[b.bookId]=1; if(b && b.isReading) out.push(Object.assign({},b,{idx:i})); });
+  lists.forEach(function(l){
+    if(l.id===activeId) return;
+    try{
+      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+      JSON.parse(raw).forEach(function(b){
+        if(!b || !b.isReading || (b.bookId && seen[b.bookId])) return;
+        if(b.bookId) seen[b.bookId]=1;
+        out.push(Object.assign({},b,{idx:-1,_listId:l.id}));
+      });
+    }catch(e){}
+  });
+  return out;
+}
+// The same move the running-timer widget makes: open the list it lives in.
+function rdOpenElsewhere(listId, bookId){
+  if(listId && listId!==activeId) switchList(listId);
+  for(var i=0;i<books.length;i++) if(books[i] && books[i].bookId===bookId){ openRL(i); return; }
+  showToast('That book is no longer in that list');
+}
 function renderReadingScreen(){
   var body=document.getElementById('reading-body'); if(!body) return;
-  var reading=[]; for(var i=0;i<books.length;i++){ if(books[i].isReading) reading.push(Object.assign({},books[i],{idx:i})); }
+  var reading=_readingEverywhere();
   var s=computeStreak();
   var sub=s.todayMet?'Goal reached today \u2014 nice':(Math.floor(s.todaySec/60))+' / '+babelGoalMin+' min today';
   var head='<div class="rd-streakcard"><div class="rd-streak-num">'+s.current+'</div>'
@@ -7042,7 +7133,8 @@ function renderReadingScreen(){
   }
   var cards=reading.map(function(b){
     var _rst=seriesText(b), _rcur=currentPageFor(b)||0;
-    return '<div class="rd-card" onclick="openRL('+b.idx+')"><div class="rd-info"><div class="rd-title">'+esc(b.title)+'</div>'
+    var _go=(b.idx>=0)?('openRL('+b.idx+')'):('rdOpenElsewhere(\''+b._listId+'\',\''+b.bookId+'\')');
+    return '<div class="rd-card" onclick="'+_go+'"><div class="rd-info"><div class="rd-title">'+esc(b.title)+'</div>'
       +(_rst?'<div class="rd-series">'+esc(_rst)+'</div>':'')
       +'<div class="rd-by">'+esc(b.author)+'</div>'
       +'<div class="rd-pages">'+(curTotalOf(b)>0?(curUnitStr(b,_rcur)+' / '+curUnitStr(b,curTotalOf(b))):noTotalText(curReadOf(b)))+'</div></div></div>';
@@ -7297,7 +7389,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v60';
+var BABEL_VERSION='babel-v61';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
