@@ -1010,13 +1010,12 @@ body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padd
 .bp-none{font-family:var(--ui);font-size:13px;color:var(--text-muted);margin:0}
 /* The thoughts as one thread, oldest first, read straight through. */
 .bp-secacts{display:flex;gap:16px}
-.bp-view{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-bottom:16px}
-.bp-seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;padding:2px}
-.bp-seg button{border:0;background:none;color:var(--text-muted);font-family:var(--ui);font-size:12px;
-  font-weight:600;padding:5px 13px;border-radius:999px;cursor:pointer}
-.bp-seg button.on{background:var(--surface);color:var(--text)}
-.bp-seg button:disabled{opacity:.4;cursor:default}
-.bp-viewnote{font-family:var(--ui);font-size:11.5px;color:var(--text-muted)}
+
+
+
+
+
+
 .bp-rgroup+.bp-rgroup{margin-top:26px}
 .bp-rlabel{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.07em;
   color:var(--text-muted);margin:0 0 12px}
@@ -1028,23 +1027,19 @@ body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padd
 .bp-thbody{font-family:var(--display);font-size:15.5px;line-height:1.72;color:var(--text);max-width:62ch}
 .bp-thbody p{margin:0 0 .95em;white-space:pre-line}
 .bp-thbody p:last-child{margin-bottom:0}
-.bp-declined{display:inline-block;margin-top:8px;padding:0;border:0;background:none;cursor:pointer;
-  font-family:var(--ui);font-size:12px;font-style:italic;color:var(--text-muted);text-decoration:underline dotted}
-.bp-wanted{margin-top:8px;padding:10px 12px;border:1px dashed var(--border);border-radius:10px;
-  font-family:var(--ui);font-size:12.5px;line-height:1.5;color:var(--text-muted)}
-.bp-wanted p{margin:0 0 6px}
-.bp-wanted p:last-child{margin:0}
-.bp-wanted-h{font-size:11px;text-transform:uppercase;letter-spacing:.06em}
-.bp-wanted-t{font-family:var(--display);font-size:14px;color:var(--text);white-space:pre-line}
-.bp-wanted-s{font-family:var(--display);font-size:13.5px;font-style:italic;color:var(--text-muted);margin-top:10px!important}
-.bp-composebar{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:-6px 0 16px;
-  font-family:var(--ui);font-size:12px;color:var(--text-muted)}
-.bp-composing{font-family:var(--ui);font-size:12px;color:var(--accent);margin:-6px 0 16px}
-.llm-btn{flex:none;border:1px solid var(--accent);background:none;color:var(--accent);border-radius:999px;
-  padding:7px 14px;font-family:var(--ui);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
-.llm-btn:disabled{opacity:.5;cursor:default;border-color:var(--border);color:var(--text-muted)}
-.llm-bar{height:4px;background:var(--border);border-radius:99px;overflow:hidden;margin:8px 4px 0}
-.llm-bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+
+
+
+
+
+
+
+
+
+
+
+
+
 .bp-review{margin-top:18px}
 .bp-rvlabel{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin:0 0 8px}
 .bp-rvbox{min-height:84px}
@@ -1366,35 +1361,32 @@ body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padd
 .tmr-pf-btns{display:flex;gap:10px;margin-top:12px}
 .tmr-pf-btns .tmr-primary,.tmr-pf-btns .tmr-ghost{flex:1;width:auto;padding:13px}
 .tmr-row2 .tmr-ghost,.tmr-row2 .tmr-primary{padding-left:8px;padding-right:8px}
-/* ── Thoughts ── */
+/* ── Writing boxes (summary, notes) ── */
 .th-box{display:block;width:100%;min-height:96px;max-height:60vh;overflow-y:auto;resize:none;
   padding:12px 13px;font-family:var(--display);font-size:15px;line-height:1.5;color:var(--text);
   background:var(--surface);border:1px solid var(--border);border-radius:12px;outline:none}
 .th-box:focus{border-color:var(--accent)}
 .tmr-pageform .th-box{min-height:64px;background:var(--bg1);font-size:14px}
-.th-where{font-family:var(--ui);font-size:12px;color:var(--text-muted);margin:9px 2px 10px;line-height:1.5}
-.th-where b{color:var(--text);font-weight:600}
-.th-x{background:none;border:none;padding:0 0 0 4px;color:var(--accent);font-family:var(--ui);font-size:12px;cursor:pointer;text-decoration:underline}
-.th-btns{display:flex;gap:10px}
-.th-btns .tmr-primary,.th-btns .tmr-ghost{flex:1;width:auto;padding:13px}
-.th-ask:disabled{opacity:.4;cursor:default}
-.th-asknote{font-family:var(--ui);font-size:11.5px;color:var(--text-muted);margin:8px 2px 0;text-align:right}
-.th-saved{display:flex;align-items:center;gap:10px;width:100%;margin-top:14px;padding:11px 13px;
-  border:1px solid var(--accent);border-radius:12px;background:none;color:var(--accent);
-  font-family:var(--ui);font-size:13px;text-align:left;cursor:pointer}
-.th-saved>span:first-child{flex:1;min-width:0}
-.th-saved b{font-weight:600}
-.th-move{flex:none;font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
-.th-h{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin:24px 2px 10px}
-.th-list{display:flex;flex-direction:column;gap:10px}
-.th-row{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px}
-.th-row.fresh{border-color:var(--accent)}
-.th-date{font-family:var(--ui);font-size:11px;color:var(--text-muted);margin-bottom:5px}
-.th-text{font-family:var(--display);font-size:14.5px;line-height:1.55;color:var(--text);white-space:pre-wrap;word-break:break-word;cursor:pointer}
-.th-text.clamp{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
-.th-on{display:flex;align-items:center;gap:10px;width:100%;margin-top:9px;padding:0;border:none;background:none;
-  color:var(--accent);font-family:var(--ui);font-size:12.5px;text-align:left;cursor:pointer}
-.th-on>span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .lib-gear{flex:none;margin-left:auto;width:38px;height:38px;display:flex;align-items:center;justify-content:center;
   border:none;background:none;color:var(--text-muted);border-radius:50%;cursor:pointer}
 .lib-gear svg{width:22px;height:22px}
@@ -1574,10 +1566,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       </div>
       <div id="h-body"></div>
     </section>
-    <section class="screen hidden" id="screen-thoughts" data-screen-label="Thoughts">
-      <div class="appbar"><div class="appbar-title">Thoughts</div></div>
-      <div id="thoughts-body"></div>
-    </section>
     <section class="screen hidden" id="screen-settings" data-screen-label="Settings">
       <div class="appbar"><div class="appbar-title">Settings</div><button class="appbar-done" onclick="switchScreen('library')">Done</button></div>
       <div class="set-list">
@@ -1621,16 +1609,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
           <button class="set-row" onclick="babelCheckUpdate()"><span>Update Babel</span><span class="set-chev">&#8635;</span></button>
           <div class="set-row" style="cursor:default"><span>Version</span><span class="set-chev" id="set-version" style="font-size:.8em;opacity:.75">&hellip;</span></div>
           <button class="set-row" onclick="babelShowStorage(1)"><span>Storage</span><span class="set-chev" id="set-storage" style="font-size:.8em;opacity:.75">&hellip;</span></button>
-          <button class="set-row" onclick="babelCheckWebGPU(1)"><span>On-device AI</span><span class="set-chev" id="set-webgpu" style="font-size:.8em;opacity:.75">Tap to check</span></button>
           <div id="storage-alarm" style="display:none;margin:8px 2px 0;padding:10px 12px;border-radius:10px;background:#5a1d1d;color:#ffd9d9;font-size:.82em;line-height:1.4"></div>
-        </div>
-        <div class="set-group">
-          <div class="set-group-h">On-device editor</div>
-          <div class="set-row llm-row" style="cursor:default">
-            <span class="set-n"><b>Copy-editor</b><em id="llm-sub">Tidies spelling and punctuation for the Composed view. Your own words always stay.</em></span>
-            <button class="llm-btn" id="llm-btn" onclick="llmButton()">Download (0.8 GB)</button>
-          </div>
-          <div class="llm-bar hidden" id="llm-bar"><i id="llm-fill"></i></div>
         </div>
         <div class="set-group" id="signout-group" style="display:none">
           <button class="set-row" onclick="BabelCloud.signOut()"><span>Sign out</span><span class="set-chev">&rsaquo;</span></button>
@@ -1646,7 +1625,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <button class="tab" data-screen="timer" onclick="switchScreen('timer')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5"/><path d="M9.5 2.5h5"/><path d="M19.2 6.8l1.2-1.2"/></svg><span>Timer</span></button>
     <button class="tab" data-screen="reading" onclick="switchScreen('reading')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Reading</span></button>
     <button class="tab" data-screen="hearth" onclick="switchScreen('hearth')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M12 2c.6 4.2-2.2 6-4 8.2C6.4 12.2 5.5 14 5.5 16c0 3.6 2.9 6 6.5 6s6.5-2.4 6.5-6c0-2.6-1.4-4.6-3-6.2-.4 1.3-1.3 2.2-2.4 2.5C14.4 8.6 15.5 4.6 12 2Z"/></svg><span>Hearth</span></button>
-    <button class="tab" data-screen="thoughts" onclick="openThoughts()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-7.5L7 20v-3.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5z"/><path d="M8 9h8M8 12h5"/></svg><span>Thoughts</span></button>
   </nav>
 </div>
 <div class="sheet-overlay hidden" id="shop-sheet" onclick="if(event.target===this)closeShop()">
@@ -1738,8 +1716,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       </section>
       <section class="bp-sec">
         <div class="bp-sech"><h3>My thoughts</h3>
-          <span class="bp-secacts"><button class="bp-secact" onclick="bpAddThought()">Add</button>
-          <button class="bp-secact" onclick="openSM(bpIdx)">Edit</button></span></div>
+          <span class="bp-secacts"><button class="bp-secact" onclick="openSM(bpIdx)">Edit</button></span></div>
         <div class="bp-th" id="bp-th"></div>
       </section>
       <section class="bp-sec">
@@ -2066,13 +2043,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <span id="toast-msg"></span>
   <button class="toast-undo" id="toast-undo" onclick="undoDelete()">Undo</button>
 </div>
-<!-- The edit guard decides what a model may change; nothing it writes reaches
-     an entry without passing through this. Kept as its own file so its tests
-     run against exactly the code the app ships. -->
-<script src="editguard.js"></script>
-<!-- Lossless sentence splitting, for composing an entry a sentence at a time
-     when the whole entry is refused. Tested on its own like the guard. -->
-<script src="sentences.js"></script>
 <script>
 // ── Storage layer (IndexedDB with localStorage-compatible API) ────────────────
 // Backed by IndexedDB so we get ~1+ GB of room instead of localStorage's 5 MB.
@@ -2613,7 +2583,6 @@ function _rovViews(){
     ['bp-sheet',        function(){ return bpIdx>=0 && !!books[bpIdx]; },                         renderBookPage],
     ['sessions-modal',  function(){ return smIdx>=0 && !!books[smIdx]; },                         renderSM],
     ['rl-modal',        function(){ return rlOpenIdx>=0 && !!books[rlOpenIdx] && rlEditIdx===-1; }, renderRLModal],
-    ['screen-thoughts', function(){ return true; },                                               renderThoughts],
     ['screen-reading',  function(){ return true; },                                               renderReadingScreen]
   ];
 }
@@ -2663,6 +2632,10 @@ function normalizeBook(b){
   // Carry every old single note across to a dated entry. Additive: the
   // note string itself is left exactly where it was.
   b.sessions.forEach(noteEntries);
+  // The on-device editor is gone (v60). The tidied copies it kept beside an
+  // entry (e.composed / e.composedOf) are dropped; e.text, what he wrote, is not
+  // touched.
+  b.sessions.forEach(function(r){ (r.notes||[]).forEach(function(e){ if(e){ delete e.composed; delete e.composedOf; } }); });
   var _ci=currentReadIdx(b);
   if(_ci>=0) _newest=b.sessions[_ci].id;
   if(_newest) b.timerSessions.forEach(function(x){ if(x && !x.readId) x.readId=_newest; });
@@ -4847,7 +4820,7 @@ function bpToggleDesc(){
 // Every entry on the book, oldest first, grouped by read, and numbered across
 // the whole book so "Log 7" is the same entry wherever it is shown. Reads come
 // in the order they were logged; within a read, by date, ties kept in the
-// order written. Each row keeps its entry, for the position and composed text.
+// order written. Each row keeps its entry, for its position.
 function bpThoughts(b){
   var out=[];
   (b.sessions||[]).forEach(function(r,ri){
@@ -4861,68 +4834,13 @@ function bpThoughts(b){
   out.forEach(function(t,i){ t.n=i+1; });
   return out;
 }
-// ── Composed text: a cached derivative, never a replacement ─────────────────
-// What he wrote stays in e.text, untouched. A composed version lives beside
-// it in e.composed, with e.composedOf naming the exact text it was made from,
-// and is only ever shown while e.text is still that text: an edit makes it
-// stale on the spot, even through a path that forgot to clear it. Composing
-// arrives with the on-device model — one entry at a time, never the whole
-// book, so no two judgments can ever be averaged into one.
-var TH_COMPOSE_READY=false;
-function thTextKey(s){
-  s=String(s==null?'':s);
-  var h=0x811c9dc5;
-  for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; }
-  return s.length+':'+h.toString(16);
-}
-function thComposedValid(e){
-  return !!e && typeof e.composed==='string' && !!e.composed && e.composedOf===thTextKey(e.text);
-}
-function thComposedText(e){ return thComposedValid(e) ? e.composed : ((e&&e.text)||''); }
-function thSetComposed(e, text){ if(!e) return; e.composed=String(text); e.composedOf=thTextKey(e.text); }
-function thClearComposed(e){ if(e){ delete e.composed; delete e.composedOf; } }
-
-// ── The thread on the book page ─────────────────────────────────────────────
-// The whole arc, top to bottom: what he believed at chapter 4 sits above what
-// he knew by the end. A book read more than once is grouped by read; his
-// summary of a read sits under that read's entries, in its own field.
-var bpView='raw';
-function bpSetView(v){
-  if(v==='composed' && !TH_COMPOSE_READY) return;
-  bpView=(v==='composed')?'composed':'raw';
-  renderBPThoughts();
-}
-function bpEntryHTML(t, composed){
-  var p=thPosText(t), txt=composed?thComposedText(t.e):t.text;
-  // What the editor left alone is said plainly rather than silently: a whole
-  // entry, or the sentences inside one it otherwise composed. Tapping shows
-  // what the model wanted. A partial record only stands beside a composed
-  // copy, and a refusal only beside his raw words.
-  var dec=composed ? composeRecord(t.e) : null;
-  if(dec && (dec.kind==='partial')!==thComposedValid(t.e)) dec=null;
-  var label='', panel='';
-  if(dec){
-    label = dec.kind==='partial' ? (dec.pieces.length+' of '+dec.total+' sentences left as written')
-          : dec.kind==='veto'    ? 'Left as written — the sentences passed one by one, not together'
-          : dec.kind==='all'     ? ('Left as written — all '+dec.total+' sentences')
-          : 'Left as written';
-    var whole=(dec.kind!=='partial' && (dec.kind==='veto' || !(dec.pieces||[]).length));
-    panel=(whole ? '<p class="bp-wanted-h">'+(dec.kind==='veto'?'Put together, it read:':'The model wanted:')+'</p>'
-                   +'<p class="bp-wanted-t">'+esc(dec.wanted||'(nothing)')+'</p>'
-                   +'<p class="bp-wanted-why">Refused: '+esc(dec.reason||'')+'</p>' : '')
-      +(dec.pieces||[]).map(function(q){
-        return '<p class="bp-wanted-s">“'+esc(q.text)+'”</p>'
-          +'<p class="bp-wanted-h">The model wanted:</p><p class="bp-wanted-t">'+esc(q.wanted||'(nothing)')+'</p>'
-          +'<p class="bp-wanted-why">Refused: '+esc(q.reason||'')+'</p>';
-      }).join('');
-  }
+function bpEntryHTML(t){
+  var p=thPosText(t);
   return '<article class="bp-log">'
     +'<div class="bp-loghd"><span class="bp-logn">Log '+t.n+'</span>'
       +'<span class="bp-logmeta">'+esc(longISO(t.at))+(p?' · '+esc(p):'')+'</span></div>'
-    +'<div class="bp-thbody">'+String(txt).split(/\n{2,}/).map(function(par){
+    +'<div class="bp-thbody">'+String(t.text).split(/\n{2,}/).map(function(par){
         return '<p>'+esc(par)+'</p>'; }).join('')+'</div>'
-    +(dec ? '<button class="bp-declined" onclick="bpToggleDeclined(this)">'+esc(label)+'</button>'
-           +'<div class="bp-wanted hidden">'+panel+'</div>' : '')
     +'</article>';
 }
 function bpReviewHTML(r, ri, multi){
@@ -4947,34 +4865,12 @@ function bpReadSpan(r){
   if(a) return 'from '+longISO(a);
   return z ? 'finished '+longISO(z) : '';
 }
-// Opens Thoughts already pointed at this book, so another entry does not mean
-// picking the book he is looking at.
-function bpAddThought(){
-  var i=bpIdx; if(i<0 || !books[i]) return;
-  closeBookPage();
-  openThoughts(i);
-  setTimeout(function(){ try{ var t=document.getElementById('th-box'); if(t) t.focus(); }catch(e){} },80);
-}
 function renderBPThoughts(){
   var b=books[bpIdx], host=document.getElementById('bp-th');
   if(!b || !host) return;
   var list=bpThoughts(b), reads=b.sessions||[], multi=reads.length>1, cur=currentReadIdx(b);
-  var composed=(bpView==='composed' && TH_COMPOSE_READY);
-  var none='<p class="bp-none">Nothing written yet. Tap Add to write the first thought.</p>';
+  var none='<p class="bp-none">Nothing written yet. Tap Edit to add an entry.</p>';
   var h='';
-  if(list.length){
-    h+='<div class="bp-view"><div class="bp-seg">'
-      +'<button class="'+(composed?'':'on')+'" onclick="bpSetView(\'raw\')">Raw</button>'
-      +'<button class="'+(composed?'on':'')+'"'+(TH_COMPOSE_READY?' onclick="bpSetView(\'composed\')"':' disabled')+'>Composed</button>'
-      +'</div>'+(TH_COMPOSE_READY?'':'<span class="bp-viewnote">Composed needs the on-device editor — Settings.</span>')+'</div>';
-  }
-  if(composed && list.length){
-    var _todo=list.filter(function(t){ return !thComposedValid(t.e) && !composeDeclined(t.e); }).length;
-    var _left=LLM.queue.length+(LLM.busy?1:0);
-    if(_left) h+='<p class="bp-composing">Composing… '+_left+' to go</p>';
-    else if(_todo) h+='<div class="bp-composebar"><span>'+_todo+' not composed yet</span>'
-      +'<button class="bp-secact" onclick="bpComposeRest()">Compose them</button></div>';
-  }
   if(!reads.length){ host.innerHTML=none; return; }
   reads.forEach(function(r,ri){
     var rows=list.filter(function(t){ return t.read===ri+1; });
@@ -4985,442 +4881,13 @@ function renderBPThoughts(){
       var span=bpReadSpan(r);
       h+='<p class="bp-rlabel">Read '+(ri+1)+' of '+reads.length+(span?' · '+esc(span):'')+'</p>';
     }
-    h+= rows.length ? rows.map(function(t){ return bpEntryHTML(t,composed); }).join('')
+    h+= rows.length ? rows.map(function(t){ return bpEntryHTML(t); }).join('')
                     : (multi?'<p class="bp-none">Nothing written on this read.</p>':none);
     if(wantReview) h+=bpReviewHTML(r,ri,multi);
     h+='</div>';
   });
   host.innerHTML=h;
   try{ host.querySelectorAll('textarea.bp-rvbox').forEach(function(t){ autoGrow(t); }); }catch(e){}
-}
-function bpToggleDeclined(btn){
-  var w=btn && btn.nextElementSibling; if(w) w.classList.toggle('hidden');
-}
-// Composes every entry on this book that has neither a composed copy nor a
-// recorded refusal. Opt-in from the Composed view, never run on its own.
-function bpComposeRest(){
-  var b=books[bpIdx]; if(!b) return;
-  var n=0;
-  bpThoughts(b).forEach(function(t){
-    if(thComposedValid(t.e) || composeDeclined(t.e)) return;
-    var r=(b.sessions||[])[t.read-1]; if(!r || !r.id) return;
-    if(composeEnqueue({listId:activeId, idx:bpIdx, bookId:b.bookId, readId:r.id, at:t.at, text:t.text})) n++;
-  });
-  showToast(n ? ('Composing '+n+' '+(n===1?'entry':'entries')+'…') : 'Nothing left to compose');
-  renderBPThoughts();
-}
-
-// ── The on-device copy-editor ───────────────────────────────────────────────
-// A small model proposes a copy-edit of ONE entry. editguard.js then throws
-// away every change that is not spelling, punctuation, capitalisation or a
-// sentence break — or refuses the whole thing and hands back his own words.
-// Only an accepted result is stored, and only in e.composed: never e.text,
-// r.note or r.review. The model never sees two entries in one request; that is
-// what keeps "chapters 1-4 good" and "chapters 7-8 terrible" from becoming
-// "mixed feelings", and it is structural, not a prompt instruction.
-//
-// web-llm is pinned at 0.2.79. NOT 0.2.80 or later: on this phone's Adreno
-// GPU, 0.2.80+ loads a model and then loses the WebGPU device on the first
-// token, every time, at 16- and 32-bit (mlc-ai/web-llm issue #836 — 0.2.80
-// moved CPU work in llm_chat.ts onto GPU kernels). 0.2.79 ran the same model
-// cleanly on the phone on 2026-10-17. Do not "update" this.
-var LLM={
-  MODEL:'Qwen2.5-1.5B-Instruct-q4f16_1-MLC',
-  LIB:'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/+esm',
-  SIZE:'0.8 GB',
-  lib:null, engine:null, loading:null, queue:[], busy:false, pct:-1, idle:null,
-  importLib:function(){ return import(LLM.LIB); }
-};
-var LLM_READY_KEY='rl_llm_ready';     // set once the model has downloaded and loaded
-var LLM_LOG_KEY='rl_compose_log';     // refusals, on this device only — never synced
-function llmIsReady(){ try{ return storage.getItem(LLM_READY_KEY)==='1'; }catch(e){ return false; } }
-function llmInit(){ TH_COMPOSE_READY=llmIsReady(); }
-var _llmSupport=null;
-function llmSupport(){
-  if(_llmSupport) return _llmSupport;
-  _llmSupport=Promise.resolve().then(function(){
-    if(typeof navigator==='undefined' || !navigator.gpu) return {ok:false, why:'this WebView has no WebGPU'};
-    return navigator.gpu.requestAdapter().then(function(ad){ return ad ? {ok:true} : {ok:false, why:'the GPU offers no adapter'}; });
-  }).catch(function(e){ return {ok:false, why:(e&&e.message)||'the WebGPU check failed'}; });
-  return _llmSupport;
-}
-function llmLib(){
-  if(LLM.lib) return Promise.resolve(LLM.lib);
-  return LLM.importLib().then(function(m){ LLM.lib=m; return m; });
-}
-// Loaded lazily, on first use. Composing never downloads: if the weights have
-// gone (storage cleared, model removed) the editor turns itself off instead of
-// quietly pulling 800 MB the way CreateMLCEngine otherwise would.
-function llmEngine(allowDownload){
-  if(LLM.engine) return Promise.resolve(LLM.engine);
-  if(LLM.loading) return LLM.loading;
-  LLM.loading=llmLib().then(function(w){
-    return Promise.resolve(allowDownload ? true : w.hasModelInCache(LLM.MODEL)).then(function(have){
-      if(!have){
-        try{ storage.removeItem(LLM_READY_KEY); }catch(e){}
-        TH_COMPOSE_READY=false;
-        throw new Error('the model is no longer downloaded');
-      }
-      return w.CreateMLCEngine(LLM.MODEL, {initProgressCallback:function(p){
-        LLM.pct=Math.round(((p&&p.progress)||0)*100); renderLlmRow();
-      }});
-    });
-  }).then(function(e){ LLM.engine=e; LLM.loading=null; LLM.pct=-1; return e; },
-          function(err){ LLM.loading=null; LLM.pct=-1; throw err; });
-  return LLM.loading;
-}
-// A loaded model holds 1.6 GB of GPU memory; a phone short of memory kills the
-// app holding it. Let go of it a couple of minutes after the last entry.
-function llmUnloadSoon(){
-  clearTimeout(LLM.idle);
-  LLM.idle=setTimeout(function(){
-    if(LLM.busy || LLM.queue.length || !LLM.engine) return;
-    var e=LLM.engine; LLM.engine=null; try{ e.unload(); }catch(x){}
-  },120000);
-}
-function llmButton(){
-  if(LLM.loading) return;
-  if(llmIsReady()){ llmRemove(); return; }
-  llmSupport().then(function(s){
-    if(!s.ok){ renderLlmRow(); return; }
-    if(!confirm('Download the on-device editor? About '+LLM.SIZE+' — use Wi-Fi.')) return;
-    llmEngine(true).then(function(){
-      try{ storage.setItem(LLM_READY_KEY,'1'); }catch(e){}
-      TH_COMPOSE_READY=true;
-      showToast('On-device editor ready');
-      composeRefresh(); llmUnloadSoon();
-    }, function(err){
-      showToast('Download failed: '+String((err&&err.message)||err).slice(0,90));
-      renderLlmRow();
-    });
-    renderLlmRow();
-  });
-}
-function llmRemove(){
-  if(!confirm('Remove the on-device editor and free about '+LLM.SIZE+'? Composed text already saved stays.')) return;
-  LLM.queue=[];
-  var e=LLM.engine; LLM.engine=null; try{ if(e) e.unload(); }catch(x){}
-  try{ storage.removeItem(LLM_READY_KEY); }catch(x){}
-  TH_COMPOSE_READY=false; bpView='raw';
-  llmLib().then(function(w){ return w.deleteModelAllInfoInCache(LLM.MODEL); })
-    .then(function(){ showToast('On-device editor removed'); },
-          function(err){ showToast('Could not remove every file: '+String((err&&err.message)||err).slice(0,80)); })
-    .then(composeRefresh);
-}
-// How often the editor earns its keep. Refusals are split by cause, because
-// they point at different fixes: dropping his words means the model deletes,
-// going over budget means it rewrites.
-function composeCounts(){
-  var done=0, left=0, reversed=0, dropped=0, over=0, echo=0, veto=0, sentences=0;
-  books.forEach(function(b){ (b.sessions||[]).forEach(function(r){ (r.notes||[]).forEach(function(e){
-    if(!e || !String(e.text||'').trim()) return;
-    var rec=composeRecord(e);
-    if(thComposedValid(e)){
-      done++;
-      if(rec && rec.kind==='partial') sentences+=(rec.pieces||[]).length;
-      return;
-    }
-    if(!rec || rec.kind==='partial') return;
-    left++; sentences+=(rec.total||1);
-    if(rec.kind==='veto') veto++;
-    else if(/reverse your meaning/.test(rec.reason||'')) reversed++;
-    else if(/were dropped/.test(rec.reason||'')) dropped++;
-    else if(/refused edits/.test(rec.reason||'')) over++;
-    else if(/copied its own example/.test(rec.reason||'')) echo++;
-  }); }); });
-  return {done:done, left:left, reversed:reversed, dropped:dropped, over:over, echo:echo, veto:veto, sentences:sentences};
-}
-function renderLlmRow(){
-  var btn=document.getElementById('llm-btn'), sub=document.getElementById('llm-sub');
-  var bar=document.getElementById('llm-bar'), fill=document.getElementById('llm-fill');
-  if(!btn || !sub) return;
-  if(bar) bar.classList.toggle('hidden', !LLM.loading);
-  if(fill) fill.style.width=Math.max(0,LLM.pct)+'%';
-  if(LLM.loading){
-    btn.disabled=true;
-    btn.textContent=(llmIsReady()?'Loading':'Downloading')+(LLM.pct>=0?' '+LLM.pct+'%':'…');
-    return;
-  }
-  btn.disabled=false;
-  if(llmIsReady()){
-    var c=composeCounts();
-    btn.textContent='Remove';
-    var causes=[];
-    if(c.reversed) causes.push(c.reversed+' reversed meaning');
-    if(c.dropped) causes.push(c.dropped+' dropped words');
-    if(c.over) causes.push(c.over+' rewrites');
-    if(c.echo) causes.push(c.echo+' copied an example');
-    if(c.veto) causes.push(c.veto+' vetoed whole');
-    // The number that matters now is sentences, not entries: a long entry can
-    // compose apart from the one sentence the model could not parse.
-    sub.textContent='Ready · '+c.done+' composed · '+c.left+' left as written'
-      +(causes.length ? ' ('+causes.join(', ')+')' : '')
-      +(c.sentences ? ' · '+c.sentences+' sentence'+(c.sentences===1?'':'s')+' left as written' : '');
-    return;
-  }
-  btn.textContent='Download ('+LLM.SIZE+')';
-  sub.textContent='Tidies spelling and punctuation for the Composed view. Your own words always stay.';
-  llmSupport().then(function(s){
-    if(s.ok || llmIsReady() || LLM.loading) return;
-    btn.disabled=true; btn.textContent='Unavailable';
-    sub.textContent='Not available on this device — '+s.why+'.';
-  });
-}
-
-// What the guard refused, kept on this device so "Left as written" can show
-// what the model wanted. Keyed by the exact words, so an edit forgets it.
-var _composeLog=null;
-function composeLog(){
-  if(!_composeLog){
-    try{ _composeLog=JSON.parse(storage.getItem(LLM_LOG_KEY)||'{}')||{}; }catch(e){ _composeLog={}; }
-  }
-  return _composeLog;
-}
-// A refusal stands for the guard and prompt that made it. When either changes,
-// COMPOSE_VER moves on and older refusals are tried again — "never re-run"
-// means never re-run the same judgement, not never look again.
-// Guard v4 only refuses more than v3 did (negations), so it does not move
-// this: every v3 refusal would be refused again, at minutes of GPU each.
-var COMPOSE_VER='3';
-// What the editor recorded for these exact words under the current guard and
-// prompt: an entry it left alone ('declined', 'all', 'veto'), or the sentences
-// it left alone inside an entry it otherwise composed ('partial').
-function composeRecord(e){
-  var rec=e && composeLog()[thTextKey(e.text)];
-  return (rec && rec.v===COMPOSE_VER) ? rec : null;
-}
-// An entry that was not composed at all. A partly composed entry is composed.
-function composeDeclined(e){
-  var rec=composeRecord(e);
-  return (rec && rec.kind!=='partial') ? rec : null;
-}
-function composeRecordDecline(text, wanted, reason, extra){
-  var log=composeLog(), keys=Object.keys(log);
-  if(keys.length>=400){
-    keys.sort(function(a,b){ return (log[a].at||0)-(log[b].at||0); });
-    keys.slice(0,keys.length-399).forEach(function(k){ delete log[k]; });
-  }
-  var rec={wanted:String(wanted||''), reason:String(reason||''), at:Date.now(), v:COMPOSE_VER, kind:'declined'};
-  if(extra) Object.keys(extra).forEach(function(f){ rec[f]=extra[f]; });
-  log[thTextKey(text)]=rec;
-  try{ storage.setItem(LLM_LOG_KEY, JSON.stringify(log)); }catch(e){}
-}
-
-// The prompt, then demonstrations — small models copy an example far more
-// reliably than they follow a rule. No example's output is "nicer" than its
-// input; that is the whole point of them.
-var COMPOSE_SYS='You are a copy-editor for a private reading journal. Fix only spelling, '
-  +'capitalisation, punctuation and sentence breaks. Do not replace, remove, reorder or add '
-  +'words, except to correct a misspelled word. Keep slang, profanity, blunt opinions and '
-  +'chapter or page references exactly as written. If the text is already correct, return it '
-  +'unchanged. Return only the corrected text. If a phrase is garbled or you cannot parse it, '
-  +'leave it exactly as written. Never delete words you do not understand.';
-// Stand-ins, used only until he has composed entries of his own. The old
-// "already correct" line ("I couldn't put it down…") is gone: given a long
-// entry, the model copied it back word for word.
-var COMPOSE_SHOTS=[
-  ['chapters 7-8 were terrible. pacing fell apart', 'Chapters 7-8 were terrible. Pacing fell apart.'],
-  ['charcter feels like a devise', 'character feels like a device'],
-  ['this book is kinda shit tbh', 'This book is kinda shit, tbh.']
-];
-// His own entries make the best demonstrations: they carry his register and
-// length, and there is no tidy invented line to echo. They are read from his
-// library on this device when a request is built — never written into this
-// file, which is public. Only entries the guard already accepted are used, so
-// every demonstration's output is his words with nothing but spelling and
-// punctuation changed. Thoughts on the same book are left out: the model never
-// sees two of his entries about one book side by side.
-var SHOT_MAX=480;                     // characters; long demos slow every request
-function composeShots(job){
-  var clean=[], changed=[];
-  books.forEach(function(b){
-    if(job && b.bookId && b.bookId===job.bookId) return;
-    (b.sessions||[]).forEach(function(r){ (r.notes||[]).forEach(function(e){
-      if(!e || !thComposedValid(e)) return;
-      var t=String(e.text||''), c=String(e.composed||'');
-      if(t.trim().length<12 || t.length>SHOT_MAX || (job && t===job.text)) return;
-      (c===t ? clean : changed).push([t,c]);
-    }); });
-  });
-  var picks=[];
-  changed.sort(function(a,b){ return a[0].length-b[0].length; });
-  if(changed.length) picks.push(changed[0]);                         // short
-  if(changed.length>1) picks.push(changed[changed.length-1]);        // long
-  if(clean.length){                                                  // already right, comes back unchanged
-    clean.sort(function(a,b){ return Math.abs(a[0].length-120)-Math.abs(b[0].length-120); });
-    picks.push(clean[0]);
-  }
-  for(var i=0;i<COMPOSE_SHOTS.length && picks.length<3;i++) picks.push(COMPOSE_SHOTS[i]);
-  return picks;
-}
-// One entry's words to edit, after the demonstrations. max_tokens sits about
-// 1.2x the entry's length, which makes padding impossible rather than
-// discouraged.
-function composeRequest(text, shots){
-  var msgs=[{role:'system', content:COMPOSE_SYS}];
-  (shots||COMPOSE_SHOTS).forEach(function(s){ msgs.push({role:'user', content:s[0]}, {role:'assistant', content:s[1]}); });
-  msgs.push({role:'user', content:String(text)});
-  return {messages:msgs, temperature:0, max_tokens:Math.round(String(text).length/3.2)+48};
-}
-// A job names one entry: where it lives and the exact words it was made from.
-function composeEnqueue(job){
-  if(!TH_COMPOSE_READY || !job || !String(job.text||'').trim()) return false;
-  if(LLM.queue.some(function(j){ return j.bookId===job.bookId && j.readId===job.readId && j.at===job.at && j.text===job.text; })) return false;
-  LLM.queue.push(job);
-  composeDrain();
-  return true;
-}
-function composeDrain(){
-  if(LLM.busy) return;
-  var job=LLM.queue.shift();
-  if(!job){ llmUnloadSoon(); return; }
-  // Without the guard there is nothing standing between the model and his
-  // words, so nothing is composed at all.
-  if(typeof EditGuard!=='function'){ LLM.queue=[]; return; }
-  LLM.busy=true; composeRefresh();
-  var shots=composeShots(job);
-  llmEngine(false)
-    .then(function(eng){ return composeEntry(eng, job, shots); })
-    .catch(function(err){ composeFailed(job, err); })
-    .then(function(){ LLM.busy=false; composeRefresh(); composeDrain(); });
-}
-// One request, for one piece of his writing: an entry, or one sentence of it.
-function composeAsk(eng, text, shots){
-  return eng.chat.completions.create(composeRequest(text, shots)).then(function(res){
-    return (res&&res.choices&&res.choices[0]&&res.choices[0].message&&res.choices[0].message.content)||'';
-  });
-}
-// The verdict on one piece. A copy of one of its own demonstrations is not an
-// edit of his writing; say so plainly, rather than letting it arrive as "145
-// of your words were dropped".
-function composeJudge(text, out, shots){
-  var norm=function(s){ return String(s||'').replace(/\s+/g,' ').trim(); };
-  if((shots||[]).some(function(s){ return norm(s[1])===norm(out) && norm(s[0])!==norm(text); }))
-    return {ok:false, reason:'the model copied its own example'};
-  var g=EditGuard(text, out);
-  if(g.rejected) return {ok:false, reason:g.reason};
-  return {ok:true, text:keepBreaks(text, g.text)};
-}
-// Two passes. The whole entry first, exactly as before: when the guard accepts
-// it, that is one request and done. Only when it refuses is the entry split
-// into sentences and each composed on its own, so one clause the model cannot
-// parse costs that sentence instead of the entry. Splitting every time would
-// re-read the demonstrations once per sentence and make the entries that
-// already work slower for nothing.
-function composeEntry(eng, job, shots){
-  return composeAsk(eng, job.text, shots).then(function(out){
-    var v=composeJudge(job.text, out, shots);
-    if(v.ok){ composeStore(job, v.text); return; }
-    var S=(typeof Sentences!=='undefined' && Sentences) ? Sentences : null;
-    var pieces=S ? S.split(job.text) : [job.text];
-    var total=S ? pieces.filter(function(p){ return !!S.body(p); }).length : 1;
-    if(total<2){ composeRecordDecline(job.text, out, v.reason); return; }
-    return composeSentences(eng, job, shots, pieces, total, out, v.reason);
-  });
-}
-// One sentence per request — never two in one prompt, the same rule as one
-// entry per request. A refused sentence stays exactly as he wrote it, byte for
-// byte. Nothing is stored until every sentence is back: a half-composed entry
-// is never written.
-function composeSentences(eng, job, shots, pieces, total, wholeOut, wholeReason){
-  var out=pieces.slice(), refused=[], chain=Promise.resolve();
-  pieces.forEach(function(piece, i){
-    var b=Sentences.body(piece); if(!b) return;
-    chain=chain.then(function(){
-      return composeAsk(eng, b, shots).then(function(got){
-        var v=composeJudge(b, got, shots);
-        if(v.ok) out[i]=Sentences.reclothe(piece, v.text);
-        else refused.push({i:i, text:b, wanted:got, reason:v.reason});
-      });
-    });
-  });
-  return chain.then(function(){
-    var extra={pieces:refused, total:total};
-    if(refused.length===total){
-      extra.kind='all';
-      composeRecordDecline(job.text, wholeOut, wholeReason, extra);
-      return;
-    }
-    // Per-sentence decisions, entry-level veto. A sentence's budget has a
-    // floor of two changes, generous for six words, so several sentences each
-    // slipping two in can add up to a rewrite no single sentence shows. The
-    // rejoined entry must pass the guard against what he wrote, with nothing
-    // left for it to undo, or none of it is kept.
-    var joined=Sentences.rejoin(out), G=EditGuard(job.text, joined);
-    if(G.rejected || G.reverts.length){
-      extra.kind='veto';
-      composeRecordDecline(job.text, joined, 'the sentences passed one by one but not together ('
-        +(G.rejected ? G.reason : G.reverts.length+' change'+(G.reverts.length===1?'':'s')+' refused across sentences')+')', extra);
-      return;
-    }
-    if(composeStore(job, joined) && refused.length){
-      extra.kind='partial';
-      composeRecordDecline(job.text, '', refused.length+' of '+total+' sentences left as written', extra);
-    }
-  });
-}
-// Writes the composed copy onto the entry, once, and only while the entry
-// still holds the exact words it was made from.
-function composeStore(job, text){
-  return !!thApply({listId:job.listId, idx:job.idx, bookId:job.bookId}, function(b){
-    var r=readById(b, job.readId); if(!r) return null;
-    var es=noteEntries(r);
-    for(var k=es.length-1;k>=0;k--){
-      var e=es[k];
-      if(e && e.at===job.at && e.text===job.text){
-        if(thComposedValid(e)) return null;          // composed once; never re-run over it
-        thSetComposed(e, text);
-        return {entry:e};
-      }
-    }
-    return null;                                     // his words changed meanwhile: store nothing
-  });
-}
-// The guard rebuilds its text with single spaces, which folds his paragraphs
-// into one. Put back each line break he wrote after the word it followed.
-// Only whitespace moves; no word is touched.
-function keepBreaks(orig, text){
-  orig=String(orig||''); text=String(text||'');
-  if(!/\n/.test(orig) || !text) return text;
-  var key=function(w){ return w.toLowerCase().replace(/[^a-z0-9']/g,''); };
-  var A=[], re=/(\S+)(\s*)/g, m;
-  while((m=re.exec(orig))) A.push({k:key(m[1]), ws:m[2]});
-  var B=text.split(' '), K=B.map(key), n=A.length, nb=B.length, i, j, T=[];
-  for(i=0;i<=n;i++) T[i]=new Int32Array(nb+1);
-  for(i=n-1;i>=0;i--) for(j=nb-1;j>=0;j--)
-    T[i][j]=(A[i].k && A[i].k===K[j]) ? T[i+1][j+1]+1 : Math.max(T[i+1][j], T[i][j+1]);
-  var pairs=[]; i=0; j=0;
-  while(i<n && j<nb){
-    if(A[i].k && A[i].k===K[j]){ pairs.push([i,j]); i++; j++; }
-    else if(T[i+1][j]>=T[i][j+1]) i++; else j++;
-  }
-  // A word changed in place (a spelling fix) sits in a gap the same size on
-  // both sides; pair those positionally too.
-  var all=[], pi=-1, pj=-1;
-  pairs.concat([[n,nb]]).forEach(function(p){
-    if(p[0]-pi===p[1]-pj) for(var g=1; g<p[0]-pi; g++) all.push([pi+g, pj+g]);
-    if(p[0]<n) all.push(p);
-    pi=p[0]; pj=p[1];
-  });
-  var sep=B.map(function(){ return ' '; });
-  all.forEach(function(p){ if(/\n/.test(A[p[0]].ws) && p[1]<nb-1) sep[p[1]]=A[p[0]].ws; });
-  return B.map(function(w,k){ return w+(k<nb-1?sep[k]:''); }).join('');
-}
-function composeFailed(job, err){
-  LLM.queue=[];                                      // a broken engine should not grind through the rest
-  var e=LLM.engine; LLM.engine=null; try{ if(e) e.unload(); }catch(x){}
-  showToast('On-device editor stopped: '+String((err&&err.message)||err).slice(0,80));
-}
-// Redraws what composing changed. Never while he is typing in the thread: a
-// summary saves when the box loses focus, so redrawing under him would wipe
-// words he has not saved yet.
-function composeRefresh(){
-  try{
-    var host=document.getElementById('bp-th'), a=document.activeElement;
-    var typing=!!(host && a && host.contains && host.contains(a) && /^(TEXTAREA|INPUT)$/.test(a.tagName||''));
-    if(bpIdx>=0 && !typing) renderBPThoughts();
-  }catch(e){}
-  try{ renderLlmRow(); }catch(e){}
 }
 function renderBookPage(){
   var b=books[bpIdx]; if(!b) return;
@@ -6755,16 +6222,11 @@ function noteWrite(i,val){
     we={at:todayISO(),text:String(val)};
     es.push(we); rtNote[x.id]=0;
   } else {
-    // A composed version was made from the old words; it goes with them.
-    if(es[k].text!==String(val)) thClearComposed(es[k]);
     es[k].text=String(val);
     we=es[k];
   }
   syncNoteText(x);
   saveCurrentList(); fanOutBookMeta(smIdx); renderSM(); renderTable(); updateStats();
-  // New words, so the editor gets one look at them (when it is installed).
-  var _wb=books[smIdx];
-  if(we && _wb) composeEnqueue({listId:activeId, idx:smIdx, bookId:_wb.bookId, readId:x.id, at:we.at, text:we.text});
 }
 function noteAdd(i){
   var x=_readAt(i); if(!x) return;
@@ -6791,328 +6253,10 @@ function noteDel(i){
   syncNoteText(x);
   saveCurrentList(); fanOutBookMeta(smIdx); renderSM(); renderTable(); updateStats();
 }
-
-// ── Thoughts ─────────────────────────────────────────────────────────────────
-// One box: type a thought, Log it, and it is filed on a book. A logged thought
-// IS a reading-log entry — {at,text} pushed onto noteEntries() of the book's
-// current read, read.note rebuilt by syncNoteText, then saved and fanned out
-// exactly as noteWrite does — so a thought logged here and one typed into the
-// reading log are the same thing in the same place, indistinguishable after.
-//
-// Where it goes is never worked out from the text. A running timer names the
-// book; otherwise he picks one, and nothing is written until he does. Every
-// save says on screen where it landed, and that line moves it in one tap: a
-// thought quietly filed on the wrong book would only be found months later.
-var TH_ASK_READY=false;  // Ask arrives with the on-device model; until then it is shown, disabled
-var _thTarget=null;      // {bookId,idx} when opened pointed at one book
-var _thDraft='';         // the box keeps its text when he leaves the screen
-var _thLast=null;        // where the last save landed: the confirmation line
-var _thFresh=[];         // entries saved since the app opened, so they lead the list
-var _thRows=[];          // the rows on screen, for their Move buttons
-var _thMoving=null;      // the entry being moved while the picker is open
-
-// openThoughts(bookIdx) opens the section pointed at one book, so a later
-// "compile my thoughts on this book" on the book page has a way in. Opened
-// from the tab bar it points nowhere and the usual routing applies.
-function openThoughts(bookIdx){
-  _thTarget=(typeof bookIdx==='number' && books[bookIdx]) ? {bookId:books[bookIdx].bookId, idx:bookIdx} : null;
-  _thLast=null;
-  switchScreen('thoughts');
-}
-function thClearTarget(){ _thTarget=null; renderThoughts(); }
-// The book he read most recently: the latest timed session, else the first one
-// marked reading. Only ever the picker's first row, never a destination.
-function thLastReadIdx(){
-  var best=-1, bt=0;
-  books.forEach(function(b,i){
-    (b.timerSessions||[]).forEach(function(x){
-      if(x && !x.detached && (x.startTime||0)>bt){ bt=x.startTime; best=i; }
-    });
-  });
-  if(best<0) for(var i=0;i<books.length;i++){ if(books[i].isReading){ best=i; break; } }
-  return best;
-}
-// Where Log will file, decided only by state he can see on screen. null means
-// he chooses. A book he pointed the section at outranks a running timer.
-function thRoute(){
-  if(_thTarget) return {listId:activeId, idx:_thTarget.idx, bookId:_thTarget.bookId, why:'chosen'};
-  if(activeTimer){
-    var tb=tmrTimerBook();
-    return {listId:activeTimer.listId, idx:tmrBookIdx(), bookId:tb&&tb.bookId,
-            title:(tb&&tb.title)||activeTimer.bookTitle, why:'timer'};
-  }
-  return null;
-}
-// The book's index in the open list. The same book in another list shares its
-// bookId, and fanOutBookMeta carries a change made here to every copy.
-function _thIdxOf(ref){
-  if(!ref) return -1;
-  if(ref.bookId){
-    for(var i=0;i<books.length;i++) if(books[i] && books[i].bookId===ref.bookId) return i;
-    return -1;
-  }
-  return (ref.listId===activeId && books[ref.idx]) ? ref.idx : -1;
-}
-// Runs fn on the book and saves it the way the reading log does. The timer can
-// be running against a book that only exists in another list; that copy is
-// written where it lives and fanned out from there. fn returns what to hand
-// back, or nothing to save nothing.
-function thApply(ref, fn){
-  var i=_thIdxOf(ref);
-  if(i>=0){
-    var out=fn(books[i]); if(!out) return null;
-    saveCurrentList(); fanOutBookMeta(i);
-    try{ renderTable(); updateStats(); }catch(e){}
-    out.listId=activeId; return out;
-  }
-  if(!ref || !ref.bookId || !ref.listId || ref.listId===activeId) return null;
-  try{
-    var raw=storage.getItem(listKey(ref.listId)), arr=raw?JSON.parse(raw):[], j=-1;
-    for(var k=0;k<arr.length;k++) if(arr[k] && arr[k].bookId===ref.bookId){ j=k; break; }
-    if(j<0) return null;
-    var out2=fn(arr[j]); if(!out2) return null;
-    storage.setItem(listKey(ref.listId), JSON.stringify(arr));
-    try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(ref.listId); }catch(e){}
-    _thFanOutFrom(arr[j], ref.listId);
-    out2.listId=ref.listId; return out2;
-  }catch(e){ return null; }
-}
-// fanOutBookMeta, for a book that is not in the open list: every other copy
-// gets its reads. Without this a later edit in a third list would push its
-// older reads back over this one and the thought would be gone.
-function _thFanOutFrom(src, srcListId){
-  if(!src || !src.bookId) return;
-  var sess=JSON.stringify(src.sessions||[]);
-  lists.forEach(function(l){
-    if(l.id===srcListId || l.id===activeId) return;
-    try{
-      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
-      var arr=JSON.parse(raw), hit=false;
-      arr.forEach(function(x){
-        if(!x || x.bookId!==src.bookId) return;
-        stampFormats(x); x.sessions=JSON.parse(sess); hit=true;
-      });
-      if(hit){
-        storage.setItem(listKey(l.id), JSON.stringify(arr));
-        try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(l.id); }catch(e){}
-      }
-    }catch(e){}
-  });
-}
-// Where the running sitting is, in the read's own unit: pages, or minutes for
-// audio. fmt says which, so a position can never be read as the other unit.
-function thPosNow(b){
-  if(!b || !activeTimer) return null;
-  var fmt=readFormat(curReadOf(b)), p=currentPageFor(b)||0;
-  if(activeTimer.fmt===fmt) p=Math.max(p, activeTimer.startPage||0);
-  return p>0 ? {pos:p, fmt:fmt} : null;
-}
 // Entries written before positions existed have none, and show nothing.
 function thPosText(e){
   if(!e || !(e.pos>0)) return '';
   return e.fmt==='audio' ? fmtMins(e.pos) : 'p.'+e.pos;
-}
-// One entry on the book's current read — exactly what noteWrite writes, plus
-// a position when there is one.
-function thAddEntry(b, text, stamp){
-  if(!b || !String(text||'').trim()) return null;
-  var had=(b.sessions||[]).length;
-  var rid=ensureCurrentRead(b), r=readById(b,rid); if(!r) return null;
-  if(b.sessions.length>had) _thMadeReads[(b.bookId||'')+'|'+rid]=1;
-  var e={at:todayISO(), text:String(text)};
-  if(stamp && stamp.pos>0){ e.pos=stamp.pos; e.fmt=stamp.fmt; }
-  noteEntries(r).push(e);
-  syncNoteText(r);
-  return {entry:e, readId:rid, bookId:b.bookId, title:b.title};
-}
-// A book never started has no read to hold a thought, so filing one starts a
-// read. If that thought is then moved away, the read it leaves is empty and
-// would show the book as begun today. Only a read made here, holding nothing
-// at all, is taken back; any read he made, or that holds anything, stays.
-var _thMadeReads={};
-function _thDropEmptyRead(b, rid){
-  var key=(b.bookId||'')+'|'+rid;
-  if(!_thMadeReads[key]) return;
-  var r=readById(b,rid); if(!r) return;
-  if(r.end || r.rating || String(r.note||'').trim()) return;
-  if((r.notes||[]).some(function(e){ return e && String(e.text||'').trim(); })) return;
-  if((b.timerSessions||[]).some(function(x){ return x && x.readId===rid; })) return;
-  b.sessions.splice(b.sessions.indexOf(r),1);
-  delete _thMadeReads[key];
-}
-// Files text on the book ref names. stamp: true takes the running sitting's
-// position; an object {pos,fmt} is used as given. Returns where it landed.
-function thFile(ref, text, stamp){
-  var res=thApply(ref, function(b){
-    return thAddEntry(b, text, stamp===true ? thPosNow(b) : (stamp||null));
-  });
-  if(!res) return null;
-  _thFresh.push(res.entry);
-  _thLast={listId:res.listId, bookId:res.bookId, readId:res.readId, title:res.title,
-           at:res.entry.at, text:res.entry.text, pos:res.entry.pos, fmt:res.entry.fmt};
-  // Composed at log time, once, and cached on the entry — when the editor is
-  // installed. It runs after the entry is saved, so it can never cost it.
-  composeEnqueue({listId:res.listId, idx:ref.idx, bookId:res.bookId, readId:res.readId,
-                  at:res.entry.at, text:res.entry.text});
-  return res;
-}
-function thLog(){
-  var ta=document.getElementById('th-box'), text=ta?ta.value:_thDraft;
-  if(!String(text||'').trim()){ showToast('Write something first'); try{ if(ta) ta.focus(); }catch(e){} return; }
-  var ref=thRoute();
-  if(!ref){ tmrOpenPicker('log'); return; }        // nothing is written until he picks
-  thLogTo(ref, text);
-}
-function thLogTo(ref, text){
-  if(!thFile(ref, text, ref.why==='timer')){
-    showToast('Could not save — your text is still in the box'); return;
-  }
-  // Empty the box itself, not just the draft: renderThoughts reads the box back.
-  var ta=document.getElementById('th-box'); if(ta) ta.value='';
-  _thDraft=''; renderThoughts();
-}
-// The picker hands back a book for a new thought or for one being moved.
-function thPicked(mode, i){
-  if(mode==='refile'){ thMoveTo(i); return; }
-  var b=books[i]; if(!b) return;
-  var ta=document.getElementById('th-box');
-  thLogTo({listId:activeId, idx:i, bookId:b.bookId}, ta?ta.value:_thDraft);
-}
-// Moving takes the entry off its read and puts it on the chosen book's current
-// read, keeping the day it was written. A position belonged to the old book,
-// so it does not travel. Exactly one copy exists afterwards.
-function thMove(n){ var row=_thRows[n]; if(!row) return; _thMoving=row; tmrOpenPicker('refile'); }
-function thMoveLast(){ if(!_thLast) return; _thMoving=_thLast; tmrOpenPicker('refile'); }
-function _thTake(b, loc){
-  var r=readById(b, loc.readId); if(!r) return null;
-  var es=noteEntries(r);
-  for(var k=es.length-1;k>=0;k--){
-    var e=es[k];
-    if(e && e.at===loc.at && e.text===loc.text && (e.pos||0)===(loc.pos||0)){
-      es.splice(k,1); syncNoteText(r);
-      return {entry:e};
-    }
-  }
-  return null;
-}
-function thMoveTo(i){
-  var src=_thMoving, dest=books[i]; _thMoving=null;
-  if(!src || !dest) return;
-  if(src.bookId && src.bookId===dest.bookId){ showToast('It is already on '+dest.title); return; }
-  var srcRef={listId:src.listId, idx:src.idx, bookId:src.bookId};
-  var taken=thApply(srcRef, function(b){ var t=_thTake(b, src); if(t) _thDropEmptyRead(b, src.readId); return t; });
-  if(!taken){ showToast('Could not find that thought — nothing was moved'); renderThoughts(); return; }
-  var moved=thApply({listId:activeId, idx:i, bookId:dest.bookId}, function(b){
-    var had=(b.sessions||[]).length;
-    var rid=ensureCurrentRead(b), r=readById(b,rid); if(!r) return null;
-    if(b.sessions.length>had) _thMadeReads[(b.bookId||'')+'|'+rid]=1;
-    var e={at:taken.entry.at, text:taken.entry.text};
-    // Same words, so a composed version made from them still holds.
-    if(thComposedValid(taken.entry)){ e.composed=taken.entry.composed; e.composedOf=taken.entry.composedOf; }
-    noteEntries(r).push(e); syncNoteText(r);
-    return {entry:e, readId:rid, bookId:b.bookId, title:b.title};
-  });
-  if(!moved){
-    // Put it back rather than lose it.
-    thApply(srcRef, function(b){
-      var r=readById(b, src.readId); if(!r) return null;
-      noteEntries(r).push(taken.entry); syncNoteText(r); return {};
-    });
-    showToast('Could not move it — it is still on '+(src.title||'the old book')); renderThoughts(); return;
-  }
-  var fi=_thFresh.indexOf(taken.entry); if(fi>=0) _thFresh[fi]=moved.entry;
-  _thLast={listId:moved.listId, bookId:moved.bookId, readId:moved.readId, title:moved.title,
-           at:moved.entry.at, text:moved.entry.text};
-  showToast('Moved to '+moved.title);
-  renderThoughts();
-}
-// Every entry in every list, newest first. It used to walk the open list only,
-// so a thought the timer filed on a book in the other list never appeared. A
-// book in both lists holds the same entries in both, so it is listed once — from
-// the open list when it is there. Read without converting: a list on screen
-// must not rewrite the data it shows.
-function _thFreshIdx(e){
-  var i=_thFresh.indexOf(e); if(i>=0) return i;
-  // A book outside the open list is parsed fresh from storage, so match by content.
-  for(var n=_thFresh.length-1;n>=0;n--){
-    var f=_thFresh[n];
-    if(f && f.at===e.at && f.text===e.text && (f.pos||0)===(e.pos||0)) return n;
-  }
-  return -1;
-}
-function thRecent(){
-  var rows=[], shown={};
-  function walk(arr, listId){
-    arr.forEach(function(b,bi){
-      if(!b) return;
-      if(listId!==activeId && b.bookId && shown[b.bookId]) return;
-      (b.sessions||[]).forEach(function(r){
-        if(!r) return;
-        var es=Array.isArray(r.notes) ? r.notes
-          : (String(r.note||'').trim() ? [{at:(r.end||r.start||todayISO()), text:r.note}] : []);
-        es.forEach(function(e,k){
-          if(!e || !String(e.text||'').trim()) return;
-          rows.push({listId:listId, idx:bi, bookId:b.bookId, title:b.title, readId:r.id,
-                     at:e.at, text:e.text, pos:e.pos, fmt:e.fmt, k:k, fresh:_thFreshIdx(e)});
-        });
-      });
-    });
-    arr.forEach(function(b){ if(b && b.bookId) shown[b.bookId]=1; });
-  }
-  walk(books, activeId);
-  lists.forEach(function(l){
-    if(l.id===activeId) return;
-    try{ var raw=storage.getItem(listKey(l.id)); if(raw) walk(JSON.parse(raw), l.id); }catch(e){}
-  });
-  rows.sort(function(a,b){
-    if(a.fresh!==b.fresh) return b.fresh-a.fresh;   // saved since the app opened, latest first
-    if(a.at!==b.at) return a.at<b.at?1:-1;           // then by the day written
-    return b.k-a.k;                                  // later in a read = written later
-  });
-  return rows;
-}
-function renderThoughts(){
-  var body=document.getElementById('thoughts-body'); if(!body) return;
-  var ta=document.getElementById('th-box'); if(ta) _thDraft=ta.value;
-  var ref=thRoute(), where;
-  if(ref && ref.why==='timer') where='Files on <b>'+esc(ref.title||'')+'</b> — the timer is running';
-  else if(ref){
-    var tb=books[_thIdxOf(ref)];
-    where=tb ? 'Files on <b>'+esc(tb.title)+'</b> <button class="th-x" onclick="thClearTarget()">Choose instead</button>'
-             : 'You pick the book when you log it';
-  }
-  else where='You pick the book when you log it';
-  var h='<div class="th-compose">'
-    +'<textarea id="th-box" class="th-box grow" rows="3" placeholder="A thought, a line, a question…"'
-      +' oninput="_thDraft=this.value;autoGrow(this)">'+esc(_thDraft)+'</textarea>'
-    +'<div class="th-where">'+where+'</div>'
-    +'<div class="th-btns"><button class="tmr-primary" onclick="thLog()">Log</button>'
-      +'<button class="tmr-ghost th-ask"'+(TH_ASK_READY?' onclick="thAsk()"':' disabled')+'>Ask</button></div>'
-    +(TH_ASK_READY?'':'<div class="th-asknote">Ask arrives with the on-device model.</div>')
-    +'</div>';
-  if(_thLast){
-    var lp=thPosText(_thLast);
-    h+='<button class="th-saved" onclick="thMoveLast()"><span>Saved → <b>'+esc(_thLast.title||'')+'</b>'
-      +(lp?' · '+esc(lp):'')+'</span><span class="th-move">Move</span></button>';
-  }
-  _thRows=thRecent().slice(0,40);
-  h+='<div class="th-h">Recent</div>';
-  if(!_thRows.length){
-    h+='<div class="rd-empty">Nothing written yet. Thoughts you log here, and entries in any book’s reading log, show up below.</div>';
-  } else {
-    h+='<div class="th-list">'+_thRows.map(function(r,n){
-      var p=thPosText(r);
-      return '<div class="th-row'+(r.fresh>=0?' fresh':'')+'">'
-        +'<div class="th-date">'+esc(longISO(r.at))+'</div>'
-        +'<div class="th-text clamp" onclick="this.classList.toggle(\'clamp\')">'+esc(r.text)+'</div>'
-        +(r.readId
-          ? '<button class="th-on" onclick="thMove('+n+')"><span>→ '+esc(r.title||'')+(p?' · '+esc(p):'')+'</span><span class="th-move">Move</span></button>'
-          : '<div class="th-on"><span>→ '+esc(r.title||'')+'</span></div>')
-        +'</div>';
-    }).join('')+'</div>';
-  }
-  body.innerHTML=h;
-  try{ autoGrow(document.getElementById('th-box')); }catch(e){}
 }
 
 function addSession(){
@@ -7373,9 +6517,8 @@ function renderTimerTab(){
     var _sa=b?isAudioRead(curReadOf(b)):false;
     var _smax=b?curTotalOf(b):0;
     controls='<div class="tmr-pageform"><label>'+(_sa?'Starting position':'Starting page')+'</label>'+tmrPosField('tmr-startpage',_sa,b?(currentPageFor(b)||0):0,_smax)+'<div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrBegin()">Begin</button><button class="tmr-ghost" onclick="tmrCancelStart()">Cancel</button></div></div>'; }
-  else if((tmrMode==='running'||tmrMode==='paused') && _tmrNote!=null){ controls=tmrNoteForm(); }
-  else if(tmrMode==='running'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Pause</button><button class="tmr-ghost" onclick="tmrNoteOpen()">Note</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
-  else if(tmrMode==='paused'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Resume</button><button class="tmr-ghost" onclick="tmrNoteOpen()">Note</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
+  else if(tmrMode==='running'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Pause</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
+  else if(tmrMode==='paused'){ controls='<div class="tmr-row2"><button class="tmr-ghost" onclick="tmrPauseResume()">Resume</button><button class="tmr-primary" onclick="tmrFinish()">Finish</button></div>'; }
   else if(tmrMode==='finishprompt'){
     // Resolve the timer's OWN book — the card above may be showing a different
     // one when the timer is running against another list.
@@ -7393,68 +6536,26 @@ function renderTimerTab(){
       +(_switched?'<div class="tmr-longnote">This session started as '+(_fa?'audio':'print')+', so it finishes in '+(_fa?'hours and minutes':'pages')+'. The format you just picked applies to the next one.</div>':'')
       +(_longRun?('<div class="tmr-longnote">This ran for '+formatHMS(_elapsed)+'. If the timer was left going, correct the time below \u2014 it saves exactly what you enter.</div>'
                  +'<label class="tmr-l2">Time read</label>'+tmrPosField('tmr-dur',true,Math.round(_elapsed/60),0)):'')
-      +'<label class="tmr-l2">Anything to note?</label>'
-      +'<textarea id="tmr-endnote" class="th-box grow" rows="2" placeholder="Optional" oninput="_tmrEndNote=this.value;autoGrow(this)">'+esc(_tmrEndNote||'')+'</textarea>'
       +'<div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrConfirmFinish()">Save session</button><button class="tmr-ghost" onclick="tmrKeepReading()">Keep reading</button></div></div>'; }
   body.innerHTML=card+circle+'<div class="tmr-controls">'+controls+'</div>';
   tmrPaint();
 }
 function tmrCircleTap(){ if(tmrMode==='idle') tmrStart(); else if(tmrMode==='running'||tmrMode==='paused') tmrPauseResume(); }
-// ── A note mid-sitting ──────────────────────────────────────────────────────
-// The box opens in place on the timer screen and saves through the same path
-// as Thoughts, onto the timer's own book at the page the sitting is on. Drafts
-// live in these, not just in the box, so a repaint while he types (a pause
-// from the notification, say) never throws his words away.
-var _tmrNote=null;      // null = closed; a string = open, holding the draft
-var _tmrEndNote='';     // the finish prompt's "anything to note?"
-function tmrNoteForm(){
-  var tb=tmrTimerBook(), p=thPosText(thPosNow(tb));
-  return '<div class="tmr-pageform tmr-noteform"><label>Note on '+esc((tb&&tb.title)||'this book')+(p?' · '+esc(p):'')+'</label>'
-    +'<textarea id="tmr-note" class="th-box grow" rows="3" placeholder="What just struck you?" oninput="_tmrNote=this.value;autoGrow(this)">'+esc(_tmrNote||'')+'</textarea>'
-    +'<div class="tmr-pf-btns"><button class="tmr-primary" onclick="tmrNoteSave()">Save note</button><button class="tmr-ghost" onclick="tmrNoteClose()">Cancel</button></div></div>';
-}
-function tmrNoteOpen(){
-  if(!activeTimer) return;
-  if(_tmrNote==null) _tmrNote='';
-  renderTimerTab();
-  var t=document.getElementById('tmr-note');
-  if(t) setTimeout(function(){ try{ autoGrow(t); t.focus(); }catch(e){} },50);
-}
-function tmrNoteClose(){ _tmrNote=null; renderTimerTab(); }
-function tmrNoteSave(){
-  var t=document.getElementById('tmr-note'), text=t?t.value:(_tmrNote||'');
-  if(!String(text).trim()){ tmrNoteClose(); return; }
-  if(!activeTimer){ showToast('The timer has stopped — log it from Thoughts'); return; }
-  var tb=tmrTimerBook();
-  var res=thFile({listId:activeTimer.listId, idx:tmrBookIdx(), bookId:tb&&tb.bookId, why:'timer'}, text, true);
-  if(!res){ showToast('Could not save the note — it is still here'); return; }
-  _tmrNote=null; renderTimerTab();
-  var p=thPosText(res.entry);
-  showToast('Noted on '+res.title+(p?' · '+p:''));
-}
-// The same picker files a thought: tmrOpenPicker('log') or ('refile'). Then a
-// tap hands the book to Thoughts instead of the timer, and closing the sheet
-// without tapping one writes nothing anywhere.
-var _tpFor=null;
-function tmrOpenPicker(forWhat){
-  if(!forWhat && tmrMode!=='idle') return;
+function tmrOpenPicker(){
+  if(tmrMode!=='idle') return;
   var sheet=document.getElementById('timer-pick'); if(!sheet) return;
-  _tpFor=forWhat||null;
   var hd=document.getElementById('timer-pick-h');
-  if(hd) hd.textContent = _tpFor==='refile' ? 'Move this thought to…' : _tpFor ? 'File this thought on…' : 'Choose a book';
+  if(hd) hd.textContent='Choose a book';
   var s=document.getElementById('timer-pick-search'); if(s) s.value='';
   tmrRenderPickList();
   sheet.classList.remove('hidden'); document.body.style.overflow='hidden';
-  // Filing a thought, the book he last read is already at the top; the
-  // keyboard would only cover it.
-  if(s && !_tpFor) setTimeout(function(){try{s.focus();}catch(e){}},60);
+  if(s) setTimeout(function(){try{s.focus();}catch(e){}},60);
 }
 function tmrRenderPickList(){
   var q=((document.getElementById('timer-pick-search')||{}).value||'').toLowerCase().trim();
   var rows=[];
   var order=[]; for(var oi=0;oi<books.length;oi++) order.push(oi);
-  var last=_tpFor ? thLastReadIdx() : -1;
-  if(last>=0){ order.splice(last,1); order.unshift(last); }
+  var last=-1;
   for(var n=0;n<order.length;n++){
     var i=order[n], b=books[i];
     if(q && (b.title||'').toLowerCase().indexOf(q)<0 && (b.author||'').toLowerCase().indexOf(q)<0 && (b.genre||'').toLowerCase().indexOf(q)<0 && (b.seriesName||'').toLowerCase().indexOf(q)<0) continue;
@@ -7463,9 +6564,8 @@ function tmrRenderPickList(){
   }
   document.getElementById('timer-pick-list').innerHTML = rows.join('') || '<p style="color:var(--text-muted);font-family:var(--ui);font-size:13px;padding:22px;text-align:center">No matches.</p>';
 }
-function tmrClosePicker(){ _tpFor=null; var s=document.getElementById('timer-pick'); if(s) s.classList.add('hidden'); document.body.style.overflow=''; }
+function tmrClosePicker(){ var s=document.getElementById('timer-pick'); if(s) s.classList.add('hidden'); document.body.style.overflow=''; }
 function tmrSelectBook(i){
-  if(_tpFor){ var f=_tpFor; tmrClosePicker(); thPicked(f,i); return; }
   tmrSelIdx=i; tmrClosePicker(); renderTimerTab();
 }
 function tmrStart(){ var idx=tmrPickIdx(); if(idx<0){ showToast('Add a book first'); return; } tmrSelIdx=idx; tmrMode='startprompt'; renderTimerTab(); var inp=document.getElementById('tmr-startpage')||document.getElementById('tmr-startpage-h'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
@@ -7488,20 +6588,13 @@ function tmrPauseResume(){
   else { activeTimer.pausedAt=Date.now(); saveActiveTimer(); tmrStopTick(); tmrMode='paused'; renderTimerTab(); pushTimerState(); }
 }
 function tmrFinish(){ if(!activeTimer) return;
-  // A note half-written when he taps Finish moves into the finish prompt's box.
-  if(_tmrNote!=null){ if(String(_tmrNote).trim()) _tmrEndNote=_tmrNote; _tmrNote=null; }
   _tmrFrozenSec=timerElapsedSec(); activeTimer.finishing=true; if(!activeTimer.pausedAt) activeTimer.pausedAt=Date.now(); saveActiveTimer(); tmrStopTick(); tmrMode='finishprompt'; renderTimerTab(); pushTimerState(); var inp=document.getElementById('tmr-endpage')||document.getElementById('tmr-endpage-h'); if(inp) setTimeout(function(){try{inp.focus();}catch(e){}},50); }
 function tmrKeepReading(){ if(!activeTimer) return;
-  // Back to reading with a note typed at the finish: it reopens as a note
-  // rather than vanishing with the prompt.
-  var _ne=document.getElementById('tmr-endnote'), _nt=_ne?_ne.value:(_tmrEndNote||'');
-  _tmrEndNote=''; if(String(_nt||'').trim()) _tmrNote=_nt;
   activeTimer.finishing=false; activeTimer.accumulatedSec=_tmrFrozenSec; activeTimer.startTime=Date.now(); activeTimer.pausedAt=null; saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState(); }
 function tmrConfirmFinish(){
   if(!activeTimer) return;
   var _fb=tmrTimerBook();
   var _cfmt=tmrSessionFmt(_fb);
-  var _ne=document.getElementById('tmr-endnote'), _endNote=_ne?_ne.value:(_tmrEndNote||'');
   var endPage=tmrPosRead('tmr-endpage',_cfmt==='audio');
   if(isNaN(endPage)){ tmrKeepReading(); return; }
   if(endPage<0) endPage=0;
@@ -7524,7 +6617,6 @@ function tmrConfirmFinish(){
     // The book is gone from every list. Saving nowhere and saying nothing is
     // how a sitting used to vanish; ask instead.
     if(!confirm('"'+(activeTimer.bookTitle||'This book')+'" is no longer in any of your lists, so this sitting has nowhere to be saved.\n\nOK discards it. Cancel keeps it here: undo the delete, then save.')) return;
-    _tmrEndNote=''; _tmrNote=null;
     activeTimer=null; saveActiveTimer(); tmrStopTick(); _tmrFrozenSec=0; tmrMode='idle'; pushTimerState(); pushWidgetSnapshot();
     renderTimerTab(); showToast('Session discarded');
     return;
@@ -7548,21 +6640,11 @@ function tmrConfirmFinish(){
     try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(_loc.listId); }catch(e){}
     fanOutSession(arr[idx].bookId, session, _loc.listId); _savedOn=arr[idx]; } }catch(e){} }
   if(!_savedOn){ showToast('Could not save the session — it is still here'); return; }
-  // The thought he had at the end of the sitting, filed where the sitting
-  // ended. Saved after the session, so a failure here can never cost him the
-  // session — and if it does fail, the words wait in the Thoughts box.
-  var _noted=null;
-  if(String(_endNote||'').trim()){
-    _noted=thFile({listId:_loc.listId, idx:idx, bookId:_savedOn.bookId, why:'timer'}, _endNote, {pos:endPage, fmt:_cfmt});
-    if(!_noted) _thDraft=(_thDraft?_thDraft+'\n\n':'')+_endNote;
-  }
-  _tmrEndNote=''; _tmrNote=null;
   activeTimer=null; saveActiveTimer(); tmrStopTick(); _tmrFrozenSec=0; tmrMode='idle'; pushTimerState(); pushWidgetSnapshot();
   updateStats(); renderTimerTab(); if(currentTab==='list') renderTable();
   // The unit is the sitting's own. This used to ask whichever book the timer
   // screen had selected, and quietly gave that book an empty read if it had none.
-  showToast('Logged '+formatHMS(sec)+' \u00b7 '+unitStr({format:_cfmt},Math.max(0,endPage-startPage))
-    +(_noted?' \u00b7 note saved':(String(_endNote||'').trim()?' \u00b7 note kept in Thoughts':'')));
+  showToast('Logged '+formatHMS(sec)+' \u00b7 '+unitStr({format:_cfmt},Math.max(0,endPage-startPage)));
 }
 function tmrStartFromReading(idx){ tmrSelIdx=idx; switchScreen('timer'); }
 /* A session running longer than this on reopening is treated as suspect rather
@@ -7774,7 +6856,7 @@ setInterval(function(){ if(_bridgeReady && activeTimer) tmrBridgeSync(true); }, 
 
 /* ===== Babel app shell logic ===== */
 function switchScreen(name){
-  ['library','stats','timer','reading','hearth','thoughts','settings'].forEach(function(s){
+  ['library','stats','timer','reading','hearth','settings'].forEach(function(s){
     var el=document.getElementById('screen-'+s); if(el) el.classList.toggle('hidden', s!==name);
   });
   document.querySelectorAll('.tabbar .tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-screen')===name); });
@@ -7783,9 +6865,8 @@ function switchScreen(name){
   if(name==='stats') updateStats();
   if(name==='reading') renderReadingScreen();
   if(name==='hearth'){ renderHearth(); }
-  if(name==='settings'){ babelShowVersion(); babelShowStorage(0); babelCheckWebGPU(0); renderLlmRow(); }
+  if(name==='settings'){ babelShowVersion(); babelShowStorage(0); }
   if(name==='timer') renderTimerTab();
-  if(name==='thoughts') renderThoughts();
   if(name==='library' && currentTab==='genre') renderGenreTab();
   try{ window.scrollTo(0,0); }catch(e){}
   pushWidgetSnapshot();
@@ -7847,7 +6928,7 @@ function pushWidgetSnapshot(){
 window.addEventListener('load',function(){
   try{
     var tp=new URLSearchParams(location.search).get('tab');
-    if(tp && ['library','stats','timer','reading','hearth','thoughts','settings'].indexOf(tp)>=0) switchScreen(tp);
+    if(tp && ['library','stats','timer','reading','hearth','settings'].indexOf(tp)>=0) switchScreen(tp);
   }catch(e){}
 });
 function openAddSheet(){
@@ -8216,7 +7297,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v59';
+var BABEL_VERSION='babel-v60';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -8250,42 +7331,24 @@ function babelShowStorage(verbose){
     }
   });
 }
-// ── Can this phone run a model locally? ───────────────────────────────────────
-// An in-browser LLM needs WebGPU, and whether a Capacitor WebView has it is
-// not something anyone can answer from a spec sheet — WebGPU is still not
-// Baseline, and even where navigator.gpu exists requestAdapter() can come back
-// empty. So rather than guess, this asks the device. Diagnostic only: nothing
-// here downloads a model or changes any behaviour.
-function babelCheckWebGPU(verbose){
-  var el=document.getElementById('set-webgpu'); if(!el) return;
-  function say(t){ el.textContent=t; }
-  if(typeof navigator==='undefined' || !navigator.gpu){
-    say('No \u2014 WebGPU missing');
-    if(verbose) showToast('This WebView has no WebGPU, so a local model cannot run here.');
-    return;
-  }
-  say('Checking\u2026');
-  var done=false;
-  // A request that never settles would leave it saying "Checking" forever.
-  setTimeout(function(){ if(!done){ done=true; say('No answer \u2014 timed out'); } },8000);
-  Promise.resolve()
-    .then(function(){ return navigator.gpu.requestAdapter(); })
-    .then(function(ad){
-      if(done) return; done=true;
-      if(!ad){
-        say('No \u2014 no GPU adapter');
-        if(verbose) showToast('WebGPU is present but this device offers no adapter.');
-        return;
-      }
-      var name='';
-      try{ name=(ad.info&&(ad.info.description||ad.info.vendor))||''; }catch(e){}
-      say('Yes'+(name?(' \u2014 '+String(name).slice(0,22)):''));
-      if(verbose) showToast('WebGPU works here \u2014 a local model is possible.');
-    })
-    .catch(function(e){
-      if(done) return; done=true;
-      say('No \u2014 '+((e&&(e.name||e.message))||'failed'));
-    });
+// ── The on-device AI was removed in v60 ──────────────────────────────────────
+// Its model (about 0.8 GB, which web-llm keeps in the browser's cache storage
+// under webllm/...) and its two records here — the "model ready" flag and the
+// copy-editor's log of entries it refused — are deleted so the space comes
+// back. None of it is his writing. Safe to run on every launch: once they are
+// gone there is nothing left to find.
+function babelRemoveAI(){
+  try{ storage.removeItem('rl_llm_ready'); storage.removeItem('rl_compose_log'); }catch(e){}
+  try{
+    if(window.caches) caches.keys().then(function(ks){
+      return Promise.all(ks.filter(function(k){ return /^webllm\//.test(k); }).map(function(k){ return caches.delete(k); }));
+    }).catch(function(e){ console.error('[Babel] could not clear the old model cache', e); });
+  }catch(e){}
+  try{
+    if(window.indexedDB && indexedDB.databases) indexedDB.databases().then(function(dbs){
+      (dbs||[]).forEach(function(d){ if(d && /^webllm/.test(d.name||'')) indexedDB.deleteDatabase(d.name); });
+    }).catch(function(){});
+  }catch(e){}
 }
 function babelShowVersion(){
   var el=document.getElementById('set-version'); if(!el) return;
@@ -9853,7 +8916,7 @@ storage.init().then(function(){
   // check looks at elapsed, or the check would freeze the timer at "now" and
   // the real pause would then be ignored — turning a correct 1h into a wrong 8h.
   Promise.resolve(tmrBridgeSync()).then(tmrCheckRunaway).catch(tmrCheckRunaway);
-  llmInit();
+  try{ babelRemoveAI(); }catch(e){}
   switchScreen("library");
   if(window.BabelCloud){ try{ BabelCloud.init(); }catch(e){} }
 });
