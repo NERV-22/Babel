@@ -2586,8 +2586,92 @@ function saveCurrentList(){
   if(!activeId)return;
   storage.setItem(listKey(activeId),JSON.stringify(books));
   storage.setItem(readKey(activeId),JSON.stringify([...readSet]));
+  scheduleRefreshOpenViews();
 }
+// ── One redraw for every screen that shows a book ───────────────────────────
+// A change saved in one sheet used to leave the screens under it showing the
+// old data: the book page redrew only when it opened, so a thought, rating or
+// session edited from it stayed stale until it was closed and reopened. Every
+// save of the open list now asks for one redraw of whatever is on screen, run
+// after the handler that saved has finished its own drawing. A view he is
+// typing in is never redrawn under him; it is marked and caught up the moment
+// he leaves the box, so nothing unsaved can be wiped.
+var _rovPending=false, _rovBusy=false, _rovStale={};
+function scheduleRefreshOpenViews(){
+  if(_rovPending) return;
+  _rovPending=true;
+  setTimeout(function(){ _rovPending=false; refreshOpenViews(); },0);
+}
+function _rovShown(id){ var el=document.getElementById(id); return !!el && !el.classList.contains('hidden'); }
+function _rovTyping(id){
+  var host=document.getElementById(id), a=document.activeElement;
+  return !!(host && a && host.contains(a) && /^(TEXTAREA|INPUT|SELECT)$/.test(a.tagName||''));
+}
+// [element, still pointing at a book, redraw]
+function _rovViews(){
+  return [
+    ['bp-sheet',        function(){ return bpIdx>=0 && !!books[bpIdx]; },                         renderBookPage],
+    ['sessions-modal',  function(){ return smIdx>=0 && !!books[smIdx]; },                         renderSM],
+    ['rl-modal',        function(){ return rlOpenIdx>=0 && !!books[rlOpenIdx] && rlEditIdx===-1; }, renderRLModal],
+    ['screen-thoughts', function(){ return true; },                                               renderThoughts],
+    ['screen-reading',  function(){ return true; },                                               renderReadingScreen]
+  ];
+}
+function refreshOpenViews(){
+  if(_rovBusy) return;
+  _rovBusy=true;
+  try{
+    _rovViews().forEach(function(v){
+      if(!_rovShown(v[0]) || !v[1]()){ delete _rovStale[v[0]]; return; }
+      if(_rovTyping(v[0])){ _rovStale[v[0]]=1; return; }
+      delete _rovStale[v[0]];
+      try{ v[2](); }catch(e){ console.error('[Babel] redraw of '+v[0]+' failed', e); }
+    });
+  }finally{ _rovBusy=false; }
+}
+document.addEventListener('focusout', function(){
+  setTimeout(function(){ if(Object.keys(_rovStale).length) refreshOpenViews(); },0);
+}, true);
 
+// Backfill defaults for fields added in later versions, so a book saved before
+// those fields existed still loads cleanly. Opening a list, restoring a backup
+// and pasting a book all run this one function: the restore used to carry its
+// own older copy, which skipped the medium stamps, the duplicate-read merge,
+// the orphaned-session repair and the move of old notes into dated entries.
+// Any field added later gets its default here and only here.
+function normalizeBook(b){
+  if(!b) return b;
+  stampFormats(b);          // stamp the medium BEFORE any re-homing
+  mergeGhostReads(b);
+  adoptOrphanSessions(b);
+  if(b.summary===undefined)     b.summary="";
+  if(b.myRating===undefined)    b.myRating=0;
+  if(b.optional===undefined)    b.optional=false;
+  if(b.isFav===undefined)       b.isFav=false;
+  if(b.isReading===undefined)   b.isReading=false;
+  if(!b.sessions)               b.sessions=[];
+  if(b.seriesOrder===undefined) b.seriesOrder="";
+  if(b.seriesName===undefined)  b.seriesName="";
+  if(!b.timerSessions)         b.timerSessions=[];
+  if(!b.bookId)                b.bookId=resolveBookId(b.title,b.author);
+  if(b.translator===undefined)  b.translator='';
+  if(b.runtimeMin===undefined)  b.runtimeMin=0;
+  // Give every read-through an id, then attach untagged sessions to the
+  // newest read — that is where an untagged history belongs.
+  var _newest=null;
+  b.sessions.forEach(function(x){ if(!x.id) x.id=newReadId(); });
+  // Carry every old single note across to a dated entry. Additive: the
+  // note string itself is left exactly where it was.
+  b.sessions.forEach(noteEntries);
+  var _ci=currentReadIdx(b);
+  if(_ci>=0) _newest=b.sessions[_ci].id;
+  if(_newest) b.timerSessions.forEach(function(x){ if(x && !x.readId) x.readId=_newest; });
+  // Read-throughs carry their own rating; seed the newest existing read
+  // with the book's current rating so old data displays correctly.
+  if(b.myRating && b.sessions.length && !b.sessions.some(function(x){return x.rating;}))
+    b.sessions[b.sessions.length-1].rating=b.myRating;
+  return b;
+}
 function loadListData(id){
   migrateBookIds();
   try{
@@ -2597,37 +2681,7 @@ function loadListData(id){
     readSet=r?new Set(JSON.parse(r)):new Set();
     // Backfill defaults for fields added in later versions, so old data
     // saved before those fields existed still loads cleanly.
-    books.forEach(function(b){
-      stampFormats(b);          // stamp the medium BEFORE any re-homing
-      mergeGhostReads(b);
-      adoptOrphanSessions(b);
-      if(b.summary===undefined)     b.summary="";
-      if(b.myRating===undefined)    b.myRating=0;
-      if(b.optional===undefined)    b.optional=false;
-      if(b.isFav===undefined)       b.isFav=false;
-      if(b.isReading===undefined)   b.isReading=false;
-      if(!b.sessions)               b.sessions=[];
-      if(b.seriesOrder===undefined) b.seriesOrder="";
-      if(b.seriesName===undefined)  b.seriesName="";
-      if(!b.timerSessions)         b.timerSessions=[];
-      if(!b.bookId)                b.bookId=resolveBookId(b.title,b.author);
-      if(b.translator===undefined)  b.translator='';
-      if(b.runtimeMin===undefined)  b.runtimeMin=0;
-      // Give every read-through an id, then attach untagged sessions to the
-      // newest read — that is where an untagged history belongs.
-      var _newest=null;
-      b.sessions.forEach(function(x){ if(!x.id) x.id=newReadId(); });
-      // Carry every old single note across to a dated entry. Additive: the
-      // note string itself is left exactly where it was.
-      b.sessions.forEach(noteEntries);
-      var _ci=currentReadIdx(b);
-      if(_ci>=0) _newest=b.sessions[_ci].id;
-      if(_newest) b.timerSessions.forEach(function(x){ if(x && !x.readId) x.readId=_newest; });
-      // Read-throughs carry their own rating; seed the newest existing read
-      // with the book's current rating so old data displays correctly.
-      if(b.myRating && b.sessions.length && !b.sessions.some(function(x){return x.rating;}))
-        b.sessions[b.sessions.length-1].rating=b.myRating;
-    });
+    books.forEach(normalizeBook);
   }catch(e){books=[];readSet=new Set();}
   var lst=lists.find(function(l){return l.id===id;})||lists[0];
   if(!lst.theme)lst.theme=Object.assign({},DEFAULT_THEME);
@@ -3017,31 +3071,22 @@ function updateStats(){
 
 // Sum up Reading Log sessions to populate Read Today / Read This Week cards.
 // Today = since local midnight. This week = last 7 calendar days (sliding).
+// These cards had their own copy of the day maths: open list only, audiobook
+// minutes counted as pages, and a sitting past midnight given whole to the
+// night before. So they could disagree with the goal bar right under them.
+// Time now comes from the map the goal bar and streak use (every list, a book
+// in two lists once, a running timer included); pages from the one the strip
+// and calendar use, which never counts audio.
 function updateReadTimeStats(){
   var now = new Date();
-  var midnightToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  var sevenDaysAgo = midnightToday - 6*24*60*60*1000;  // start of day 6 days ago
+  var secMap = _gatherSecByDay(), dayMap = _gatherDayStats();
   var todayPages = 0, todaySec = 0;
   var weekPages = 0, weekSec = 0;
-
-  for(var i=0;i<books.length;i++){
-    var ts = books[i].timerSessions || [];
-    for(var j=0;j<ts.length;j++){
-      var s = ts[j];
-      if(!s.startTime || s.detached) continue;
-      // Pages read in this session (can be zero if user just opened a session
-      // without page changes — still count time but not pages).
-      var pages = Math.max(0, (s.endPage||0) - (s.startPage||0));
-      var sec = s.durationSec || 0;
-      if(s.startTime >= sevenDaysAgo){
-        weekPages += pages;
-        weekSec += sec;
-        if(s.startTime >= midnightToday){
-          todayPages += pages;
-          todaySec += sec;
-        }
-      }
-    }
+  for(var i=0;i<7;i++){
+    var k = _dayKey(new Date(now.getFullYear(), now.getMonth(), now.getDate()-i));
+    var sec = secMap[k] || 0, pages = (dayMap[k] && dayMap[k].pages) || 0;
+    weekSec += sec; weekPages += pages;
+    if(i===0){ todaySec = sec; todayPages = pages; }
   }
   document.getElementById("stat-today-pages").textContent = todayPages.toLocaleString();
   document.getElementById("stat-today-time").textContent  = formatStatTime(todaySec);
@@ -3727,22 +3772,14 @@ document.getElementById("details-modal").addEventListener("click",function(e){if
 // or reset their personal data (read status, rating, favorite, sessions).
 function copyBook(idx){
   var b=books[idx];
-  // Snapshot all fields, plus whether this book was marked read in the
-  // SOURCE list (so Inherit can replay that on the destination).
-  clipboardBook = {
-    bookId: b.bookId,
-    title: b.title, author: b.author, translator: b.translator||'', pages: b.pages, runtimeMin: b.runtimeMin||0, audioLabel: b.audioLabel||'', editions: (b.editions||[]).slice(), genre: b.genre,
-    summary: b.summary || "",
-    seriesOrder: b.seriesOrder || "",
-    seriesName: b.seriesName || "",
-    optional: !!b.optional,
-    myRating: b.myRating || 0,
-    isFav: !!b.isFav,
-    isReading: !!b.isReading,
-    sessions: (b.sessions || []).map(function(s){return Object.assign({},s);}),
-    timerSessions: (b.timerSessions || []).map(function(s){return Object.assign({},s);}),
-    wasRead: readSet.has(idx)
-  };
+  // A whole, separate snapshot, plus whether this book was marked read in the
+  // SOURCE list (so Inherit can replay that on the destination). Listing the
+  // fields by hand dropped the crowd rating, page coverage and finish stamp,
+  // and copied each read one level deep, so a paste into the same list left
+  // both copies sharing one list of thoughts in memory.
+  clipboardBook = JSON.parse(JSON.stringify(b));
+  delete clipboardBook.idx;
+  clipboardBook.wasRead = readSet.has(idx);
   renderPasteButton();
   showToast('"'+b.title+'" copied — switch lists to paste.');
 }
@@ -3772,22 +3809,21 @@ function closePasteChooser(){
 }
 function confirmPaste(mode){
   if(!clipboardBook) return;
-  var c=clipboardBook;
-  var newBook = {
-    // Same bookId as the source: pasting SHOWS the same book in another list
-    // rather than creating a second, separately-counted book.
-    // Inherit = the SAME book shown in another list (shared id, shared reads).
-    // Reset = a genuinely separate entry, so it gets its own identity.
-    bookId: mode==="inherit" ? (c.bookId || resolveBookId(c.title,c.author)) : newBookId(),
-    title: c.title, author: c.author, translator: c.translator||'', pages: c.pages, runtimeMin: c.runtimeMin||0, audioLabel: c.audioLabel||'', editions: (c.editions||[]).slice(), genre: c.genre,
-    summary: c.summary, optional: c.optional,
-    seriesOrder: c.seriesOrder, seriesName: c.seriesName,
-    myRating:   mode==="inherit" ? c.myRating  : 0,
-    isFav:      mode==="inherit" ? c.isFav     : false,
-    isReading:  mode==="inherit" ? c.isReading : false,
-    sessions:   mode==="inherit" ? c.sessions.map(function(s){return Object.assign({},s);}) : [],
-    timerSessions: mode==="inherit" ? (c.timerSessions||[]).map(function(s){return Object.assign({},s);}) : []
-  };
+  var c=clipboardBook, src=JSON.parse(JSON.stringify(c)), newBook;
+  delete src.wasRead;
+  // Inherit = the SAME book shown in another list (shared id, shared reads),
+  // so it counts once. Reset = a genuinely separate entry with its own id: what
+  // describes the book travels, what he did with it does not.
+  if(mode==="inherit"){
+    newBook=src;
+    newBook.bookId=c.bookId || resolveBookId(c.title,c.author);
+  } else {
+    newBook={bookId:newBookId()};
+    BOOK_DETAIL_FIELDS.concat(['rating','optional']).forEach(function(k){ if(src[k]!==undefined) newBook[k]=src[k]; });
+    newBook.myRating=0; newBook.isFav=false; newBook.isReading=false;
+    newBook.sessions=[]; newBook.timerSessions=[];
+  }
+  normalizeBook(newBook);
   // Insert at the top of the array so it's findable when no sort is applied.
   books.unshift(newBook);
   // readSet stores array indexes — every existing entry shifts up by one.
@@ -3886,26 +3922,8 @@ function importBackup(e){
       var targetName=activeList().name;
       if(!confirm('Replace "'+targetName+'" ('+books.length+' books) with backup "'+( data.listName||"untitled")+'" ('+data.books.length+' books)?'))return;
       books=data.books;
-      // Same backfill as loadListData — old backup files predate some fields.
-      books.forEach(function(b){
-        if(b.summary===undefined)     b.summary="";
-        if(b.myRating===undefined)    b.myRating=0;
-        if(b.optional===undefined)    b.optional=false;
-        if(b.isFav===undefined)       b.isFav=false;
-        if(b.isReading===undefined)   b.isReading=false;
-        if(!b.sessions)               b.sessions=[];
-        if(b.seriesOrder===undefined) b.seriesOrder="";
-        if(b.seriesName===undefined)  b.seriesName="";
-        if(!b.timerSessions)         b.timerSessions=[];
-        if(!b.bookId)                b.bookId=resolveBookId(b.title,b.author);
-        if(b.translator===undefined)  b.translator='';
-        if(b.runtimeMin===undefined)  b.runtimeMin=0;
-        b.sessions.forEach(function(x){ if(!x.id) x.id=newReadId(); });
-        var _ci2=currentReadIdx(b), _nw=(_ci2>=0)?b.sessions[_ci2].id:null;
-        if(_nw) b.timerSessions.forEach(function(x){ if(x && !x.readId) x.readId=_nw; });
-        if(b.myRating && b.sessions.length && !b.sessions.some(function(x){return x.rating;}))
-          b.sessions[b.sessions.length-1].rating=b.myRating;
-      });
+      // The same set-up opening a list runs — old backup files predate some fields.
+      books.forEach(normalizeBook);
       readSet=data.read?new Set(data.read):new Set();
       if(data.listName&&data.listName.trim()){activeList().name=data.listName.trim();document.getElementById("list-name-input").value=data.listName.trim();}
       if(data.theme){activeList().theme=Object.assign({},DEFAULT_THEME,data.theme);applyTheme(activeList().theme);if(document.getElementById("theme-panel").classList.contains("open"))syncPk(activeList().theme);}
@@ -5429,14 +5447,18 @@ function renderBookPage(){
   // starsDisplayHTML already prints the number after the stars; adding another
   // put "4.0 4.0" on the page.
   document.getElementById('bp-stars').innerHTML=
-      starsDisplayHTML(b.myRating||0,'bp'+b.idx)
+      starsDisplayHTML(b.myRating||0,'bp'+bpIdx)
     + (b.myRating?'':'<span class="bp-rv">Not rated</span>');
 
   var go=document.getElementById('bp-go');
   go.innerHTML=ICONS.play+' '+(b.isReading?'Reading now':'Start reading');
   go.classList.toggle('on',!!b.isReading);
-  go.onclick=function(){ toggleReading(b.idx); renderBookPage(); };
-  document.getElementById('bp-log').onclick=function(){ openRL(b.idx); };
+  // books[bpIdx] is the stored book, which carries no idx of its own (only the
+  // library's display copies do). Using b.idx here made Start reading throw and
+  // Reading log open empty.
+  var _bi=bpIdx;
+  go.onclick=function(){ toggleReading(_bi); renderBookPage(); };
+  document.getElementById('bp-log').onclick=function(){ openRL(_bi); };
 
   document.getElementById('bp-n').textContent=audio?fmtMins(at):String(at);
   document.getElementById('bp-of').textContent=tot
@@ -5744,7 +5766,7 @@ function startTimer(idx){
   // by saving the current elapsed as a session ending at the start page
   // (best we can do without an interactive end-page prompt for that book).
   if(activeTimer){
-    if(activeTimer.listId===activeId && activeTimer.bookIdx===idx){
+    if(activeTimer.listId===activeId && tmrBookIdx()===idx){
       return; // already running on this book — no-op
     }
     // Switching books: just drop the prior session quietly. The user
@@ -5756,7 +5778,7 @@ function startTimer(idx){
   var suggestedPage = currentPageFor(b) || 0;
   showPagePrompt("start", suggestedPage, function(page){
     activeTimer = {
-      listId: activeId, bookIdx: idx,
+      listId: activeId, bookIdx: idx, bookId: b.bookId,
       bookTitle: b.title, bookAuthor: b.author, bookPages: b.pages,
       startTime: Date.now(), startPage: page,
       accumulatedSec: 0, pausedAt: null
@@ -5820,7 +5842,7 @@ function finishTimer(){
   var rlStatus = document.getElementById("rl-status");
   if(rlStatus) rlStatus.textContent = "Finishing — enter end page";
 
-  var idx = activeTimer.bookIdx;
+  var idx = tmrBookIdx();
   var listMatch = activeTimer.listId === activeId;
   var b = listMatch ? books[idx] : null;
   var suggested = b ? Math.max(activeTimer.startPage, currentPageFor(b)) : activeTimer.startPage;
@@ -5881,7 +5903,7 @@ function startTimerTick(){
     // Only update the textContent of the display elements — cheap, no re-render.
     var sec = timerElapsedSec();
     var disp = document.getElementById("rl-display");
-    if(disp && rlOpenIdx>=0 && activeTimer && activeTimer.bookIdx===rlOpenIdx && activeTimer.listId===activeId){
+    if(disp && rlOpenIdx>=0 && activeTimer && activeTimer.listId===activeId && tmrBookIdx()===rlOpenIdx){
       disp.textContent = formatHMS(sec);
     }
     var wt = document.getElementById("rl-widget-time");
@@ -6254,6 +6276,7 @@ function closeRL(){
   document.getElementById("rl-modal").classList.add("hidden");
   // Keep ticking only if widget needs updates (timer still running).
   if(!activeTimer || activeTimer.pausedAt) stopTimerTick();
+  refreshOpenViews();
 }
 function renderRLModal(){
   if(rlOpenIdx<0) return;
@@ -6398,6 +6421,9 @@ function rlEditorHTML(b,s,idx){
       + '<button class="rl-edit-save" onclick="rlEditSave('+idx+')">Save</button></div>'
   + '</div>';
 }
+// A sitting cannot end before it began. One check, used by the session editor
+// and the timer's Finish prompt, so both refuse the same thing with the same words.
+function posRangeError(from,to){ return (to<from) ? 'The end cannot be before the start.' : ''; }
 // Reads the editor back into a session object. Returns a string on bad input so
 // the caller can show it rather than writing something impossible to the book.
 function rlEditRead(b, base){
@@ -6419,7 +6445,7 @@ function rlEditRead(b, base){
   var to   = audioPos ? (n('rle-toh')*60   + n('rle-tom'))   : n('rle-to');
   // The open item from the handoff: p.120 to p.0 was storable and contributed
   // nothing. Refuse it here rather than letting it sit in the data.
-  if(to < from) return 'The end cannot be before the start.';
+  var _rangeErr=posRangeError(from,to); if(_rangeErr) return _rangeErr;
   var out = base ? Object.assign({}, base) : {};
   out.startTime = when;
   out.durationSec = sec;
@@ -6518,7 +6544,7 @@ document.getElementById("rl-widget-top").addEventListener("click",function(){
   if(activeTimer.listId !== activeId){
     switchList(activeTimer.listId);
   }
-  openRL(activeTimer.bookIdx);
+  openRL(tmrBookIdx());
 });
 
 
@@ -6532,6 +6558,7 @@ function closeSM(){
   var m=document.getElementById("sessions-modal");
   if(m)m.classList.add("hidden");
   smIdx=-1;
+  refreshOpenViews();
 }
 document.getElementById("sessions-modal").addEventListener("click",function(e){if(e.target===this)closeSM();});
 // Interactive half-step stars for one read-through. Two hit zones per star
@@ -6554,7 +6581,10 @@ function readStarsHTML(i,r){
 }
 // The book's headline rating (shown on the library row and used by stats) is
 // the most recent read-through that carries one.
-function syncHeadlineRating(idx){
+// cleared: a rating was just taken away (cleared, or its read deleted). Only
+// then may the book lose its stars when no read holds one — a book rated
+// before reads existed keeps its rating when a read is added to it.
+function syncHeadlineRating(idx, cleared){
   var ss=books[idx].sessions||[], best=null, bestEnd='';
   ss.forEach(function(x){
     if(!x.rating) return;
@@ -6562,6 +6592,7 @@ function syncHeadlineRating(idx){
     if(best===null || e>=bestEnd){ best=x.rating; bestEnd=e; }
   });
   if(best!==null) books[idx].myRating=best;
+  else if(cleared) books[idx].myRating=0;
 }
 // A read-through's medium is fixed once it has sessions — switching would
 // reinterpret their recorded positions as the wrong unit.
@@ -6585,7 +6616,7 @@ function setReadRating(i,val){
   if(!ss[i])return;
   if(ss[i].rating===val) val=0;   // tap the same value again to clear
   ss[i].rating=val;
-  syncHeadlineRating(smIdx);
+  syncHeadlineRating(smIdx, !val);
   saveCurrentList(); fanOutBookMeta(smIdx); renderSM(); renderTable(); updateStats();
 }
 // The book page: identity, current-read progress, then every read-through
@@ -6641,7 +6672,8 @@ function renderSM(){
       return '<div class="rt-card">'
         +'<div class="rt-head"><span class="rt-n">'+(n-pos)+'</span>'
           +'<span class="rt-ttl"><b>'+esc(readMediumName(b,x))+'</b>'
-            +'<span>'+progText(x,rp,rtot)+(x.start?' \u00b7 from '+esc(x.start.slice(5)):'')+'</span></span>'
+            +'<span>'+progText(x,rp,rtot)+'</span>'
+            +(x.start?'<span>from '+esc(longISO(x.start))+'</span>':'')+'</span>'
           +'<span class="rt-pct">'+(rtot?rpct+'%':'\u2014')+'</span>'
           +'<button class="sdel" onclick="delS('+i+')" title="Remove this read">'+ICONS.close+'</button></div>'
         +'<div class="rt-bar"><div class="rt-fill" style="width:'+rpct+'%"></div></div>'
@@ -6806,7 +6838,7 @@ function thRoute(){
   if(_thTarget) return {listId:activeId, idx:_thTarget.idx, bookId:_thTarget.bookId, why:'chosen'};
   if(activeTimer){
     var tb=tmrTimerBook();
-    return {listId:activeTimer.listId, idx:activeTimer.bookIdx, bookId:tb&&tb.bookId,
+    return {listId:activeTimer.listId, idx:tmrBookIdx(), bookId:tb&&tb.bookId,
             title:(tb&&tb.title)||activeTimer.bookTitle, why:'timer'};
   }
   return null;
@@ -6994,21 +7026,43 @@ function thMoveTo(i){
   showToast('Moved to '+moved.title);
   renderThoughts();
 }
-// Every entry in the open list, newest first. Read without converting: a list
-// on screen must not rewrite the data it shows.
+// Every entry in every list, newest first. It used to walk the open list only,
+// so a thought the timer filed on a book in the other list never appeared. A
+// book in both lists holds the same entries in both, so it is listed once — from
+// the open list when it is there. Read without converting: a list on screen
+// must not rewrite the data it shows.
+function _thFreshIdx(e){
+  var i=_thFresh.indexOf(e); if(i>=0) return i;
+  // A book outside the open list is parsed fresh from storage, so match by content.
+  for(var n=_thFresh.length-1;n>=0;n--){
+    var f=_thFresh[n];
+    if(f && f.at===e.at && f.text===e.text && (f.pos||0)===(e.pos||0)) return n;
+  }
+  return -1;
+}
 function thRecent(){
-  var rows=[];
-  books.forEach(function(b,bi){
-    (b.sessions||[]).forEach(function(r){
-      if(!r) return;
-      var es=Array.isArray(r.notes) ? r.notes
-        : (String(r.note||'').trim() ? [{at:(r.end||r.start||todayISO()), text:r.note}] : []);
-      es.forEach(function(e,k){
-        if(!e || !String(e.text||'').trim()) return;
-        rows.push({listId:activeId, idx:bi, bookId:b.bookId, title:b.title, readId:r.id,
-                   at:e.at, text:e.text, pos:e.pos, fmt:e.fmt, k:k, fresh:_thFresh.indexOf(e)});
+  var rows=[], shown={};
+  function walk(arr, listId){
+    arr.forEach(function(b,bi){
+      if(!b) return;
+      if(listId!==activeId && b.bookId && shown[b.bookId]) return;
+      (b.sessions||[]).forEach(function(r){
+        if(!r) return;
+        var es=Array.isArray(r.notes) ? r.notes
+          : (String(r.note||'').trim() ? [{at:(r.end||r.start||todayISO()), text:r.note}] : []);
+        es.forEach(function(e,k){
+          if(!e || !String(e.text||'').trim()) return;
+          rows.push({listId:listId, idx:bi, bookId:b.bookId, title:b.title, readId:r.id,
+                     at:e.at, text:e.text, pos:e.pos, fmt:e.fmt, k:k, fresh:_thFreshIdx(e)});
+        });
       });
     });
+    arr.forEach(function(b){ if(b && b.bookId) shown[b.bookId]=1; });
+  }
+  walk(books, activeId);
+  lists.forEach(function(l){
+    if(l.id===activeId) return;
+    try{ var raw=storage.getItem(listKey(l.id)); if(raw) walk(JSON.parse(raw), l.id); }catch(e){}
   });
   rows.sort(function(a,b){
     if(a.fresh!==b.fresh) return b.fresh-a.fresh;   // saved since the app opened, latest first
@@ -7070,7 +7124,22 @@ function addSession(){
 }
 function delS(i){
   if(smIdx<0)return;
-  var _b=books[smIdx];
+  var _b=books[smIdx], _r=(_b.sessions||[])[i]; if(!_r) return;
+  // One tap on the x used to take a read and everything in it. Deleting a
+  // single entry already asked; the whole read now asks too, whenever it holds
+  // something worth keeping.
+  var _words=String(_r.note||'').trim() || String(_r.review||'').trim()
+    || (Array.isArray(_r.notes) && _r.notes.some(function(e){ return e && String(e.text||'').trim(); }));
+  var _sits=(_b.timerSessions||[]).filter(function(x){ return x && x.readId===_r.id && !x.detached; }).length;
+  if(_words || _r.rating || _sits){
+    var _what=[];
+    if(_words) _what.push('your thoughts and summary');
+    if(_r.rating) _what.push('its rating');
+    var _m='Remove this read?'+(_what.length?' '+_what.join(' and ').replace(/^./,function(c){return c.toUpperCase();})+' go with it.':'')
+      +(_sits?' Its '+_sits+' timed session'+(_sits===1?'':'s')+' stay in the reading log but stop counting.':'');
+    if(!confirm(_m)) return;
+  }
+  var _hadRating=!!_r.rating;
   stampFormats(_b);                    // before the read holding the medium goes
   // Mark this read's sessions as deliberately detached. Without it they are
   // indistinguishable from sessions orphaned by a bug, and adoptOrphanSessions
@@ -7081,7 +7150,7 @@ function delS(i){
     if(x && x.readId===_gone.id) x.detached=1;
   });
   _b.sessions.splice(i,1);
-  syncHeadlineRating(smIdx);
+  syncHeadlineRating(smIdx, _hadRating);
   saveCurrentList();fanOutBookMeta(smIdx);renderSM();renderTable();updateStats();
 }
 function updS(i,field,val){
@@ -7132,7 +7201,7 @@ function tmrStartTick(){ tmrStopTick(); _tmrTick=setInterval(tmrPaint,1000); }
 function tmrStopTick(){ if(_tmrTick){ clearInterval(_tmrTick); _tmrTick=null; } }
 function tmrElapsedDisplaySec(){ return tmrMode==='finishprompt' ? _tmrFrozenSec : timerElapsedSec(); }
 function tmrPickIdx(){
-  if(activeTimer && activeTimer.listId===activeId) return activeTimer.bookIdx;
+  if(activeTimer && activeTimer.listId===activeId){ var _ti=tmrBookIdx(); if(_ti>=0) return _ti; }
   if(tmrSelIdx>=0 && tmrSelIdx<books.length) return tmrSelIdx;
   for(var i=0;i<books.length;i++){ if(books[i].isReading) return i; }
   return books.length?0:-1;
@@ -7182,12 +7251,55 @@ function tmrPaint(){
   if(arc){ arc.setAttribute('stroke-dasharray', C.toFixed(1)); arc.setAttribute('stroke', activeTimer?tmrLapColor(lap):'transparent'); arc.setAttribute('stroke-dashoffset', (C*(1-(activeTimer?frac:0))).toFixed(1)); }
   if(base){ base.setAttribute('stroke', (activeTimer&&lap>=1)?tmrLapColor(lap-1):'transparent'); }
 }
+// Where the running timer's book sits in its own list, right now. The timer
+// used to remember only a position, and positions move: a paste puts a book at
+// the top and a delete closes a gap, so every book below shifts by one and a
+// sitting could be saved onto the neighbour. It now carries the book's id and
+// looks the position up each time. The remembered position is tried first, so
+// a list holding the same book twice keeps the copy the timer started on. A
+// timer started before ids were recorded has none, and falls back to position.
+function tmrBookIdx(){
+  if(!activeTimer) return -1;
+  var arr, own=(activeTimer.listId===activeId);
+  if(own) arr=books;
+  else { try{ var raw=storage.getItem(listKey(activeTimer.listId)); arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; } }
+  var i=activeTimer.bookIdx, id=activeTimer.bookId;
+  if(!id) return (typeof i==='number' && arr[i]) ? i : -1;
+  if(typeof i==='number' && arr[i] && arr[i].bookId===id) return i;
+  for(var k=0;k<arr.length;k++){
+    if(arr[k] && arr[k].bookId===id){
+      if(own){ activeTimer.bookIdx=k; saveActiveTimer(); }   // keep the stored position honest
+      return k;
+    }
+  }
+  return -1;
+}
 // The book the running timer belongs to — which is NOT always books[bookIdx],
 // because the timer can be running against a book in another list.
 function tmrTimerBook(){
   if(!activeTimer) return null;
-  if(activeTimer.listId===activeId) return books[activeTimer.bookIdx]||null;
-  try{ var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[]; return arr[activeTimer.bookIdx]||null; }catch(e){ return null; }
+  var i=tmrBookIdx(); if(i<0) return null;
+  if(activeTimer.listId===activeId) return books[i]||null;
+  try{ var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[]; return arr[i]||null; }catch(e){ return null; }
+}
+// Where a finished sitting should be written: the timer's own list first; if
+// the book has since been deleted there, any other list holding the same book.
+function _tmrLocate(){
+  if(!activeTimer) return null;
+  var i=tmrBookIdx(); if(i>=0) return {listId:activeTimer.listId, idx:i};
+  var id=activeTimer.bookId; if(!id) return null;
+  var k;
+  if(activeTimer.listId!==activeId){
+    for(k=0;k<books.length;k++) if(books[k] && books[k].bookId===id) return {listId:activeId, idx:k};
+  }
+  for(var n=0;n<lists.length;n++){
+    var l=lists[n]; if(l.id===activeId || l.id===activeTimer.listId) continue;
+    try{
+      var raw=storage.getItem(listKey(l.id)), arr=raw?JSON.parse(raw):[];
+      for(k=0;k<arr.length;k++) if(arr[k] && arr[k].bookId===id) return {listId:l.id, idx:k};
+    }catch(e){}
+  }
+  return null;
 }
 // A position box. Print reads get one page number; audio reads get [hr] [min],
 // because typing 255 for 4h 15m on a phone is miserable.
@@ -7277,6 +7389,7 @@ function renderTimerTab(){
     // day, show what it recorded and let him put in what he actually read.
     var _elapsed=tmrElapsedDisplaySec(), _longRun=_elapsed>=TMR_LONG_SEC;
     controls='<div class="tmr-pageform"><label>'+(_fa?'Stopped at':'Finish at page')+'</label>'+tmrPosField('tmr-endpage',_fa,sug,_fmax)
+      +'<div class="rl-edit-err hidden" id="tmr-end-err" style="margin:10px 0 0"></div>'
       +(_switched?'<div class="tmr-longnote">This session started as '+(_fa?'audio':'print')+', so it finishes in '+(_fa?'hours and minutes':'pages')+'. The format you just picked applies to the next one.</div>':'')
       +(_longRun?('<div class="tmr-longnote">This ran for '+formatHMS(_elapsed)+'. If the timer was left going, correct the time below \u2014 it saves exactly what you enter.</div>'
                  +'<label class="tmr-l2">Time read</label>'+tmrPosField('tmr-dur',true,Math.round(_elapsed/60),0)):'')
@@ -7313,7 +7426,7 @@ function tmrNoteSave(){
   if(!String(text).trim()){ tmrNoteClose(); return; }
   if(!activeTimer){ showToast('The timer has stopped — log it from Thoughts'); return; }
   var tb=tmrTimerBook();
-  var res=thFile({listId:activeTimer.listId, idx:activeTimer.bookIdx, bookId:tb&&tb.bookId, why:'timer'}, text, true);
+  var res=thFile({listId:activeTimer.listId, idx:tmrBookIdx(), bookId:tb&&tb.bookId, why:'timer'}, text, true);
   if(!res){ showToast('Could not save the note — it is still here'); return; }
   _tmrNote=null; renderTimerTab();
   var p=thPosText(res.entry);
@@ -7364,7 +7477,7 @@ function tmrBegin(){
   // readings like "990 of 508 pages (195%)". Clamp against the book the timer
   // is actually starting on, not books[tmrSelIdx], which is -1 until he picks.
   var _capS=curTotalOf(b); if(_capS>0 && page>_capS) page=_capS;
-  activeTimer={ listId:activeId, bookIdx:idx, bookTitle:b.title, bookAuthor:b.author, bookPages:b.pages, fmt:readFormat(curReadOf(b)), startTime:Date.now(), startPage:page, accumulatedSec:0, pausedAt:null, finishing:false };
+  activeTimer={ listId:activeId, bookIdx:idx, bookId:b.bookId, bookTitle:b.title, bookAuthor:b.author, bookPages:b.pages, fmt:readFormat(curReadOf(b)), startTime:Date.now(), startPage:page, accumulatedSec:0, pausedAt:null, finishing:false };
   if(!b.isReading){ b.isReading=true; saveCurrentList(); if(currentTab==='list') renderTable(); }
   saveActiveTimer(); tmrMode='running'; renderTimerTab(); tmrStartTick(); pushTimerState();
 }
@@ -7393,7 +7506,30 @@ function tmrConfirmFinish(){
   if(isNaN(endPage)){ tmrKeepReading(); return; }
   if(endPage<0) endPage=0;
   var _capE=fmtTotal(_fb,_cfmt); if(_capE>0 && endPage>_capE) endPage=_capE;
-  var sec=_tmrFrozenSec, idx=activeTimer.bookIdx, startPage=activeTimer.startPage;
+  var sec=_tmrFrozenSec, startPage=activeTimer.startPage||0;
+  // A book shortened after the timer started would otherwise trap the sitting:
+  // the end is capped to the new length, below a start that never was.
+  if(_capE>0 && startPage>_capE) startPage=_capE;
+  // p.120 to p.80 used to save and count as nothing. The prompt stays open with
+  // the sitting intact, so a typo costs nothing.
+  var _rangeErr=posRangeError(startPage,endPage);
+  if(_rangeErr){
+    var _ee=document.getElementById('tmr-end-err');
+    var _msg=_rangeErr+' You started at '+(_cfmt==='audio'?fmtMins(startPage):'p.'+startPage)+'.';
+    if(_ee){ _ee.textContent=_msg; _ee.classList.remove('hidden'); } else showToast(_msg);
+    return;
+  }
+  var _loc=_tmrLocate();
+  if(!_loc){
+    // The book is gone from every list. Saving nowhere and saying nothing is
+    // how a sitting used to vanish; ask instead.
+    if(!confirm('"'+(activeTimer.bookTitle||'This book')+'" is no longer in any of your lists, so this sitting has nowhere to be saved.\n\nOK discards it. Cancel keeps it here: undo the delete, then save.')) return;
+    _tmrEndNote=''; _tmrNote=null;
+    activeTimer=null; saveActiveTimer(); tmrStopTick(); _tmrFrozenSec=0; tmrMode='idle'; pushTimerState(); pushWidgetSnapshot();
+    renderTimerTab(); showToast('Session discarded');
+    return;
+  }
+  var idx=_loc.idx;
   // A corrected duration on a marathon session. Blank boxes mean "leave it as
   // recorded"; anything longer than the timer actually ran is not accepted.
   if(sec>=TMR_LONG_SEC){
@@ -7404,23 +7540,28 @@ function tmrConfirmFinish(){
   // Stamped here, so tagSessionRead and stampFormats both leave it alone: the
   // session keeps the medium it was actually recorded in.
   var session={ startTime:startTime, endTime:startTime+sec*1000, durationSec:sec, startPage:startPage, endPage:endPage, fmt:_cfmt };
-  if(activeTimer.listId===activeId){ var b=books[idx]; if(b){ b.timerSessions=b.timerSessions||[]; tagSessionRead(b,session); b.timerSessions.push(session); saveCurrentList(); fanOutSession(b.bookId, session, activeId); } }
-  else { try{ var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[]; if(arr[idx]){ arr[idx].timerSessions=arr[idx].timerSessions||[]; tagSessionRead(arr[idx],session); arr[idx].timerSessions.push(session); storage.setItem(listKey(activeTimer.listId), JSON.stringify(arr)); fanOutSession(arr[idx].bookId, session, activeTimer.listId); } }catch(e){} }
+  var _savedOn=null;
+  if(_loc.listId===activeId){ var b=books[idx]; if(b){ b.timerSessions=b.timerSessions||[]; tagSessionRead(b,session); b.timerSessions.push(session); saveCurrentList(); fanOutSession(b.bookId, session, activeId); _savedOn=b; } }
+  else { try{ var raw=storage.getItem(listKey(_loc.listId)); var arr=raw?JSON.parse(raw):[]; if(arr[idx]){ arr[idx].timerSessions=arr[idx].timerSessions||[]; tagSessionRead(arr[idx],session); arr[idx].timerSessions.push(session); storage.setItem(listKey(_loc.listId), JSON.stringify(arr));
+    // The list it was written to changed too; without this only the copies
+    // fanOutSession reached were marked for backup, never this one.
+    try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(_loc.listId); }catch(e){}
+    fanOutSession(arr[idx].bookId, session, _loc.listId); _savedOn=arr[idx]; } }catch(e){} }
+  if(!_savedOn){ showToast('Could not save the session — it is still here'); return; }
   // The thought he had at the end of the sitting, filed where the sitting
   // ended. Saved after the session, so a failure here can never cost him the
   // session — and if it does fail, the words wait in the Thoughts box.
   var _noted=null;
   if(String(_endNote||'').trim()){
-    var _nb=tmrTimerBook();
-    _noted=thFile({listId:activeTimer.listId, idx:idx, bookId:_nb&&_nb.bookId, why:'timer'}, _endNote, {pos:endPage, fmt:_cfmt});
+    _noted=thFile({listId:_loc.listId, idx:idx, bookId:_savedOn.bookId, why:'timer'}, _endNote, {pos:endPage, fmt:_cfmt});
     if(!_noted) _thDraft=(_thDraft?_thDraft+'\n\n':'')+_endNote;
   }
   _tmrEndNote=''; _tmrNote=null;
   activeTimer=null; saveActiveTimer(); tmrStopTick(); _tmrFrozenSec=0; tmrMode='idle'; pushTimerState(); pushWidgetSnapshot();
   updateStats(); renderTimerTab(); if(currentTab==='list') renderTable();
-  var _tb=(tmrSelIdx>=0)?books[tmrSelIdx]:null;
-  var _tr=_tb?readById(_tb,ensureCurrentRead(_tb)):null;
-  showToast('Logged '+formatHMS(sec)+' \u00b7 '+unitStr(_tr,Math.max(0,endPage-startPage))
+  // The unit is the sitting's own. This used to ask whichever book the timer
+  // screen had selected, and quietly gave that book an empty read if it had none.
+  showToast('Logged '+formatHMS(sec)+' \u00b7 '+unitStr({format:_cfmt},Math.max(0,endPage-startPage))
     +(_noted?' \u00b7 note saved':(String(_endNote||'').trim()?' \u00b7 note kept in Thoughts':'')));
 }
 function tmrStartFromReading(idx){ tmrSelIdx=idx; switchScreen('timer'); }
@@ -7477,7 +7618,12 @@ function tmrInit(){
   // save prompt it was 0, so the screen showed 00:00 and "Keep reading" wrote
   // accumulatedSec = 0 — the whole session gone. Rebuild it from the record,
   // which is frozen because finishing now also sets pausedAt.
-  if(activeTimer && activeTimer.finishing) _tmrFrozenSec = timerElapsedSec(); if(activeTimer){ tmrSelIdx=(activeTimer.listId===activeId)?activeTimer.bookIdx:-1; tmrSyncMode(); if(tmrMode==='running') tmrStartTick(); } }
+  if(activeTimer && activeTimer.finishing) _tmrFrozenSec = timerElapsedSec();
+  // A timer started on an older version knows only a position. Its position is
+  // still right at this moment (nothing has moved since it was loaded), so
+  // record the book's id now and it stays attached from here on.
+  if(activeTimer && !activeTimer.bookId){ var _tb0=tmrTimerBook(); if(_tb0 && _tb0.bookId){ activeTimer.bookId=_tb0.bookId; saveActiveTimer(); } }
+  if(activeTimer){ tmrSelIdx=(activeTimer.listId===activeId)?tmrBookIdx():-1; tmrSyncMode(); if(tmrMode==='running') tmrStartTick(); } }
 
 /* ── Native timer bridge (floating bubble) ──────────────────────────────────
    Web is the single source of truth. Every timer transition mirrors state to
@@ -7487,11 +7633,7 @@ function tmrInit(){
    All of it no-ops outside the Capacitor shell. */
 function _tmrBookTitle(){
   if(!activeTimer) return '';
-  try{
-    if(activeTimer.listId===activeId){ var b=books[activeTimer.bookIdx]; return b?(b.title||''):''; }
-    var raw=storage.getItem(listKey(activeTimer.listId)); var arr=raw?JSON.parse(raw):[];
-    return arr[activeTimer.bookIdx]?(arr[activeTimer.bookIdx].title||''):'';
-  }catch(e){ return ''; }
+  try{ var b=tmrTimerBook(); return b?(b.title||''):(activeTimer.bookTitle||''); }catch(e){ return activeTimer.bookTitle||''; }
 }
 function pushTimerState(){
   var P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences;
@@ -7760,7 +7902,7 @@ function renderTable(){
     var sBadge=(_last?'<span class="sbadge">'+esc(_last)+'</span>':'')
              +(sc>1?'<span class="sbadge rt-badge">'+sc+' reads</span>':'');
     var sum='';
-    var timerOn=(activeTimer && activeTimer.bookIdx===b.idx && activeTimer.listId===activeId);
+    var timerOn=(activeTimer && activeTimer.listId===activeId && tmrBookIdx()===b.idx);
     return '<div class="bk-card'+(isRead?' is-read':'')+(b.isReading?' is-reading':'')+'" data-bidx="'+b.idx+'">'
       +'<div class="bk-row1">'
         +'<button class="chk'+(isRead?' checked':'')+'" onclick="toggleRead('+b.idx+')" title="Mark read"></button>'
@@ -8074,7 +8216,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v58';
+var BABEL_VERSION='babel-v59';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -8981,10 +9123,8 @@ function closeScan(){
 function showYearBooks(){
   var yr=new Date().getFullYear(), rows=[];
   books.forEach(function(b,i){
-    if(!readSet.has(i)) return;
-    if(_finishYear(b)!==yr) return;
-    var fin='';
-    (b.sessions||[]).forEach(function(x){ if(x.end && x.end>fin) fin=x.end; });
+    if(!_finishedInYear(b,yr,readSet.has(i))) return;
+    var fin=_readEndInYear(b,yr);
     if(!fin && b.finishedAt){
       var d=new Date(b.finishedAt);
       fin=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -9001,7 +9141,7 @@ function showYearBooks(){
           +'<span class="yb-t">'+esc(r.b.title||'')+'</span>'
           +'<span class="yb-m">'+esc(meta)+'</span></button>';
       }).join('')
-    : '<div class="lookup-note">No books finished in '+yr+' yet. Books count once they are marked read with a finish date.</div>';
+    : '<div class="lookup-note">No books finished in '+yr+' yet. A book counts once one of its reads has a Finished date in '+yr+'.</div>';
   document.getElementById('yearbooks-sheet').classList.remove('hidden');
 }
 function closeYearBooks(){ document.getElementById('yearbooks-sheet').classList.add('hidden'); }
@@ -9011,7 +9151,9 @@ function closeYearBooks(){ document.getElementById('yearbooks-sheet').classList.
 // matching the calendar/streak scope); library-composition charts (authors,
 // ratings) use the active list, matching the counters above them.
 function _allTimerSessions(){
-  var out=[];
+  // A book in two lists holds the same sessions in both (fanOutSession); count
+  // each once, keyed on its start moment — the rule every day map already uses.
+  var out=[], seen={};
   // An audio session's startPage/endPage are MINUTES, not pages. Anything here
   // that counts pages has to be able to tell the two apart — without it a
   // ten-hour audiobook adds six hundred "pages" to its month.
@@ -9021,6 +9163,7 @@ function _allTimerSessions(){
   // business travelling with them.
   function grab(b,arr){(arr||[]).forEach(function(x){
     if(x && x.startTime && x.durationSec && !x.detached){
+      if(seen[x.startTime]) return; seen[x.startTime]=1;
       var c={}; for(var k in x) if(Object.prototype.hasOwnProperty.call(x,k)) c[k]=x[k];
       c._audio = !!sessionIsAudio(b,x);
       out.push(c);
@@ -9035,13 +9178,26 @@ function _allTimerSessions(){
   });
   return out;
 }
-// Year a book was finished: explicit stamp first, else latest session-log
-// date, else unknown (counts in totals but not the yearly ring).
+// "Finished" is a read's Finished date. The checkbox stamp (finishedAt) is set
+// once and never moves, so it used to win over every later read: a book reread
+// this year counted in the year it was first ticked. It is now only the
+// fallback for a ticked book none of whose reads has a date.
+function _readEndInYear(b,yr){
+  var fin='';
+  (b.sessions||[]).forEach(function(x){ var e=(x&&x.end)||''; if(e.slice(0,4)===String(yr) && e>fin) fin=e; });
+  return fin;
+}
+function _hasReadEnd(b){ return (b.sessions||[]).some(function(x){ return x && (x.end||''); }); }
+function _finishedInYear(b,yr,ticked){
+  if(_readEndInYear(b,yr)) return true;
+  return !!(ticked && !_hasReadEnd(b) && b.finishedAt && new Date(b.finishedAt).getFullYear()===yr);
+}
+// Year a book was last finished: latest read date, else the checkbox stamp.
 function _finishYear(b){
-  if(b.finishedAt) return new Date(b.finishedAt).getFullYear();
   var yr=null;
-  (b.sessions||[]).forEach(function(x){ var m=(x.end||'').match(/^(\d{4})/); if(m){ var y=+m[1]; if(!yr||y>yr) yr=y; } });
-  return yr;
+  (b.sessions||[]).forEach(function(x){ var m=((x&&x.end)||'').match(/^(\d{4})/); if(m){ var y=+m[1]; if(!yr||y>yr) yr=y; } });
+  if(yr) return yr;
+  return b.finishedAt ? new Date(b.finishedAt).getFullYear() : null;
 }
 function _dsTime(sec){ var hh=Math.floor(sec/3600), mm=Math.round((sec%3600)/60); return hh>0?(hh+'h '+mm+'m'):(mm+'m'); }
 function renderDeepStats(){
@@ -9051,7 +9207,7 @@ function renderDeepStats(){
 
   // Yearly goal ring
   var finished=0;
-  books.forEach(function(b,i){ if(readSet.has(i) && _finishYear(b)===thisYear) finished++; });
+  books.forEach(function(b,i){ if(_finishedInYear(b,thisYear,readSet.has(i))) finished++; });
   var pct=babelYearlyGoal>0?Math.min(finished/babelYearlyGoal,1):0, C=2*Math.PI*34;
   h+='<div class="ds-card ds-year" onclick="showYearBooks()" title="See the books"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--border)" stroke-width="7"/><circle cx="40" cy="40" r="34" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+(pct*C).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 40 40)"/></svg>'
     +'<div><div class="ds-year-n">'+finished+' / '+babelYearlyGoal+'</div><div class="ds-year-l">books in '+thisYear+'</div></div></div>';
@@ -9832,8 +9988,11 @@ window.BabelCloud = (function(){
     }catch(e){ setStatus(navigator.onLine?'error':'offline'); }
     window.addEventListener('online', function(){ if(user){ pull(); pushDirty(); } });
     document.addEventListener('visibilitychange', function(){ if(!document.hidden && user && navigator.onLine) pull(); });
-    if(pollTimer) clearInterval(pollTimer);
-    pollTimer=setInterval(function(){ if(user && navigator.onLine && !document.hidden) pull(); }, 30000);
+    // No 30-second poll. Babel runs on one device, so the cloud copy is a backup
+    // of this phone rather than a second editor, and a pull every half minute
+    // only risked replacing a whole list mid-edit. Pulls happen at launch, on
+    // reconnect, on returning to the app, and from Sync now / Pull in Settings.
+    if(pollTimer){ clearInterval(pollTimer); pollTimer=null; }
   }
 
   // ---- auth ----
@@ -10080,6 +10239,7 @@ window.BabelCloud = (function(){
       updateStats(); renderFilterPills(); renderGenreDropdown && renderGenreDropdown(); renderGenrePickPills && renderGenrePickPills();
       (currentTab==='list')?renderTable():renderGenreTab();
       applyTheme(activeList().theme||DEFAULT_THEME);
+      refreshOpenViews();
     }catch(e){}
   }
 
