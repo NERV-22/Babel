@@ -1442,6 +1442,97 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .cloud-acct{font-family:var(--ui);font-size:13.5px;color:var(--text);margin-bottom:12px;display:flex;flex-direction:column;gap:3px}
 .cloud-last{font-size:11px;color:var(--text-muted)}
 </style>
+<style>
+/* ── The library: Archive, survey, taste, discover (v62) ── */
+.lib-arch{margin-left:auto}
+.lib-arch+.lib-gear{margin-left:0}
+.ar-top{position:sticky;top:0;z-index:5;background:var(--bg1);padding:2px 0 10px}
+.ar-q{width:100%;box-sizing:border-box;padding:11px 14px;font-family:var(--ui);font-size:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);outline:none}
+.ar-q:focus{border-color:var(--accent)}
+.ar-chips,.yr-years{display:flex;gap:7px;overflow-x:auto;margin-top:10px;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.ar-chip{flex:none;border:1px solid var(--border);background:none;color:var(--text-muted);border-radius:999px;padding:6px 12px;font-family:var(--ui);font-size:12px;cursor:pointer;white-space:nowrap}
+.ar-chip span{opacity:.65;margin-left:2px}
+.ar-chip.on{border-color:var(--accent);color:var(--accent)}
+.ar-count{font-family:var(--ui);font-size:11.5px;color:var(--text-muted);margin:4px 2px 10px}
+.ar-book{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius,14px);padding:14px 15px;margin-bottom:12px}
+.ar-t{font-family:var(--display);font-size:17px;font-weight:600;color:var(--text);line-height:1.25}
+.ar-m{font-family:var(--ui);font-size:12px;color:var(--text-muted);margin-top:3px}
+.ar-cmp{margin-top:10px;padding:8px 11px;border-left:2px solid var(--accent);font-family:var(--ui);font-size:12px;line-height:1.55;color:var(--text)}
+.ar-reads{margin-top:10px}
+.ar-reads.multi{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.ar-reads.multi .ar-read{flex:0 0 86%;scroll-snap-align:start;border:1px solid var(--border);border-radius:12px;padding:11px 12px;background:var(--bg1)}
+.ar-read+.ar-read{margin-top:12px}
+.ar-reads.multi .ar-read+.ar-read{margin-top:0}
+.ar-rh{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.ar-stars{margin-top:6px}
+.ar-entries{margin-top:8px;display:flex;flex-direction:column;gap:9px}
+.ar-ed{font-family:var(--ui);font-size:11px;color:var(--text-muted);margin-bottom:2px}
+.ar-et,.ar-st{font-family:var(--display);font-size:14.5px;line-height:1.55;color:var(--text);white-space:pre-wrap;word-break:break-word}
+.ar-sum{margin-top:10px;padding-top:9px;border-top:1px solid var(--border)}
+.ar-sl{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:3px}
+.ar-more{display:block;width:100%;padding:12px;margin:4px 0 20px;border:1px solid var(--border);border-radius:12px;background:none;color:var(--text);font-family:var(--ui);font-size:13px;cursor:pointer}
+mark{background:rgba(194,168,120,.35);background:color-mix(in srgb,var(--accent) 35%,transparent);color:inherit;border-radius:3px;padding:0 1px}
+.svy-head{flex-direction:column;align-items:flex-start;gap:3px}
+.svy-sub{font-family:var(--ui);font-size:12px;color:var(--text-muted)}
+.svy-q{margin:0 0 15px}
+.svy-qt{font-family:var(--ui);font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:8px}
+.svy-qt span{font-weight:400;color:var(--text-muted);font-size:11.5px}
+.svy-chips{display:flex;flex-wrap:wrap;gap:7px}
+.svy-chip{border:1px solid var(--border);background:var(--bg1);color:var(--text);border-radius:999px;padding:7px 12px;font-family:var(--ui);font-size:12.5px;cursor:pointer}
+.svy-chip.on{background:var(--accent);border-color:var(--accent);color:#0a0a0a;font-weight:600}
+.svy-themes{width:100%;box-sizing:border-box;padding:10px 12px;font-family:var(--ui);font-size:13.5px;border:1px solid var(--border);border-radius:10px;background:var(--bg1);color:var(--text);outline:none}
+.svy-show{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.svy-tag{font-family:var(--ui);font-size:11px;color:var(--text-muted);border:1px solid var(--border);border-radius:999px;padding:3px 9px}
+.sm-review{margin-top:12px}
+.sm-rvlabel{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:6px}
+.sm-svy{margin-top:10px}
+.sm-svy-none{font-family:var(--ui);font-size:12px;color:var(--text-muted)}
+.sm-svy .rtn-add{margin-top:8px}
+.tp-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:6px 0;font-family:var(--ui);font-size:12.5px}
+.tp-k{color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tp-v{color:var(--text-muted);flex:none;text-align:right}
+.tp-sub{font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin:12px 0 4px}
+.ds-taste .ds-note,.ds-card .ds-note{text-align:left}
+.ds-link{background:none;border:none;padding:0;color:var(--accent);font-family:var(--ui);font-size:12px;text-decoration:underline;cursor:pointer}
+.ds-yrbtn{display:flex;justify-content:space-between;align-items:center;width:100%;color:var(--text);font-family:var(--ui);font-size:14px;cursor:pointer;text-align:left}
+.ds-yrgo{color:var(--text-muted);font-size:18px}
+.fit-w{font-weight:600;color:var(--text)}
+.fit-w.good{color:var(--accent)}
+.fit-w.warn{color:#e07c7c}
+.rd-fit,.disc-fit,.bp-fit{font-family:var(--ui);font-size:12px;line-height:1.5;color:var(--text-muted);margin-top:5px}
+.bp-fit{font-size:13px;margin:0}
+.bp-before{padding:10px 0;border-bottom:1px solid var(--border)}
+.bp-before:last-child{border-bottom:none}
+.bp-bt{font-family:var(--display);font-size:14.5px;font-weight:600;color:var(--text)}
+.bp-bt span{font-family:var(--ui);font-size:11.5px;font-weight:400;color:var(--text-muted)}
+.bp-bx{font-family:var(--display);font-size:14px;line-height:1.55;color:var(--text);margin-top:4px;white-space:pre-wrap}
+.bp-bx.muted{color:var(--text-muted);font-style:italic}
+.bp-like{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;padding:9px 0;border:none;border-bottom:1px solid var(--border);background:none;cursor:pointer}
+.bp-like:last-child{border-bottom:none}
+.bp-lt{font-family:var(--display);font-size:14.5px;color:var(--text)}
+.bp-lm{font-family:var(--ui);font-size:11.5px;color:var(--text-muted)}
+.yr-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.yr-hero div{display:flex;flex-direction:column;align-items:center;padding:10px 4px;border:1px solid var(--border);border-radius:12px;background:var(--bg1)}
+.yr-hero b{font-family:var(--display);font-size:20px;color:var(--text)}
+.yr-hero span{font-family:var(--ui);font-size:10.5px;color:var(--text-muted);margin-top:2px}
+.yr-cols{height:80px;margin:4px 0 12px}
+.disc-ctl{display:flex;gap:8px;margin-bottom:8px}
+.disc-ctl input{flex:1;min-width:0;padding:10px 12px;font-family:var(--ui);font-size:13px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);outline:none}
+.disc-go{flex:none;width:auto;padding:10px 14px}
+.disc-f{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.disc-f label{font-family:var(--ui);font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px}
+.disc-f select{padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--ui);font-size:12px}
+.disc-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px}
+.disc-t{font-family:var(--display);font-size:15px;font-weight:600;color:var(--text)}
+.disc-m{font-family:var(--ui);font-size:11.5px;color:var(--text-muted);margin-top:2px}
+.disc-b{display:flex;gap:14px;margin-top:9px}
+.bp-secact.muted{color:var(--text-muted)}
+.svy-ctx{font-family:var(--display);font-size:14px;line-height:1.5;color:var(--text-muted);font-style:italic;margin:-4px 0 14px;white-space:pre-wrap}
+.svy-hint{font-family:var(--ui);font-size:11.5px;color:var(--text-muted);margin-top:6px}
+.svy-btns{flex-wrap:wrap}
+.ar-cu{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;margin:2px 0 12px;border:1px solid var(--accent);border-radius:14px;font-family:var(--ui);font-size:13px;color:var(--text)}
+.ar-cu .tmr-primary{width:auto;padding:9px 14px}
+</style>
 </head>
 <body>
 
@@ -1453,6 +1544,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <div class="list-header">
     <span class="lib-hex"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><polygon points="12,1 21.5,6.5 21.5,17.5 12,23 2.5,17.5 2.5,6.5" stroke="currentColor" stroke-width="1.1" opacity="0.4"/><polygon points="12,5 18.1,8.5 18.1,15.5 12,19 5.9,15.5 5.9,8.5" stroke="currentColor" stroke-width="1.1" opacity="0.8"/><polygon points="12,8.5 15,10.25 15,13.75 12,15.5 9,13.75 9,10.25" stroke="currentColor" stroke-width="1.1"/><circle cx="12" cy="12" r="1" fill="var(--accent)"/></svg></span>
     <input class="h1-input" id="list-name-input" value="" placeholder="Name this list..." onchange="renameCurrentList(this.value)" onblur="renameCurrentList(this.value)"/>
+    <button class="lib-gear lib-arch" onclick="switchScreen('archive')" aria-label="Archive" title="Archive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="4.2" rx="1.2"/><path d="M5.2 8.7V18a1.6 1.6 0 0 0 1.6 1.6h10.4a1.6 1.6 0 0 0 1.6-1.6V8.7"/><path d="M10 12.6h4"/></svg></button>
     <button class="lib-gear" onclick="switchScreen('settings')" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3 5.6 5.6"/></svg></button>
   </div>
   <div id="tab-list">
@@ -1566,6 +1658,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       </div>
       <div id="h-body"></div>
     </section>
+    <section class="screen hidden" id="screen-archive" data-screen-label="Archive">
+      <div class="appbar"><div class="appbar-title">Archive</div><button class="appbar-done" onclick="switchScreen('library')">Done</button></div>
+      <div class="ar-top">
+        <input type="search" id="ar-q" class="ar-q" autocomplete="off" placeholder="Search your notes, summaries, survey tags&hellip;" oninput="arSearchDebounced()"/>
+        <div class="ar-chips" id="ar-chips"></div>
+      </div>
+      <div id="ar-body"></div>
+    </section>
     <section class="screen hidden" id="screen-settings" data-screen-label="Settings">
       <div class="appbar"><div class="appbar-title">Settings</div><button class="appbar-done" onclick="switchScreen('library')">Done</button></div>
       <div class="set-list">
@@ -1657,6 +1757,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div class="modal-btns" style="margin-top:14px"><button class="modal-cancel" onclick="closeEta()">Done</button></div>
   </div>
 </div>
+<div class="sheet-overlay hidden" id="yr-sheet" onclick="if(event.target===this)closeYearReview()">
+  <div class="sheet">
+    <div class="sheet-grab" onclick="closeYearReview()"></div>
+    <div class="shop-head"><span class="shop-t">Year in review</span></div>
+    <div id="yr-body"></div>
+    <div class="modal-btns" style="margin-top:14px"><button class="modal-cancel" onclick="closeYearReview()">Done</button></div>
+  </div>
+</div>
 <div class="sheet-overlay hidden" id="stat-sheet" onclick="if(event.target===this)closeStatSheet()">
   <div class="sheet">
     <div class="sheet-grab" onclick="closeStatSheet()"></div>
@@ -1719,6 +1827,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
           <span class="bp-secacts"><button class="bp-secact" onclick="openSM(bpIdx)">Edit</button></span></div>
         <div class="bp-th" id="bp-th"></div>
       </section>
+      <div id="bp-extra"></div>
       <section class="bp-sec">
         <div class="bp-sech"><h3>Sessions</h3>
           <button class="bp-secact" onclick="openRL(bpIdx)">All</button></div>
@@ -1933,6 +2042,17 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <div class="tpsr"><button class="tpok" onclick="confirmSp()">Save</button><button class="tpcl" onclick="hideSpForm()">Cancel</button></div>
       </div>
     </div>
+  </div>
+</div>
+<div class="sheet-overlay hidden" id="svy-sheet" style="z-index:1100" onclick="if(event.target===this)closeSurvey()">
+  <div class="sheet">
+    <div class="sheet-grab" onclick="closeSurvey()"></div>
+    <div class="shop-head svy-head"><span class="shop-t" id="svy-title">Book</span><span class="svy-sub" id="svy-sub"></span></div>
+    <div class="svy-ctx hidden" id="svy-ctx"></div>
+    <div id="svy-body"></div>
+    <div class="modal-btns svy-btns" id="svy-btns" style="margin-top:14px">
+      <button class="modal-cancel" onclick="closeSurvey()">Skip</button>
+      <button class="modal-save" onclick="saveSurvey()">Save</button></div>
   </div>
 </div>
 <div class="modal-overlay hidden" id="sessions-modal">
@@ -2496,7 +2616,7 @@ function fanOutSession(bookId, session, skipListId){
 // in one list reaches every copy of it. Deliberately NOT part of fanOutBookMeta:
 // that runs on every rating tap and session delete, and a stray call must never
 // quietly rewrite another list's details. Only an actual edit calls this.
-var BOOK_DETAIL_FIELDS=['title','author','translator','pages','runtimeMin','audioLabel','editions','coverage','genre','seriesOrder','seriesName','summary'];
+var BOOK_DETAIL_FIELDS=['title','author','translator','pages','runtimeMin','audioLabel','editions','coverage','genre','seriesOrder','seriesName','summary','rating','subjects'];
 function fanOutBookDetails(idx){
   var b=books[idx]; if(!b||!b.bookId) return;
   lists.forEach(function(l){
@@ -2506,7 +2626,9 @@ function fanOutBookDetails(idx){
       var arr=JSON.parse(raw), hit=false;
       arr.forEach(function(x){
         if(!x || x.bookId!==b.bookId) return;
-        BOOK_DETAIL_FIELDS.forEach(function(k){ x[k]=b[k]; });
+        // A field this copy lacks (an older book with no crowd rating) must not
+        // wipe the one the other copy has.
+        BOOK_DETAIL_FIELDS.forEach(function(k){ if(b[k]!==undefined) x[k]=b[k]; });
         hit=true;
       });
       if(hit){
@@ -2584,6 +2706,7 @@ function saveCurrentList(){
   if(!activeId)return;
   storage.setItem(listKey(activeId),JSON.stringify(books));
   storage.setItem(readKey(activeId),JSON.stringify([...readSet]));
+  _libMemo=null;            // the all-lists view is stale the moment a list is saved
   scheduleRefreshOpenViews();
 }
 // ── One redraw for every screen that shows a book ───────────────────────────
@@ -3294,7 +3417,9 @@ function filteredBooks(){
       && (!b.translator || b.translator.toLowerCase().indexOf(q)<0)
       // Search your own writing as well — summaries and per-read notes.
       && (!b.summary || b.summary.toLowerCase().indexOf(q)<0)
-      && !(b.sessions||[]).some(function(x){ return (x.note||'').toLowerCase().indexOf(q)>=0; })
+      && !(b.sessions||[]).some(function(x){ return (x.note||'').toLowerCase().indexOf(q)>=0
+           || String(x.review||'').toLowerCase().indexOf(q)>=0
+           || svyTags(x.survey).join(' ').toLowerCase().indexOf(q)>=0; })
     )continue;
     if(rf==="read"&&!readSet.has(i))continue;
     if(rf==="unread"&&(readSet.has(i)||b.isReading))continue;
@@ -3322,7 +3447,7 @@ function filteredBooks(){
     if(fr==='unrated'){ if(b.myRating) continue; }
     else if(fr){ if((b.myRating||0) < parseFloat(fr)) continue; }
     var fv2=_fv('ff-review');
-    var hasNote=(b.summary||'').trim() || (b.sessions||[]).some(function(x){return (x.note||'').trim();});
+    var hasNote=(b.summary||'').trim() || (b.sessions||[]).some(function(x){return (x.note||'').trim() || String(x.review||'').trim();});
     if(fv2==='yes' && !hasNote) continue;
     if(fv2==='no' && hasNote) continue;
     var fl=_fv('ff-len'), pg=b.pages||0;
@@ -3554,6 +3679,9 @@ function submitBook(){
     _b.editions=(_edDraft.f||[]).slice();
     _b.seriesOrder=seriesOrder; _b.seriesName=seriesName; _b.summary=summary;
     _b.coverage=_coverDraft;
+    if(_lkPendingMeta.rating && !(_b.rating>0)) _b.rating=_lkPendingMeta.rating;
+    if(_lkPendingMeta.subjects && !(_b.subjects||[]).length) _b.subjects=_lkPendingMeta.subjects;
+    _lkPendingMeta={};
     adoptPendingCover(_b);
     saveCurrentList();
     fanOutBookDetails(detailsIdx);
@@ -3574,6 +3702,9 @@ function submitBook(){
     seriesOrder:seriesOrder, seriesName:seriesName,
     isFav:false, isReading:false, sessions:[]
   });
+  if(_lkPendingMeta.rating) books[books.length-1].rating=_lkPendingMeta.rating;
+  if(_lkPendingMeta.subjects) books[books.length-1].subjects=_lkPendingMeta.subjects;
+  _lkPendingMeta={};
   adoptPendingCover(books[books.length-1]);
   saveCurrentList();
 
@@ -4906,9 +5037,7 @@ function bpReviewHTML(r, ri, multi){
 function bpSetReview(ri, rid, val){
   var b=books[bpIdx]; if(!b || !b.sessions) return;
   var r=(rid && readById(b,rid)) || b.sessions[ri]; if(!r) return;
-  var v=String(val==null?'':val);
-  if(v.trim()) r.review=v; else delete r.review;
-  saveCurrentList(); fanOutBookMeta(bpIdx);
+  setReadReview(bpIdx, r.id, val);
 }
 function bpReadSpan(r){
   var a=(r.start||'').trim(), z=(r.end||'').trim();
@@ -4935,6 +5064,7 @@ function renderBPThoughts(){
     h+= rows.length ? rows.map(function(t){ return bpEntryHTML(t); }).join('')
                     : (multi?'<p class="bp-none">Nothing written on this read.</p>':none);
     if(wantReview) h+=bpReviewHTML(r,ri,multi);
+    if(svyCount(r.survey)) h+=svyChipsHTML(r.survey,'');
     h+='</div>';
   });
   host.innerHTML=h;
@@ -5019,11 +5149,13 @@ function renderBookPage(){
   if(st) f.push(['Series',st]);
   f.push(['Genre',b.genre||'—'],['Format',readMediumName(b,r)||'—']);
   if(tot) f.push([audio?'Runtime':'Length',audio?fmtMins(tot):(tot+' pages')]);
+  if(b.rating>0) f.push(['Readers rate it',b.rating.toFixed(2)+' / 5']);
   f.push(['Started',(r&&r.start)||'—'],['Finished',(r&&r.end)||'—'],
          ['Reads',String((b.sessions||[]).length)],
          ['Entries',String(noteCount(b))]);
   document.getElementById('bp-facts').innerHTML=f.map(function(x){
     return '<dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd>'; }).join('');
+  try{ renderBPExtra(); }catch(e){ console.error('[Babel] book page extras failed', e); }
 }
 
 // ── A read's thoughts ─────────────────────────────────────────────────────────
@@ -6202,6 +6334,8 @@ function renderSM(){
         +'</div>'
         +'<div class="rt-rate">'+readStarsHTML(i,x.rating||0)+'</div>'
         +noteBlockHTML(x,i)
+        +smReviewHTML(x,i)
+        +smSurveyRowHTML(x,i)
       +'</div>';
     }).join('');
   }
@@ -6350,9 +6484,13 @@ function delS(i){
 }
 function updS(i,field,val){
   if(smIdx<0)return;
+  var _r=books[smIdx].sessions[i], _was=_r?String(_r.end||''):'';
   books[smIdx].sessions[i][field]=val;
   if(field==='end'||field==='start'){ syncHeadlineRating(smIdx); renderSM(); }
   saveCurrentList();fanOutBookMeta(smIdx);renderTable();updateStats();
+  // A read just got its Finished date: the survey asks now, once. Changing an
+  // existing date, or a read that already has one, does not ask again.
+  if(field==='end' && !_was && val && _r && !svyCount(_r.survey)) openSurvey(smIdx, _r.id);
 }
 
 
@@ -6918,8 +7056,10 @@ document.addEventListener('visibilitychange',function(){ if(!document.hidden) tm
 setInterval(function(){ if(_bridgeReady && activeTimer) tmrBridgeSync(true); }, 4000);
 
 /* ===== Babel app shell logic ===== */
+// Every screen, once: switchScreen and the widget deep link both read this.
+var SCREENS=['library','stats','timer','reading','hearth','archive','settings'];
 function switchScreen(name){
-  ['library','stats','timer','reading','hearth','settings'].forEach(function(s){
+  SCREENS.forEach(function(s){
     var el=document.getElementById('screen-'+s); if(el) el.classList.toggle('hidden', s!==name);
   });
   document.querySelectorAll('.tabbar .tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-screen')===name); });
@@ -6930,6 +7070,7 @@ function switchScreen(name){
   if(name==='hearth'){ renderHearth(); }
   if(name==='settings'){ babelShowVersion(); babelShowStorage(0); }
   if(name==='timer') renderTimerTab();
+  if(name==='archive') renderArchive();
   if(name==='library' && currentTab==='genre') renderGenreTab();
   try{ window.scrollTo(0,0); }catch(e){}
   pushWidgetSnapshot();
@@ -6989,10 +7130,16 @@ function pushWidgetSnapshot(){
 }
 
 // Deep link: widgets open the app at a specific tab via ?tab=reading etc.
+// The start-up below opens the same tab once the library has loaded: on its
+// own, this ran first and start-up then switched to the library over it, so a
+// widget's link always landed on the library.
+function deepLinkTab(){
+  try{ var tp=new URLSearchParams(location.search).get('tab'); return (tp && SCREENS.indexOf(tp)>=0) ? tp : ''; }catch(e){ return ''; }
+}
 window.addEventListener('load',function(){
   try{
-    var tp=new URLSearchParams(location.search).get('tab');
-    if(tp && ['library','stats','timer','reading','hearth','settings'].indexOf(tp)>=0) switchScreen(tp);
+    var tp=deepLinkTab();
+    if(tp) switchScreen(tp);
   }catch(e){}
 });
 function openAddSheet(){
@@ -7004,6 +7151,7 @@ function openAddSheet(){
   try{ hideManual(); }catch(e){}
   var lf=document.getElementById('f-lookup'); if(lf) lf.value='';
   var lr=document.getElementById('lookup-results'); if(lr){ lr.innerHTML=''; lr.classList.add('hidden'); }
+  _lkPendingMeta={};      // a lookup from an earlier, abandoned add must not land on this book
   try{ _lkStatus(''); }catch(e){}
   try{ renderPasteButton(); }catch(e){}
 }
@@ -7105,6 +7253,15 @@ function rdOpenElsewhere(listId, bookId){
   for(var i=0;i<books.length;i++) if(books[i] && books[i].bookId===bookId){ openRL(i); return; }
   showToast('That book is no longer in that list');
 }
+// Below the books in progress: what to read next from his own lists, then the
+// catalog beyond them. Built fresh on every redraw; failures are logged, and
+// never take the rest of the screen with them.
+function _rdMore(){
+  var h='';
+  try{ h+=upNextHTML(); }catch(e){ console.error('[Babel] Up next failed', e); h+='<div class="rd-empty">Up next could not be worked out ('+esc(String(e&&e.message||e))+').</div>'; }
+  h+='<div class="rd-cal-title">Discover</div><div id="disc-body"></div>';
+  return h;
+}
 function renderReadingScreen(){
   var body=document.getElementById('reading-body'); if(!body) return;
   var reading=_readingEverywhere();
@@ -7126,7 +7283,8 @@ function renderReadingScreen(){
   _rdLastTodayMet = !!s.todayMet;
   var _totalSec = _rdLastTotal;
   if(!reading.length){
-    body.innerHTML=head+'<div class="rd-empty">No books in progress.<br>Mark a book as <b>reading</b> in your Library, or open its timer to start a session.</div>';
+    body.innerHTML=head+'<div class="rd-empty">No books in progress.<br>Mark a book as <b>reading</b> in your Library, or open its timer to start a session.</div>'+_rdMore();
+    renderDiscover();
     rdStripAnimate(_totalSec);
     if(_fireGoal) rdGoalMoment();
     return;
@@ -7139,7 +7297,8 @@ function renderReadingScreen(){
       +'<div class="rd-by">'+esc(b.author)+'</div>'
       +'<div class="rd-pages">'+(curTotalOf(b)>0?(curUnitStr(b,_rcur)+' / '+curUnitStr(b,curTotalOf(b))):noTotalText(curReadOf(b)))+'</div></div></div>';
   }).join('');
-  body.innerHTML=head+'<div class="rd-list">'+cards+'</div>';
+  body.innerHTML=head+'<div class="rd-list">'+cards+'</div>'+_rdMore();
+  renderDiscover();
   rdStripAnimate(_totalSec);
   if(_fireGoal) rdGoalMoment();
 }
@@ -7389,7 +7548,7 @@ function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0))
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v61';
+var BABEL_VERSION='babel-v63';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -7965,7 +8124,8 @@ function _lkFromGoogle(d){
     out.push({gid:it.id||'', olkey:'', title:v.title+(v.subtitle?': '+v.subtitle:''),
       author:(v.authors&&v.authors[0])||'', year:yr?+yr:null,
       pages:v.pageCount||null, publisher:v.publisher||'',
-      desc:v.description||'', cats:v.categories||[], editions:0, rank:i});
+      desc:v.description||'', cats:v.categories||[], editions:0, rank:i,
+      rating:v.averageRating||null, rc:v.ratingsCount||0, subjects:(v.categories||[]).slice(0,12)});
   });
   return out;
 }
@@ -7976,7 +8136,8 @@ function _lkFromOL(d){
     out.push({title:x.title, author:(x.author_name&&x.author_name[0])||'',
       year:x.first_publish_year||null, pages:x.number_of_pages_median||null,
       publisher:(x.publisher&&x.publisher[0])||'', desc:'', cats:[],
-      editions:x.edition_count||0, olkey:x.key||'', rank:i});
+      editions:x.edition_count||0, olkey:x.key||'', rank:i,
+      rating:x.ratings_average?Math.round(x.ratings_average*100)/100:null, rc:x.ratings_count||0, subjects:(x.subject||[]).slice(0,12)});
   });
   return out;
 }
@@ -7992,7 +8153,7 @@ function bookLookup(){
   var oq = isbn ? ('isbn:'+isbn) : q;
   var G='https://www.googleapis.com/books/v1/volumes?maxResults='+(isbn?5:20)+'&q='+encodeURIComponent(gq)+'&key='+GBOOKS_KEY;
   var O='https://openlibrary.org/search.json?limit='+(isbn?5:20)
-      +'&fields=key,title,author_name,first_publish_year,number_of_pages_median,edition_count,publisher&q='+encodeURIComponent(oq);
+      +'&fields=key,title,author_name,first_publish_year,number_of_pages_median,edition_count,publisher,ratings_average,ratings_count,subject&q='+encodeURIComponent(oq);
   var _gErr='';
   function grab(u,tag){
     return fetch(u).then(function(r){
@@ -8029,6 +8190,9 @@ function bookLookup(){
       if(!e.olkey&&r.olkey) e.olkey=r.olkey;
       if(r.editions>e.editions) e.editions=r.editions;
       if(r.rank<e.rank) e.rank=r.rank;
+      // The reader rating with more votes behind it wins.
+      if(r.rating && (!e.rating || (r.rc||0)>(e.rc||0))){ e.rating=r.rating; e.rc=r.rc; }
+      if(!(e.subjects||[]).length && (r.subjects||[]).length) e.subjects=r.subjects;
     });
     var list=order.map(function(k){ return map[k]; });
     list.forEach(function(r){ r.score=_lkScore(r,q); });
@@ -8120,8 +8284,14 @@ function _lkFillSummary(txt){
   sum.value=txt;
   autoGrow(sum);
 }
+// The reader rating and subjects from the pick, held until the book is saved
+// (like the cover): they are what the taste profile compares against.
+var _lkPendingMeta={};
 function lookupPick(i){
   var r=_lookupDocs[i]; if(!r) return;
+  _lkPendingMeta={};
+  if(r.rating && (r.rc||0)>=5) _lkPendingMeta.rating=r.rating;
+  if((r.subjects||[]).length) _lkPendingMeta.subjects=r.subjects.slice(0,12);
   showManual();
   document.getElementById('f-title').value=r.title||'';
   document.getElementById('f-author').value=r.author||'';
@@ -8366,6 +8536,8 @@ function renderDeepStats(){
   var pct=babelYearlyGoal>0?Math.min(finished/babelYearlyGoal,1):0, C=2*Math.PI*34;
   h+='<div class="ds-card ds-year" onclick="showYearBooks()" title="See the books"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--border)" stroke-width="7"/><circle cx="40" cy="40" r="34" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+(pct*C).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 40 40)"/></svg>'
     +'<div><div class="ds-year-n">'+finished+' / '+babelYearlyGoal+'</div><div class="ds-year-l">books in '+thisYear+'</div></div></div>';
+  try{ h+=yearPlanHTML(finished); }catch(e){ console.error('[Babel] year plan failed', e); }
+  h+='<button type="button" class="ds-card ds-yrbtn" onclick="openYearReview()"><span>Year in review</span><span class="ds-yrgo">&rsaquo;</span></button>';
 
   // Pages per month (last 12)
   var MONS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], months=[];
@@ -8421,6 +8593,7 @@ function renderDeepStats(){
     h+='</div>';
   }
 
+  try{ h+=tasteCardHTML(tasteModel()); }catch(e){ console.error('[Babel] taste card failed', e); }
   el.innerHTML=h;
 }
 function renderGenreChart(){
@@ -8972,6 +9145,1083 @@ function renderStreak(){
     +'<span class="bs-sep"></span>'+today;
 }
 
+/* ===================== The library: survey, Archive, taste, discover =====================
+   Everything here is plain code reading his own data. No model, nothing leaves
+   the phone except the Open Library lookups he starts himself.
+
+   One rule runs through all of it: a read is the unit. A book read twice holds
+   two ratings, two surveys, two summaries, and none of them is averaged into the
+   other. Where a figure has to come from several reads (the taste profile), what
+   stayed the same across them counts most and what changed is shown as a change. */
+
+// ── Every book in every list, each once ─────────────────────────────────────
+// The open list comes first, so its copy is the one used; a book is "ticked"
+// when it is ticked in any list. Each entry: {b, listId, idx, ticked, id}.
+var _libMemo=null;
+function libAll(){
+  if(_libMemo) return _libMemo;
+  var out=[], at={};
+  function add(arr, listId, rs){
+    (arr||[]).forEach(function(b,i){
+      if(!b) return;
+      var id=b.bookId||('t:'+_bkKey(b)), t=rs.has(i);
+      if(at[id]!=null){ if(t) out[at[id]].ticked=true; return; }
+      at[id]=out.length;
+      out.push({b:b, listId:listId, idx:i, ticked:t, id:id});
+    });
+  }
+  add(books, activeId, readSet);
+  lists.forEach(function(l){
+    if(l.id===activeId) return;
+    try{
+      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+      var rr=storage.getItem(readKey(l.id));
+      add(JSON.parse(raw), l.id, new Set(rr?JSON.parse(rr):[]));
+    }catch(e){}
+  });
+  _libMemo=out;
+  setTimeout(function(){ _libMemo=null; },0);
+  return out;
+}
+function _readDone(r){ return !!(r && String(r.end||'').trim()); }
+// Read, by any measure he uses: a dated finish on any read, or the tick.
+function libFinished(e){ return e.ticked || ((e.b.sessions||[]).some(_readDone)); }
+// Open a book wherever it lives: switch to its list first if it is elsewhere.
+function libOpen(listId, bookId){
+  if(listId && listId!==activeId){ switchScreen('library'); switchList(listId); }
+  for(var i=0;i<books.length;i++) if(books[i] && books[i].bookId===bookId){ openBookPage(i); return; }
+  showToast('That book is no longer in that list');
+}
+function _libDate(iso){ return iso ? longISO(iso) : ''; }
+function _readSpanText(r){
+  var a=_libDate(r.start), z=_libDate(r.end);
+  return (a&&z) ? a+' – '+z : z ? 'finished '+z : a ? 'from '+a : 'undated';
+}
+function _starsText(v){ return v ? (Math.round(v*10)/10).toFixed(1)+'★' : ''; }
+
+// ── The finish-a-book survey ────────────────────────────────────────────────
+// Asked once per read, when that read gets its Finished date: the moment in his
+// own routine (stop the timer, set the date, write the summary, tick the box)
+// where the book is done but still fresh. Skip closes it; it can be filled in
+// or changed later from the read in the reads sheet. Stored on the read as
+// r.survey, so a reread gets its own and cloud sync and the copy to his other
+// list carry it with the rest of the read.
+var SURVEY_Q=[
+  {k:'mood',  q:'How did it feel?', many:true, o:['Adventurous','Challenging','Dark','Emotional','Funny','Hopeful','Informative','Inspiring','Lighthearted','Mysterious','Reflective','Relaxing','Sad','Tense']},
+  {k:'pace',  s:'Pace', q:'Pace',             o:['Slow','Medium','Fast']},
+  {k:'drive', s:'Driven by', q:'Driven by',        o:['Plot','A mix','Characters']},
+  {k:'chars', s:'Characters', q:'The characters',   o:['Unforgettable','Fine','Flat']},
+  {k:'prose', s:'Writing', q:'The writing',      o:['Plain','Lyrical','Dense','Witty']},
+  {k:'diff',  s:'Difficulty', q:'How demanding',    o:['Easy','Medium','Demanding']},
+  {k:'len',   s:'Length', q:'Its length',       o:['Too short','Just right','Too long']},
+  {k:'end',   s:'Ending', q:'The ending',       o:['Satisfying','Open','Let me down']},
+  {k:'more',  s:'More of', q:'Want more of',     many:true, o:['This author','This genre','This mood','This setting or era','Nothing like it']},
+  {k:'warn',  s:'Heads-up', q:'Heads-up for the future', many:true, o:['Graphic violence','Sexual content','Bleak','Slow start','Heavy themes']},
+  {k:'again', s:'Reread', q:'Would you reread it?', o:['Yes','Maybe','No']}
+];
+var _svy=null;     // {idx, bookId, readId, a:{}, themes:''} while the sheet is open
+function svyCount(s){
+  if(!s || !s.a) return 0;
+  var n=0;
+  for(var k in s.a){ var v=s.a[k]; if(Array.isArray(v)?v.length:v) n++; }
+  return n;
+}
+// Every answer as one flat list, for search, the Archive and the chips. Moods
+// read on their own; every other answer carries its question ("Pace: Slow"),
+// because "Yes" or "Medium" alone says nothing.
+function svyTags(s){
+  var out=[];
+  if(!s || !s.a) return out;
+  SURVEY_Q.forEach(function(q){
+    var v=s.a[q.k]; if(!v) return;
+    (Array.isArray(v)?v:[v]).forEach(function(x){ out.push(q.s ? q.s+': '+x : x); });
+  });
+  (s.a.themes||[]).forEach(function(t){ out.push(t); });
+  return out;
+}
+function _svyButtons(cu, undated){
+  var el=document.getElementById('svy-btns'); if(!el) return;
+  el.innerHTML = cu
+    ? '<button class="modal-cancel" onclick="cuLater()">Finish later</button>'
+      +'<button class="modal-cancel" onclick="cuSkip()">'+(undated?'Don\u2019t remember':'Skip this book')+'</button>'
+      +'<button class="modal-save" onclick="saveSurvey()">Save &amp; next</button>'
+    : '<button class="modal-cancel" onclick="closeSurvey()">Skip</button>'
+      +'<button class="modal-save" onclick="saveSurvey()">Save</button>';
+}
+function _svyCtx(text){
+  var c=document.getElementById('svy-ctx'); if(!c) return;
+  c.textContent=text||''; c.classList.toggle('hidden', !text);
+}
+function openSurvey(idx, readId){
+  var b=books[idx]; if(!b) return;
+  var r=readById(b, readId); if(!r) return;
+  var prev=r.survey&&r.survey.a ? JSON.parse(JSON.stringify(r.survey.a)) : {};
+  _svy={idx:idx, listId:activeId, bookId:b.bookId, readId:readId, a:prev, themes:(prev.themes||[]).join(', ')};
+  var t=document.getElementById('svy-title'); if(t) t.textContent=b.title||'Book';
+  var n=(b.sessions||[]).indexOf(r);
+  var sub=document.getElementById('svy-sub');
+  if(sub) sub.textContent=((b.sessions||[]).length>1?'Read '+(n+1)+' · ':'')+_readSpanText(r);
+  _svyButtons(false); _svyCtx('');
+  renderSurvey();
+  document.getElementById('svy-sheet').classList.remove('hidden');
+}
+function closeSurvey(){
+  // Closing a catch-up any way at all (the grab bar, a tap outside) is "finish later".
+  if(_svy && _svy.cu){ cuLater(); return; }
+  _svy=null; var el=document.getElementById('svy-sheet'); if(el) el.classList.add('hidden');
+}
+function renderSurvey(){
+  var body=document.getElementById('svy-body'); if(!body || !_svy) return;
+  var dateRow='';
+  // Keep a date typed in this card across a redraw (every chip tap redraws).
+  var _di=document.getElementById('svy-date');
+  if(_di && _svy.cu && _di.getAttribute('data-k')===String(_svy.bookId)) _svy.date=_di.value;
+  if(_svy.cu && !_svy.readId){
+    dateRow='<div class="svy-q"><div class="svy-qt">When did you finish it?</div>'
+      +'<input type="date" class="svy-themes" id="svy-date" data-k="'+esc(String(_svy.bookId))+'" max="'+todayISO()+'" value="'+esc(_svy.date||'')+'" oninput="_svy.date=this.value"/>'
+      +(_svy.stampHint?'<div class="svy-hint">Filled in with the day you ticked it. Change it if that is not when you finished.</div>':'')
+      +'<div class="rl-edit-err hidden" id="svy-err" style="margin:8px 0 0"></div></div>';
+  }
+  body.innerHTML=dateRow+SURVEY_Q.map(function(q){
+    var v=_svy.a[q.k];
+    return '<div class="svy-q"><div class="svy-qt">'+esc(q.q)+(q.many?' <span>any that fit</span>':'')+'</div><div class="svy-chips">'
+      +q.o.map(function(o,oi){
+        var on=q.many ? ((v||[]).indexOf(o)>=0) : v===o;
+        return '<button type="button" class="svy-chip'+(on?' on':'')+'" onclick="svyPick(\''+q.k+'\','+oi+')">'+esc(o)+'</button>';
+      }).join('')+'</div></div>';
+  }).join('')
+  +'<div class="svy-q"><div class="svy-qt">Themes <span>your own words, comma between</span></div>'
+  +'<input type="text" class="svy-themes" id="svy-themes" placeholder="grief, faith, the sea" value="'+esc(_svy.themes||'')+'" oninput="_svy.themes=this.value"/></div>';
+}
+function svyPick(k, oi){
+  if(!_svy) return;
+  var q=null; SURVEY_Q.forEach(function(x){ if(x.k===k) q=x; }); if(!q) return;
+  var o=q.o[oi];
+  if(q.many){
+    var arr=(_svy.a[k]||[]).slice(), at=arr.indexOf(o);
+    if(at>=0) arr.splice(at,1); else arr.push(o);
+    if(arr.length) _svy.a[k]=arr; else delete _svy.a[k];
+  } else {
+    if(_svy.a[k]===o) delete _svy.a[k]; else _svy.a[k]=o;   // tap again to clear
+  }
+  renderSurvey();
+}
+function saveSurvey(){
+  if(!_svy) return;
+  if(_svy.cu){ cuSave(); return; }
+  var i=_idxOfId(_svy.idx, _svy.bookId), b=books[i];
+  var r=b?readById(b,_svy.readId):null;
+  if(!r){ showToast('That read is gone — the survey was not saved'); closeSurvey(); return; }
+  var a=JSON.parse(JSON.stringify(_svy.a));
+  var th=String(_svy.themes||'').split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+  if(th.length) a.themes=th; else delete a.themes;
+  var s={at:todayISO(), a:a};
+  if(!svyCount(s)){ delete r.survey; } else r.survey=s;
+  saveCurrentList(); fanOutBookMeta(i);
+  closeSurvey();
+  showToast(svyCount(s)?'Survey saved':'Survey cleared');
+  try{ if(smIdx>=0) renderSM(); }catch(e){}
+}
+// ── Catching up: a review for every book already finished ───────────────────
+// Once, on the first launch after this update, the survey walks through every
+// finished read that has none: newest finish first, while it is freshest, then
+// the books ticked as read with no Finished date anywhere, where it also asks
+// for the date. "Finish later" leaves the rest for the Archive, which says how
+// many are left and picks up where he stopped. "Skip this book" (or "Don't
+// remember", for a missing date) takes one out of the list for good; the
+// survey can still be filled in from the read itself.
+var CU_SEEN_KEY='rl_svyCatchupShown', CU_SKIP_KEY='rl_svySkip';
+var _cu=null;      // {items:[...], pos:n, done:n}
+function _cuSkips(){ try{ return JSON.parse(storage.getItem(CU_SKIP_KEY)||'{}')||{}; }catch(e){ return {}; } }
+function _cuSkipKey(it){ return it.readId ? it.readId : 'b:'+it.bookId; }
+function cuQueue(){
+  var skip=_cuSkips(), dated=[], undated=[];
+  libAll().forEach(function(e){
+    var b=e.b, rs=b.sessions||[];
+    if(!b.bookId) return;
+    rs.forEach(function(r){
+      if(r && r.id && _readDone(r) && !svyCount(r.survey) && !skip[r.id])
+        dated.push({listId:e.listId, bookId:b.bookId, readId:r.id, end:String(r.end), title:b.title||''});
+    });
+    if(e.ticked && !b.isReading && !rs.some(_readDone) && !skip['b:'+b.bookId])
+      undated.push({listId:e.listId, bookId:b.bookId, readId:null, title:b.title||'', stamp:b.finishedAt||0});
+  });
+  dated.sort(function(x,y){ return y.end.localeCompare(x.end) || x.title.localeCompare(y.title); });
+  undated.sort(function(x,y){ return x.title.localeCompare(y.title); });
+  return dated.concat(undated);
+}
+// The book as it is saved now, wherever it lives (a copy of it for showing).
+function _libFind(listId, bookId){
+  if(listId===activeId){ for(var i=0;i<books.length;i++) if(books[i] && books[i].bookId===bookId) return books[i]; return null; }
+  try{ var arr=JSON.parse(storage.getItem(listKey(listId))||'[]'); for(var k=0;k<arr.length;k++) if(arr[k] && arr[k].bookId===bookId) return arr[k]; }catch(e){}
+  return null;
+}
+// Changes a book's reads wherever it lives, saves that list, and copies the
+// reads to every other copy of the book — as fanOutBookMeta does for the open
+// list. fn(b) returns true to save.
+function libWithBook(listId, bookId, fn){
+  var i;
+  if(listId===activeId){
+    for(i=0;i<books.length;i++) if(books[i] && books[i].bookId===bookId) break;
+    if(i>=books.length || !fn(books[i])) return false;
+    saveCurrentList(); fanOutBookMeta(i);
+    return true;
+  }
+  try{
+    var arr=JSON.parse(storage.getItem(listKey(listId))||'[]'), src=null;
+    for(i=0;i<arr.length;i++) if(arr[i] && arr[i].bookId===bookId){ src=arr[i]; break; }
+    if(!src || !fn(src)) return false;
+    storage.setItem(listKey(listId), JSON.stringify(arr));
+    try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(listId); }catch(e){}
+    var sess=JSON.stringify(src.sessions||[]);
+    lists.forEach(function(l){
+      if(l.id===listId) return;
+      if(l.id===activeId){
+        var hit=false;
+        books.forEach(function(x){ if(x && x.bookId===bookId){ stampFormats(x); x.sessions=JSON.parse(sess); hit=true; } });
+        if(hit) saveCurrentList();
+        return;
+      }
+      try{
+        var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+        var a2=JSON.parse(raw), h=false;
+        a2.forEach(function(x){ if(x && x.bookId===bookId){ stampFormats(x); x.sessions=JSON.parse(sess); h=true; } });
+        if(h){ storage.setItem(listKey(l.id), JSON.stringify(a2)); try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(l.id); }catch(e){} }
+      }catch(e){}
+    });
+    _libMemo=null;
+    return true;
+  }catch(e){ return false; }
+}
+// The read a dated catch-up answer belongs on, for a book with no finished read:
+// an open read gets the date as its finish; with none, a finished read is made.
+// The book's own star rating goes onto it if no read holds one, the same rule
+// opening a list follows, so the rating keeps counting.
+function _cuReadFor(b, date){
+  b.sessions=b.sessions||[];
+  var r=null, ci=currentReadIdx(b);
+  if(ci>=0 && !_readDone(b.sessions[ci])) r=b.sessions[ci];
+  if(!r){
+    var audio=!(b.pages>0) && audioVersions(b).length>0;
+    r={id:newReadId(), start:'', end:'', note:'', rating:0, format:audio?'audio':'print'};
+    b.sessions.push(r);
+  }
+  r.end=date;
+  if(!r.rating && b.myRating && !b.sessions.some(function(x){ return x && x.rating; })) r.rating=b.myRating;
+  return r;
+}
+function cuStart(auto){
+  var items=cuQueue();
+  if(!items.length){ if(!auto) showToast('Every finished book has a review'); return; }
+  _cu={items:items, pos:0, done:0};
+  cuShow();
+}
+function cuShow(){
+  if(!_cu) return;
+  while(_cu.pos<_cu.items.length){
+    var it=_cu.items[_cu.pos], b=_libFind(it.listId, it.bookId);
+    var r=b && it.readId ? readById(b,it.readId) : null;
+    // Skip anything that changed since the list was made: deleted, or reviewed elsewhere.
+    if(b && (it.readId ? (r && !svyCount(r.survey)) : !(b.sessions||[]).some(_readDone))) break;
+    _cu.pos++;
+  }
+  if(_cu.pos>=_cu.items.length){ cuFinish(); return; }
+  var it2=_cu.items[_cu.pos], bk=_libFind(it2.listId, it2.bookId), rd=it2.readId?readById(bk,it2.readId):null;
+  var prev=rd&&rd.survey&&rd.survey.a ? JSON.parse(JSON.stringify(rd.survey.a)) : {};
+  var stamp=(!it2.readId && bk.finishedAt) ? todayISOOf(bk.finishedAt) : '';
+  _svy={cu:true, listId:it2.listId, bookId:it2.bookId, readId:it2.readId, a:prev, themes:'', date:stamp, stampHint:!!stamp};
+  document.getElementById('svy-title').textContent=bk.title||'Book';
+  var n=rd?(bk.sessions||[]).indexOf(rd):-1;
+  document.getElementById('svy-sub').textContent='Catching up · '+(_cu.pos+1)+' of '+_cu.items.length
+    +' · '+(rd ? ((bk.sessions||[]).length>1?'Read '+(n+1)+', ':'')+_readSpanText(rd) : 'ticked as read, no Finished date');
+  // What he wrote then, to jog the memory.
+  var ctx='';
+  if(rd){ var es=noteEntriesRO(rd); ctx=String(rd.review||'').trim() || (es.length?es[es.length-1].text:''); }
+  _svyCtx(ctx ? (ctx.length>260 ? ctx.slice(0,260).replace(/\s+\S*$/,'')+'…' : ctx) : (bk.author||''));
+  _svyButtons(true, !it2.readId);
+  renderSurvey();
+  var sh=document.getElementById('svy-sheet'); sh.classList.remove('hidden');
+  try{ sh.querySelector('.sheet').scrollTop=0; }catch(e){}
+}
+function todayISOOf(ms){ var d=new Date(ms); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function cuSave(){
+  var it=_cu && _cu.items[_cu.pos]; if(!it){ cuFinish(); return; }
+  var a=JSON.parse(JSON.stringify(_svy.a));
+  var th=String(_svy.themes||'').split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+  if(th.length) a.themes=th; else delete a.themes;
+  var sv={at:todayISO(), a:a}, answered=svyCount(sv)>0;
+  var date='';
+  if(!it.readId){
+    var di=document.getElementById('svy-date'); date=(di&&di.value)||_svy.date||'';
+    var err=document.getElementById('svy-err');
+    var bad=!date ? 'Pick the day you finished it, or tap Don’t remember.'
+          : date>todayISO() ? 'That date is in the future.' : '';
+    if(bad){ if(err){ err.textContent=bad; err.classList.remove('hidden'); } else showToast(bad); return; }
+  }
+  if(!it.readId || answered){
+    var ok=libWithBook(it.listId, it.bookId, function(b){
+      var r=it.readId ? readById(b,it.readId) : _cuReadFor(b,date);
+      if(!r) return false;
+      if(answered) r.survey=sv;
+      return true;
+    });
+    if(!ok){ showToast('Could not save — that book may have been removed. Moving on.'); }
+    else if(answered) _cu.done++;
+  }
+  _cu.pos++;
+  cuShow();
+}
+function cuSkip(){
+  var it=_cu && _cu.items[_cu.pos]; if(!it){ cuFinish(); return; }
+  var sk=_cuSkips(); sk[_cuSkipKey(it)]=1;
+  try{ storage.setItem(CU_SKIP_KEY, JSON.stringify(sk)); }catch(e){}
+  _cu.pos++;
+  cuShow();
+}
+function _cuClose(){
+  _svy=null; _cu=null;
+  var el=document.getElementById('svy-sheet'); if(el) el.classList.add('hidden');
+  try{ var ar=document.getElementById('screen-archive'); if(ar && !ar.classList.contains('hidden')) renderArchive(); }catch(e){}
+}
+function cuLater(){
+  var left=cuQueue().length, done=_cu?_cu.done:0;
+  _cuClose();
+  showToast((done?done+' reviewed. ':'')+(left?left+' left — carry on from the Archive':'All caught up'));
+}
+function cuFinish(){
+  var done=_cu?_cu.done:0;
+  _cuClose();
+  showToast(done ? 'All caught up — '+done+' reviewed' : 'All caught up');
+}
+// Once, on the first launch after the update; after that, from the Archive.
+function cuMaybeStart(){
+  try{ if(storage.getItem(CU_SEEN_KEY)) return; }catch(e){ return; }
+  if(!cuQueue().length) return;
+  try{ storage.setItem(CU_SEEN_KEY,'1'); }catch(e){}
+  cuStart(true);
+}
+function cuBannerHTML(){
+  var n=cuQueue().length; if(!n) return '';
+  return '<div class="ar-cu"><span>'+n+' finished book'+(n!==1?'s have':' has')+' no review yet.</span>'
+    +'<button class="tmr-primary" onclick="cuStart()">Review them</button></div>';
+}
+// The answers as small chips, for the book page, the reads sheet and the Archive.
+function svyChipsHTML(s, q){
+  var tags=svyTags(s); if(!tags.length) return '';
+  return '<div class="svy-show">'+tags.map(function(t){ return '<span class="svy-tag">'+_libMark(t,q)+'</span>'; }).join('')+'</div>';
+}
+// In the reads sheet, under a read's entries: its summary, then its survey.
+function smReviewHTML(x,i){
+  return '<div class="sm-review"><div class="sm-rvlabel">Your summary</div>'
+    +'<textarea class="rt-note grow sm-rvbox" rows="2" placeholder="'
+      +(_readDone(x)?'Having read it back, what did you make of it?':'When you finish, write what you made of it.')+'"'
+      +' oninput="autoGrow(this)" onchange="smSetReview('+i+',this.value)">'+esc(x.review||'')+'</textarea></div>';
+}
+function smSurveyRowHTML(x,i){
+  var n=svyCount(x.survey);
+  if(!n && !_readDone(x)) return '';
+  return '<div class="sm-svy">'
+    +(n ? svyChipsHTML(x.survey,'') : '<span class="sm-svy-none">No survey for this read yet.</span>')
+    +'<button class="rtn-add" onclick="openSurvey(smIdx,\''+esc(String(x.id||''))+'\')">'+(n?'Edit survey':'Fill in the survey')+'</button></div>';
+}
+// One way to write a read's summary, from the book page or the reads sheet.
+// It is its own field, never r.note: syncNoteText rebuilds r.note from the
+// entries on every save and would erase it.
+function setReadReview(idx, rid, val){
+  var b=books[idx]; if(!b || !b.sessions) return;
+  var r=rid && readById(b,rid); if(!r) return;
+  var v=String(val==null?'':val);
+  if(v.trim()) r.review=v; else delete r.review;
+  saveCurrentList(); fanOutBookMeta(idx);
+}
+function smSetReview(i,val){
+  if(smIdx<0) return;
+  var r=(books[smIdx].sessions||[])[i]; if(!r) return;
+  setReadReview(smIdx, r.id, val);
+}
+
+// ── Search across what he wrote ─────────────────────────────────────────────
+function _libNorm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+function _libTerms(q){ return _libNorm(q).split(/\s+/).filter(function(w){ return w.length>1; }); }
+// Escapes, then marks every search term. Matching ignores case and accents.
+function _libMark(text, q){
+  var s=String(text==null?'':text);
+  var terms=_libTerms(q||'');
+  if(!terms.length) return esc(s);
+  var n=_libNorm(s), marks=[];
+  terms.forEach(function(t){
+    var at=0, k;
+    while((k=n.indexOf(t,at))>=0){ marks.push([k,k+t.length]); at=k+t.length; }
+  });
+  if(!marks.length) return esc(s);
+  marks.sort(function(a,b){ return a[0]-b[0]; });
+  var out='', pos=0;
+  marks.forEach(function(m){
+    if(m[0]<pos) return;
+    out+=esc(s.slice(pos,m[0]))+'<mark>'+esc(s.slice(m[0],m[1]))+'</mark>';
+    pos=m[1];
+  });
+  return out+esc(s.slice(pos));
+}
+// Everything findable about a book, as one string.
+function _libHaystack(b){
+  var parts=[b.title,b.author,b.translator,b.seriesName,b.genre].concat(b.subjects||[]);
+  (b.sessions||[]).forEach(function(r){
+    if(!r) return;
+    noteEntriesRO(r).forEach(function(e){ parts.push(e.text); });
+    parts.push(r.review);
+    parts=parts.concat(svyTags(r.survey));
+  });
+  return _libNorm(parts.filter(Boolean).join(' ␞ '));
+}
+// Entries without converting the read (a view must not rewrite what it shows).
+function noteEntriesRO(r){
+  if(!r) return [];
+  if(Array.isArray(r.notes)) return r.notes.filter(function(e){ return e && String(e.text||'').trim(); });
+  return String(r.note||'').trim() ? [{at:(r.end||r.start||''), text:r.note}] : [];
+}
+
+// ── The Archive: every review he has written, to read, not to change ────────
+// A live view: it shows what is saved now. Nothing on it is an input except
+// the search box and the filters.
+var _arFilter='all', _arShown=30, _arTimer=null;
+function arSearchDebounced(){ clearTimeout(_arTimer); _arTimer=setTimeout(function(){ _arShown=30; renderArchive(); },180); }
+function arSetFilter(f){ _arFilter=f; _arShown=30; renderArchive(); }
+function arMore(){ _arShown+=30; renderArchive(); }
+function _arHasAny(r){
+  return r && (_readDone(r) || r.rating || String(r.review||'').trim() || noteEntriesRO(r).length || svyCount(r.survey));
+}
+function _arLastDate(b){
+  var d='';
+  (b.sessions||[]).forEach(function(r){
+    if(!r) return;
+    [r.end, r.start].forEach(function(x){ if(x && x>d) d=x; });
+    noteEntriesRO(r).forEach(function(e){ if(e.at && e.at>d) d=e.at; });
+  });
+  return d;
+}
+// Two or more reads, side by side: what held and what moved. The reread rule
+// in words — nothing is averaged away.
+function arCompareHTML(b){
+  var rs=(b.sessions||[]).filter(_arHasAny);
+  if(rs.length<2) return '';
+  rs=rs.slice().sort(function(x,y){ return String(x.end||x.start||'').localeCompare(String(y.end||y.start||'')); });
+  var first=rs[0], last=rs[rs.length-1], bits=[];
+  if(first.rating && last.rating){
+    var d=last.rating-first.rating;
+    bits.push(Math.abs(d)<=0.5 ? 'Rating held at about '+_starsText((first.rating+last.rating)/2)
+                               : 'Rating moved '+_starsText(first.rating)+' → '+_starsText(last.rating));
+  }
+  var a=svyTags(first.survey), z=svyTags(last.survey);
+  if(a.length && z.length){
+    var kept=a.filter(function(t){ return z.indexOf(t)>=0; });
+    var gone=a.filter(function(t){ return z.indexOf(t)<0; });
+    var came=z.filter(function(t){ return a.indexOf(t)<0; });
+    if(kept.length) bits.push('Both times: '+kept.join(', '));
+    if(came.length || gone.length) bits.push('This time'+(came.length?': '+came.join(', '):'')+(gone.length?(came.length?'; no longer ':': no longer ')+gone.join(', '):''));
+  }
+  return bits.length ? '<div class="ar-cmp">'+bits.map(esc).join('<br>')+'</div>' : '';
+}
+function arReadHTML(b, r, n, total, q){
+  var es=noteEntriesRO(r);
+  return '<div class="ar-read">'
+    +'<div class="ar-rh">'+(total>1?'Read '+n+' · ':'')+esc(_readSpanText(r))+' · '+esc(readMediumName(b,r))+'</div>'
+    +(r.rating?'<div class="ar-stars">'+starsDisplayHTML(r.rating,'ar'+(b.bookId||'')+'_'+n)+'</div>':'')
+    +svyChipsHTML(r.survey,q)
+    +(es.length?'<div class="ar-entries">'+es.map(function(e){
+        var p=thPosText(e);
+        return '<div class="ar-e"><div class="ar-ed">'+esc(_libDate(e.at))+(p?' · '+esc(p):'')+'</div>'
+          +'<div class="ar-et">'+_libMark(e.text,q)+'</div></div>';
+      }).join('')+'</div>':'')
+    +(String(r.review||'').trim()?'<div class="ar-sum"><div class="ar-sl">Summary</div><div class="ar-st">'+_libMark(r.review,q)+'</div></div>':'')
+    +'</div>';
+}
+function renderArchive(){
+  var body=document.getElementById('ar-body'); if(!body) return;
+  var qEl=document.getElementById('ar-q'), q=qEl?qEl.value:'';
+  var terms=_libTerms(q), yr=String(new Date().getFullYear());
+  var all=libAll().filter(function(e){ return (e.b.sessions||[]).some(_arHasAny); });
+  var counts={all:all.length, sum:0, re:0, rated:0, yr:0};
+  all.forEach(function(e){
+    var rs=e.b.sessions||[];
+    if(rs.some(function(r){ return r && String(r.review||'').trim(); })) counts.sum++;
+    if(rs.filter(_arHasAny).length>1) counts.re++;
+    if(rs.some(function(r){ return r && r.rating; })) counts.rated++;
+    if(rs.some(function(r){ return r && String(r.end||'').slice(0,4)===yr; })) counts.yr++;
+  });
+  var chips=document.getElementById('ar-chips');
+  if(chips) chips.innerHTML=[['all','All'],['sum','With a summary'],['re','Read more than once'],['rated','Rated'],['yr','Finished in '+yr]]
+    .map(function(c){ return '<button type="button" class="ar-chip'+(_arFilter===c[0]?' on':'')+'" onclick="arSetFilter(\''+c[0]+'\')">'+esc(c[1])+' <span>'+counts[c[0]]+'</span></button>'; }).join('');
+  var rows=all.filter(function(e){
+    var rs=e.b.sessions||[];
+    if(_arFilter==='sum' && !rs.some(function(r){ return r && String(r.review||'').trim(); })) return false;
+    if(_arFilter==='re' && rs.filter(_arHasAny).length<2) return false;
+    if(_arFilter==='rated' && !rs.some(function(r){ return r && r.rating; })) return false;
+    if(_arFilter==='yr' && !rs.some(function(r){ return r && String(r.end||'').slice(0,4)===yr; })) return false;
+    if(terms.length){ var h=_libHaystack(e.b); if(!terms.every(function(t){ return h.indexOf(t)>=0; })) return false; }
+    return true;
+  });
+  rows.sort(function(x,y){ return _arLastDate(y.b).localeCompare(_arLastDate(x.b)) || String(x.b.title||'').localeCompare(String(y.b.title||'')); });
+  if(!rows.length){
+    body.innerHTML=cuBannerHTML()+'<div class="rd-empty">'+(terms.length?'Nothing you have written matches “'+esc(q)+'”.':'Nothing here yet. Rate a read, write about it or give it a Finished date, and it appears here.')+'</div>';
+    return;
+  }
+  var shown=rows.slice(0,_arShown);
+  body.innerHTML=cuBannerHTML()+'<div class="ar-count">'+rows.length+' book'+(rows.length!==1?'s':'')+(terms.length?' match':'')+'</div>'
+    +shown.map(function(e){
+      var b=e.b, rs=(b.sessions||[]).filter(_arHasAny);
+      return '<article class="ar-book">'
+        +'<div class="ar-bh"><div class="ar-t">'+_libMark(b.title,q)+'</div>'
+        +'<div class="ar-m">'+_libMark([b.author,seriesText(b),b.genre].filter(Boolean).join(' · '),q)+'</div></div>'
+        +arCompareHTML(b)
+        +'<div class="ar-reads'+(rs.length>1?' multi':'')+'">'
+          +rs.map(function(r,k){ return arReadHTML(b,r,(b.sessions||[]).indexOf(r)+1,(b.sessions||[]).length,q); }).join('')
+        +'</div></article>';
+    }).join('')
+    +(rows.length>shown.length?'<button class="ar-more" onclick="arMore()">Show '+Math.min(30,rows.length-shown.length)+' more</button>':'');
+}
+
+// ── Taste: what his ratings say, against what everyone else says ───────────
+// The signal is his rating minus the crowd's (b.rating, the average on Google
+// Books / Open Library). A book he loves that everyone loves says little; one
+// he rates a star above the crowd says a lot. Books with no crowd rating fall
+// back to his own average.
+//
+// Rereads: if his ratings across reads stayed within half a star, that is
+// taste — the book counts more (one and a half times for a second read, and so
+// on). If they moved, the newer read leads (60/40), because it says who he is
+// now; the move itself is shown as a change, never averaged out of sight.
+var TASTE_SHRINK=2;          // a genre needs a few books before it can swing a score
+function _tAuthKey(a){ return _dupAuthor(a)||_libNorm(a); }
+function tasteModel(){
+  var all=libAll(), vals=[];
+  all.forEach(function(e){ (e.b.sessions||[]).forEach(function(r){ if(r && r.rating) vals.push(r.rating); }); });
+  var mean=vals.length ? vals.reduce(function(a,b){ return a+b; },0)/vals.length : 3.5;
+  var T={mean:mean, n:0, books:[], genre:{}, author:{}, mood:{}, pace:{}, prose:{}, drive:{}, subj:{}, series:{}, warn:{}, stable:[], moved:[]};
+  function acc(map,key,resid,w){
+    if(!key) return; var m=map[key]||(map[key]={s:0,w:0,n:0,name:key});
+    m.s+=resid*w; m.w+=w; m.n++;
+  }
+  all.forEach(function(e){
+    var b=e.b;
+    var rs=(b.sessions||[]).filter(function(r){ return r && r.rating; })
+      .sort(function(x,y){ return String(x.end||x.start||'').localeCompare(String(y.end||y.start||'')); });
+    if(!rs.length) return;
+    var v=rs.map(function(r){ return r.rating; });
+    var avg=v.reduce(function(a,c){ return a+c; },0)/v.length;
+    var spread=Math.max.apply(null,v)-Math.min.apply(null,v);
+    var stable=rs.length>1 && spread<=0.5, moved=rs.length>1 && !stable;
+    var val=moved ? (0.4*avg+0.6*v[v.length-1]) : avg;
+    var w=stable ? 1+0.5*(rs.length-1) : 1;
+    var crowd=(typeof b.rating==='number' && b.rating>0) ? b.rating : null;
+    var resid=val-(crowd!=null?crowd:mean);
+    var x={e:e, val:val, resid:resid, w:w, crowd:crowd, reads:rs, stable:stable, moved:moved};
+    T.books.push(x); T.n++;
+    if(stable) T.stable.push(x);
+    if(moved) T.moved.push(x);
+    acc(T.genre,b.genre,resid,w);
+    acc(T.author,_tAuthKey(b.author),resid,w);
+    if(T.author[_tAuthKey(b.author)]) T.author[_tAuthKey(b.author)].name=b.author;
+    if(b.seriesName) acc(T.series,b.seriesName,resid,w);
+    (b.subjects||[]).slice(0,12).forEach(function(s){ acc(T.subj,_libNorm(s),resid,w*0.5); });
+    // The survey, read by read: each read's own answers against that read's
+    // own rating, so a mood he only felt on the reread is credited to the reread.
+    rs.forEach(function(r){
+      var a=r.survey&&r.survey.a; if(!a) return;
+      var rr=r.rating-(crowd!=null?crowd:mean);
+      (a.mood||[]).forEach(function(m){ acc(T.mood,m,rr,1); });
+      if(a.pace) acc(T.pace,a.pace,rr,1);
+      if(a.prose) acc(T.prose,a.prose,rr,1);
+      if(a.drive) acc(T.drive,a.drive,rr,1);
+      (a.warn||[]).forEach(function(m){ acc(T.warn,m,rr,1); });
+    });
+  });
+  // "Want more of" is him saying it outright, so it counts as a strong vote.
+  all.forEach(function(e){
+    (e.b.sessions||[]).forEach(function(r){
+      var m=r && r.survey && r.survey.a && r.survey.a.more; if(!m) return;
+      if(m.indexOf('This author')>=0) acc(T.author,_tAuthKey(e.b.author),0.6,1);
+      if(m.indexOf('This genre')>=0) acc(T.genre,e.b.genre,0.6,1);
+      if(m.indexOf('Nothing like it')>=0){ acc(T.genre,e.b.genre,-0.6,1); acc(T.author,_tAuthKey(e.b.author),-0.6,1); }
+    });
+  });
+  ['genre','author','mood','pace','prose','drive','subj','series','warn'].forEach(function(k){
+    for(var key in T[k]){ var m=T[k][key]; m.v=m.s/(m.w+TASTE_SHRINK); }
+  });
+  return T;
+}
+function _tSigned(v){ var r=Math.round(v*10)/10; return (r>0?'+':r<0?'−':'±')+Math.abs(r).toFixed(1); }
+// How well a book he has not read is likely to land, with the reasons in words.
+// c: {title, author, genre, rating, subjects, seriesName, seriesOrder, bookId}
+function tasteScore(T, c){
+  var parts=[];
+  if(c.rating>0){
+    var cr=(c.rating-3.85)*0.9;
+    parts.push({v:cr, why:'readers rate it '+c.rating.toFixed(1)});
+  }
+  var g=T.genre[c.genre];
+  if(g && g.n>=2 && Math.abs(g.v)>=0.05)
+    parts.push({v:g.v, why:'you rate '+c.genre+' '+_tSigned(g.v)+' against other readers ('+g.n+' books)'});
+  var a=T.author[_tAuthKey(c.author)];
+  if(a && Math.abs(a.v)>=0.05)
+    parts.push({v:a.v*1.3, why:(a.v>=0?'you rate ':'you rate ')+c.author+' '+_tSigned(a.v)+' against other readers ('+a.n+' read)'});
+  var subj=(c.subjects||[]).map(function(s){ return T.subj[_libNorm(s)]; }).filter(function(m){ return m && m.n>=2; });
+  if(subj.length){
+    var sv=subj.reduce(function(s,m){ return s+m.v; },0)/subj.length;
+    var top=subj.slice().sort(function(x,y){ return Math.abs(y.v)-Math.abs(x.v); })[0];
+    if(Math.abs(sv)>=0.05) parts.push({v:sv*0.8, why:(sv>=0?'shares subjects you rate well':'shares subjects you rate low')+' ('+top.name+')'});
+  }
+  if(c.seriesName){
+    var prev=null;
+    libAll().forEach(function(e){
+      var b=e.b; if(b.seriesName!==c.seriesName || b.bookId===c.bookId) return;
+      if(parseFloat(b.seriesOrder)<parseFloat(c.seriesOrder) && (b.myRating||0)>0 && (!prev || parseFloat(b.seriesOrder)>parseFloat(prev.seriesOrder))) prev=b;
+    });
+    if(prev){
+      var d=(prev.myRating-T.mean);
+      parts.push({v:0.35+d*0.5, why:'next in '+c.seriesName+' — you gave '+(prev.title||'the last one')+' '+_starsText(prev.myRating)});
+    }
+  }
+  var s=parts.reduce(function(t,p){ return t+p.v; },0);
+  parts.sort(function(x,y){ return Math.abs(y.v)-Math.abs(x.v); });
+  return {s:s, parts:parts};
+}
+var TASTE_WARN=-0.35;        // below this, a book is flagged as one he may not enjoy
+function _fitWords(sc){
+  return sc.s>=0.6?'Strong fit':sc.s>=0.2?'Good fit':sc.s>TASTE_WARN?'Could go either way':'Likely not for you';
+}
+function _fitHTML(sc, n){
+  var good=sc.parts.filter(function(p){ return p.v>0; }).slice(0,n||2);
+  var bad =sc.parts.filter(function(p){ return p.v<0; }).slice(0,n||2);
+  var list=(sc.s>TASTE_WARN?good.concat(bad):bad.concat(good)).slice(0,n||2);
+  return '<span class="fit-w'+(sc.s<=TASTE_WARN?' warn':sc.s>=0.2?' good':'')+'">'+_fitWords(sc)+'</span>'
+    +(list.length?' · '+list.map(function(p){ return esc(p.why); }).join('; '):'');
+}
+// Unread books in his own lists, best fit first. Read in any list, or being
+// read, never appears.
+function tastePicks(T){
+  T=T||tasteModel();
+  var out=[];
+  libAll().forEach(function(e){
+    var b=e.b;
+    if(libFinished(e) || b.isReading) return;
+    var sc=tasteScore(T,b);
+    out.push({e:e, sc:sc});
+  });
+  out.sort(function(x,y){ return y.sc.s-x.sc.s; });
+  return out;
+}
+
+// ── On the book page: before this, how it may land, and books like it ──────
+function bpBeforeHTML(b){
+  if(!b.seriesName) return '';
+  var me=parseFloat(b.seriesOrder); if(!(me>1)) return '';
+  var prev=libAll().map(function(e){ return e.b; }).filter(function(x){
+    var o=parseFloat(x.seriesOrder);
+    return x.bookId!==b.bookId && x.seriesName===b.seriesName && o<me && (x.sessions||[]).some(_arHasAny);
+  }).sort(function(x,y){ return parseFloat(y.seriesOrder)-parseFloat(x.seriesOrder); }).slice(0,3);
+  if(!prev.length) return '';
+  return '<section class="bp-sec"><div class="bp-sech"><h3>Before this</h3></div>'
+    +prev.map(function(x){
+      var rs=(x.sessions||[]).filter(_arHasAny), r=rs[rs.length-1];
+      var es=noteEntriesRO(r), last=es[es.length-1];
+      var txt=String(r.review||'').trim() || (last?last.text:'');
+      return '<div class="bp-before"><div class="bp-bt">'+esc(x.title)+' <span>#'+esc(x.seriesOrder)+(r.rating?' · '+_starsText(r.rating):'')+'</span></div>'
+        +(txt?'<div class="bp-bx">'+esc(txt.length>420?txt.slice(0,420).replace(/\s+\S*$/,'')+'…':txt)+'</div>':'<div class="bp-bx muted">Nothing written on it.</div>')
+        +'</div>';
+    }).join('')+'</section>';
+}
+// What a book shares with another: author, series, genre, subjects, and the
+// moods he picked in their surveys.
+function _libLike(a, b){
+  var s=0;
+  if(_tAuthKey(a.author) && _tAuthKey(a.author)===_tAuthKey(b.author)) s+=3;
+  if(a.seriesName && a.seriesName===b.seriesName) s+=3;
+  if(a.genre && a.genre===b.genre) s+=1;
+  var sa={}; (a.subjects||[]).forEach(function(x){ sa[_libNorm(x)]=1; });
+  var shared=(b.subjects||[]).filter(function(x){ return sa[_libNorm(x)]; }).length;
+  s+=Math.min(2, shared*0.5);
+  var ma={}; (a.sessions||[]).forEach(function(r){ ((r&&r.survey&&r.survey.a&&r.survey.a.mood)||[]).forEach(function(m){ ma[m]=1; }); });
+  var mm=0; (b.sessions||[]).forEach(function(r){ ((r&&r.survey&&r.survey.a&&r.survey.a.mood)||[]).forEach(function(m){ if(ma[m]) mm++; }); });
+  s+=Math.min(1.5, mm*0.5);
+  return s;
+}
+function renderBPExtra(){
+  var host=document.getElementById('bp-extra'); if(!host) return;
+  var b=books[bpIdx]; if(!b){ host.innerHTML=''; return; }
+  var e={b:b, ticked:readSet.has(bpIdx)}, h=bpBeforeHTML(b);
+  var T=tasteModel();
+  if(!libFinished(e) && T.n>=3){
+    h+='<section class="bp-sec"><div class="bp-sech"><h3>For you</h3></div><p class="bp-fit">'+_fitHTML(tasteScore(T,b),3)+'</p></section>';
+  }
+  var like=libAll().filter(function(x){ return x.b.bookId!==b.bookId; })
+    .map(function(x){ return {x:x, s:_libLike(b,x.b)}; })
+    .filter(function(o){ return o.s>=1.5; })
+    .sort(function(p,q){ return q.s-p.s; }).slice(0,5);
+  var cat=(_catCache||[]).filter(function(c){ return !c.hidden && !_catOwned(c); })
+    .map(function(c){ return {c:c, s:_libLike(b,{author:c.author, subjects:c.subjects, genre:c.genre})}; })
+    .filter(function(o){ return o.s>=1.5; })
+    .sort(function(p,q){ return q.s-p.s; }).slice(0,3);
+  if(like.length || cat.length){
+    h+='<section class="bp-sec"><div class="bp-sech"><h3>Something like this</h3></div>'
+      +like.map(function(o){
+        var x=o.x.b, done=libFinished(o.x);
+        return '<button type="button" class="bp-like" onclick="libOpen(\''+esc(o.x.listId)+'\',\''+esc(x.bookId||'')+'\')">'
+          +'<span class="bp-lt">'+esc(x.title)+'</span><span class="bp-lm">'+esc(x.author||'')+(done?' · read'+(x.myRating?' '+_starsText(x.myRating):''):' · in your list')+'</span></button>';
+      }).join('')
+      +cat.map(function(o){
+        return '<div class="bp-like"><span class="bp-lt">'+esc(o.c.title)+'</span><span class="bp-lm">'+esc(o.c.author||'')+' · from Discover</span></div>';
+      }).join('')
+      +'</section>';
+  }
+  host.innerHTML=h;
+}
+
+// ── Stats: taste profile, year plan, year in review ─────────────────────────
+function tasteCardHTML(T){
+  var miss=libAll().filter(function(e){ return !(e.b.rating>0); }).length;
+  var fetchRow=miss ? '<div class="ds-note">'+miss+' book'+(miss!==1?'s have':' has')+' no reader rating to compare against. '
+      +'<button class="ds-link" onclick="libFetchCrowd()" id="crowd-btn">Look them up</button><span id="crowd-out"></span></div>' : '';
+  if(T.n<3) return '<div class="ds-card"><div class="ds-h">Your taste</div><div class="ds-note">Rate three books to see what your ratings say.</div>'+fetchRow+'</div>';
+  function top(map, min, n, dir){
+    return Object.keys(map).map(function(k){ return map[k]; })
+      .filter(function(m){ return m.n>=min && (dir>0?m.v>0.05:m.v<-0.05); })
+      .sort(function(x,y){ return dir>0?y.v-x.v:x.v-y.v; }).slice(0,n);
+  }
+  function row(m){ return '<div class="tp-row"><span class="tp-k">'+esc(m.name)+'</span><span class="tp-v">'+_tSigned(m.v)+' · '+m.n+'</span></div>'; }
+  var h='<div class="ds-card ds-taste"><div class="ds-h">Your taste</div>'
+    +'<div class="ds-note" style="margin:-4px 0 10px">Your ratings against other readers’. From '+T.n+' rated book'+(T.n!==1?'s':'')+'; you average '+T.mean.toFixed(1)+'★.</div>';
+  var gUp=top(T.genre,2,3,1), gDn=top(T.genre,2,2,-1), aUp=top(T.author,2,3,1), mUp=top(T.mood,2,3,1), mDn=top(T.mood,2,2,-1);
+  if(gUp.length) h+='<div class="tp-sub">Genres you rate above the crowd</div>'+gUp.map(row).join('');
+  if(gDn.length) h+='<div class="tp-sub">…and below it</div>'+gDn.map(row).join('');
+  if(aUp.length) h+='<div class="tp-sub">Authors who land with you</div>'+aUp.map(row).join('');
+  if(mUp.length) h+='<div class="tp-sub">Moods you rate highest</div>'+mUp.map(row).join('');
+  if(mDn.length) h+='<div class="tp-sub">Moods you rate lowest</div>'+mDn.map(row).join('');
+  var pace=top(T.pace,2,1,1)[0]; if(pace) h+='<div class="ds-note">You rate <b>'+esc(pace.name.toLowerCase())+'</b>-paced books highest.</div>';
+  if(T.stable.length || T.moved.length){
+    h+='<div class="tp-sub">Across rereads</div>';
+    T.stable.slice(0,4).forEach(function(x){ h+='<div class="tp-row"><span class="tp-k">'+esc(x.e.b.title)+'</span><span class="tp-v">held '+_starsText(x.val)+'</span></div>'; });
+    T.moved.slice(0,4).forEach(function(x){ var v=x.reads.map(function(r){ return _starsText(r.rating); }); h+='<div class="tp-row"><span class="tp-k">'+esc(x.e.b.title)+'</span><span class="tp-v">'+v.join(' → ')+'</span></div>'; });
+  }
+  return h+fetchRow+'</div>';
+}
+// Where the year is heading: the goal, what is done, what the last thirty days
+// of reading would add by 31 December. Counts the same books the ring does.
+function yearPlanHTML(finished){
+  var goal=babelYearlyGoal||0; if(goal<=0) return '';
+  var now=new Date(), end=new Date(now.getFullYear(),11,31);
+  var daysLeft=Math.max(0,Math.round((end-new Date(now.getFullYear(),now.getMonth(),now.getDate()))/86400000));
+  var left=Math.max(0,goal-finished);
+  var map=_gatherSecByDay(), sec=0;
+  for(var i=0;i<30;i++){ var d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i); sec+=map[_dayKey(d)]||0; }
+  var perDay=sec/60/30, pace=_etaGlobalPace();
+  var pages=[]; tastePicks().slice(0,8).forEach(function(p){ if(p.e.b.pages>0) pages.push(p.e.b.pages); });
+  var avgPages=pages.length?pages.reduce(function(a,b){ return a+b; },0)/pages.length:0;
+  var h='<div class="ds-card"><div class="ds-h">Year plan</div>';
+  if(!left){ return h+'<div class="ds-note">Goal reached — '+finished+' of '+goal+'. Anything from here is extra.</div></div>'; }
+  h+='<div class="tp-row"><span class="tp-k">Still to go</span><span class="tp-v">'+left+' book'+(left!==1?'s':'')+' in '+daysLeft+' days</span></div>';
+  if(left && daysLeft) h+='<div class="tp-row"><span class="tp-k">That is</span><span class="tp-v">one every '+Math.max(1,Math.round(daysLeft/left))+' days</span></div>';
+  if(perDay>0 && pace && avgPages){
+    var bookMin=avgPages*pace.minPerPage, can=Math.floor(perDay*daysLeft/bookMin);
+    h+='<div class="tp-row"><span class="tp-k">At your last 30 days</span><span class="tp-v">'+Math.round(perDay)+' min/day → about '+can+' more</span></div>';
+    var need=left*bookMin/Math.max(1,daysLeft);
+    h+='<div class="ds-note">'+(can>=left?'On course.':'To make it: about '+Math.ceil(need)+' min a day.')+' Based on '+Math.round(avgPages)+'-page books from your Up next and your pace of '
+      +(pace.minPerPage>=1?pace.minPerPage.toFixed(1)+' min/page':Math.round(60/pace.minPerPage)+' pages/hour')+'.</div>';
+  } else h+='<div class="ds-note">Time a few sessions with page numbers and this will say whether your pace gets you there.</div>';
+  return h+'</div>';
+}
+// ── Year in review ──────────────────────────────────────────────────────────
+var _yrYear=null;
+function _yrYears(){
+  var ys={};
+  libAll().forEach(function(e){ (e.b.sessions||[]).forEach(function(r){ var y=String((r&&r.end)||'').slice(0,4); if(/^\d{4}$/.test(y)) ys[y]=1; }); });
+  ys[String(new Date().getFullYear())]=1;
+  return Object.keys(ys).sort().reverse();
+}
+function openYearReview(y){
+  _yrYear=String(y||new Date().getFullYear());
+  renderYearReview();
+  document.getElementById('yr-sheet').classList.remove('hidden');
+}
+function closeYearReview(){ var el=document.getElementById('yr-sheet'); if(el) el.classList.add('hidden'); }
+function renderYearReview(){
+  var body=document.getElementById('yr-body'); if(!body) return;
+  var Y=_yrYear, MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var fin=[];
+  libAll().forEach(function(e){
+    (e.b.sessions||[]).forEach(function(r,ri){
+      if(r && String(r.end||'').slice(0,4)===Y) fin.push({e:e, r:r, n:ri+1, re:(e.b.sessions||[]).filter(_readDone).length>1});
+    });
+  });
+  fin.sort(function(a,b){ return String(a.r.end).localeCompare(String(b.r.end)); });
+  var secMap=_gatherSecByDay(), dayMap=_gatherDayStats(), sec=0, pages=0, days=0;
+  Object.keys(secMap).forEach(function(k){ if(k.split('-')[0]===Y){ sec+=secMap[k]; if(secMap[k]>0) days++; } });
+  Object.keys(dayMap).forEach(function(k){ if(k.split('-')[0]===Y) pages+=dayMap[k].pages||0; });
+  var months=[0,0,0,0,0,0,0,0,0,0,0,0]; fin.forEach(function(f){ months[(+String(f.r.end).slice(5,7))-1]++; });
+  var maxM=Math.max.apply(null,months.concat([1]));
+  function tally(get){ var m={}; fin.forEach(function(f){ var k=get(f); if(k) m[k]=(m[k]||0)+1; }); return Object.keys(m).sort(function(a,b){ return m[b]-m[a]; }).map(function(k){ return [k,m[k]]; }); }
+  var g=tally(function(f){ return f.e.b.genre; }), a=tally(function(f){ return f.e.b.author; });
+  var moods={}; fin.forEach(function(f){ ((f.r.survey&&f.r.survey.a&&f.r.survey.a.mood)||[]).forEach(function(m){ moods[m]=(moods[m]||0)+1; }); });
+  var mk=Object.keys(moods).sort(function(x,y){ return moods[y]-moods[x]; }).slice(0,4);
+  var rated=fin.filter(function(f){ return f.r.rating; });
+  var best=rated.slice().sort(function(x,y){ return y.r.rating-x.r.rating; })[0];
+  var longest=fin.filter(function(f){ return f.e.b.pages>0 && !isAudioRead(f.r); }).sort(function(x,y){ return y.e.b.pages-x.e.b.pages; })[0];
+  var avg=rated.length?rated.reduce(function(s,f){ return s+f.r.rating; },0)/rated.length:0;
+  var yrs=_yrYears();
+  var h='<div class="yr-years">'+yrs.map(function(y){ return '<button class="ar-chip'+(y===Y?' on':'')+'" onclick="_yrYear=\''+y+'\';renderYearReview()">'+y+'</button>'; }).join('')+'</div>';
+  if(!fin.length && !sec){ body.innerHTML=h+'<div class="eta-none">Nothing finished or timed in '+Y+' yet.</div>'; return; }
+  h+='<div class="yr-hero"><div><b>'+fin.length+'</b><span>finished</span></div><div><b>'+pages.toLocaleString()+'</b><span>pages</span></div>'
+    +'<div><b>'+Math.round(sec/3600)+'</b><span>hours</span></div><div><b>'+days+'</b><span>days read</span></div></div>';
+  h+='<div class="ds-cols yr-cols">'+months.map(function(n,i){ return '<div class="ds-col"><div class="ds-colbar" style="height:'+Math.max(2,Math.round(n/maxM*100))+'%"></div><div class="ds-coll">'+MON[i][0]+'</div></div>'; }).join('')+'</div>';
+  var lines=[];
+  if(best) lines.push(['Highest rated', best.e.b.title+' · '+_starsText(best.r.rating)]);
+  if(avg) lines.push(['Average rating', avg.toFixed(1)+'★ across '+rated.length]);
+  if(longest) lines.push(['Longest', longest.e.b.title+' · '+longest.e.b.pages+'p']);
+  if(g[0]) lines.push(['Most read genre', g[0][0]+' · '+g[0][1]]);
+  if(a[0] && a[0][1]>1) lines.push(['Most read author', a[0][0]+' · '+a[0][1]]);
+  var re=fin.filter(function(f){ return f.re; }).length; if(re) lines.push(['Rereads', String(re)]);
+  if(mk.length) lines.push(['How they felt', mk.join(', ')]);
+  h+=lines.map(function(l){ return '<div class="eta-line"><span class="eta-k">'+esc(l[0])+'</span><span class="eta-v">'+esc(l[1])+'</span></div>'; }).join('');
+  if(fin.length) h+='<div class="eta-th" style="margin-top:16px">The books</div><div class="yb-list">'+fin.map(function(f){
+      return '<div class="yb-item"><span class="yb-t">'+esc(f.e.b.title)+'</span><span class="yb-m">'+esc([f.e.b.author,_libDate(f.r.end),f.r.rating?_starsText(f.r.rating):''].filter(Boolean).join(' · '))+'</span></div>';
+    }).join('')+'</div>';
+  body.innerHTML=h;
+}
+
+// ── Reader ratings for books that have none ─────────────────────────────────
+// The seeded books came with the crowd's rating; books added later did not, so
+// the taste profile had nothing to compare them against. One request per book
+// to Open Library, one at a time, and every result or failure is reported.
+var _crowdBusy=false;
+function _olFetch(u){
+  return fetch(u).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
+}
+function _olWork(d){
+  return {key:d.key||'', title:d.title||'', author:(d.author_name&&d.author_name[0])||'',
+    year:d.first_publish_year||null, pages:d.number_of_pages_median||null,
+    subjects:(d.subject||[]).slice(0,14), rating:d.ratings_average?Math.round(d.ratings_average*100)/100:null,
+    rc:d.ratings_count||0, cover:d.cover_i||null};
+}
+var OL_FIELDS='key,title,author_name,first_publish_year,number_of_pages_median,subject,ratings_average,ratings_count,cover_i';
+function _onCellular(){ try{ var c=navigator.connection; return !!(c && c.type==='cellular'); }catch(e){ return false; } }
+function libFetchCrowd(){
+  if(_crowdBusy) return;
+  var need=libAll().filter(function(e){ return !(e.b.rating>0); });
+  if(!need.length) return;
+  if(_onCellular() && !confirm('You are on mobile data. Look up '+need.length+' books now?')) return;
+  _crowdBusy=true;
+  var out=document.getElementById('crowd-out'), done=0, found=0, failed=0, patch={};
+  function say(t){ var o=document.getElementById('crowd-out'); if(o) o.textContent=' '+t; }
+  var i=0;
+  (function next(){
+    if(i>=need.length){
+      _crowdBusy=false;
+      libPatchEverywhere(patch);
+      say(found+' found, '+(need.length-found-failed)+' not on Open Library'+(failed?', '+failed+' failed (no connection?)':''));
+      showToast('Reader ratings: '+found+' of '+need.length+' found');
+      try{ renderDeepStats(); }catch(e){}
+      return;
+    }
+    var b=need[i++].b;
+    say('Looking up '+i+' of '+need.length+'…');
+    var q='title:'+JSON.stringify(String(b.title||'').split(':')[0])+(b.author?' author:'+JSON.stringify(b.author):'');
+    _olFetch('https://openlibrary.org/search.json?limit=3&fields='+OL_FIELDS+'&q='+encodeURIComponent(q))
+      .then(function(d){
+        var hit=((d&&d.docs)||[]).map(_olWork).filter(function(w){ return _dupTitle(w.title)===_dupTitle(b.title) && w.rating && w.rc>=5; })[0];
+        if(hit){ found++; var p={rating:hit.rating}; if(!(b.subjects||[]).length && hit.subjects.length) p.subjects=hit.subjects; patch[b.bookId]=p; }
+      })
+      .catch(function(){ failed++; })
+      .then(function(){ setTimeout(next, 350); });
+  })();
+}
+// Writes book-level facts to every copy of each book, in every list, and saves
+// each list once. patch: {bookId: {field: value}}.
+function libPatchEverywhere(patch){
+  var ids=Object.keys(patch||{}); if(!ids.length) return;
+  var hit=false;
+  books.forEach(function(b){ var p=b&&patch[b.bookId]; if(p){ for(var k in p) b[k]=p[k]; hit=true; } });
+  if(hit) saveCurrentList();
+  lists.forEach(function(l){
+    if(l.id===activeId) return;
+    try{
+      var raw=storage.getItem(listKey(l.id)); if(!raw) return;
+      var arr=JSON.parse(raw), h=false;
+      arr.forEach(function(b){ var p=b&&patch[b.bookId]; if(p){ for(var k in p) b[k]=p[k]; h=true; } });
+      if(h){ storage.setItem(listKey(l.id), JSON.stringify(arr)); try{ if(window.BabelCloud&&BabelCloud.touch) BabelCloud.touch(l.id); }catch(e){} }
+    }catch(e){}
+  });
+  _libMemo=null;
+}
+
+// ── Discover: the catalog beyond his shelves ────────────────────────────────
+// Books he does not own, from Open Library, kept on the phone in a database of
+// their own (like the covers), never in the library's storage: that is copied
+// into the 5 MB localStorage mirror and synced, and a catalog has no business
+// in either. Filled only when he asks, and ranked by the same taste model.
+var catalogStore=(function(){
+  var DB='rl_catalog', ST='works', dbp=null;
+  function open(){
+    if(dbp) return dbp;
+    dbp=new Promise(function(res,rej){
+      try{
+        var q=indexedDB.open(DB,1);
+        q.onupgradeneeded=function(){ try{ q.result.createObjectStore(ST); }catch(e){} };
+        q.onsuccess=function(){ res(q.result); };
+        q.onerror=function(){ rej(q.error); };
+      }catch(e){ rej(e); }
+    });
+    return dbp;
+  }
+  function tx(mode,fn){
+    return open().then(function(db){ return new Promise(function(res,rej){
+      var t=db.transaction(ST,mode), out=fn(t.objectStore(ST));
+      t.oncomplete=function(){ res(out&&out.result!==undefined?out.result:out); };
+      t.onerror=t.onabort=function(){ rej(t.error||new Error('catalog write failed')); };
+    }); });
+  }
+  return {
+    all:function(){ return tx('readonly',function(s){ return s.getAll(); }); },
+    putMany:function(arr){ return tx('readwrite',function(s){ arr.forEach(function(w){ if(w&&w.key) s.put(w,w.key); }); return {result:arr.length}; }); },
+    put:function(w){ return tx('readwrite',function(s){ s.put(w,w.key); return {result:1}; }); },
+    clear:function(){ return tx('readwrite',function(s){ s.clear(); return {result:0}; }); }
+  };
+})();
+var _catCache=null, _catStatus='', _catBusy=false;
+function catLoad(){
+  return catalogStore.all().then(function(a){ _catCache=a||[]; return _catCache; })
+    .catch(function(e){ _catCache=[]; _catStatus='The catalog on this phone could not be opened ('+((e&&e.name)||'error')+').'; return _catCache; });
+}
+// Owned if any list holds the same title and author.
+var _catOwnedKeys=null;
+function _catOwned(c){
+  if(!_catOwnedKeys){ _catOwnedKeys={}; libAll().forEach(function(e){ _catOwnedKeys[_dupTitle(e.b.title)+'|'+_dupAuthor(e.b.author)]=1; }); setTimeout(function(){ _catOwnedKeys=null; },0); }
+  return !!_catOwnedKeys[_dupTitle(c.title)+'|'+_dupAuthor(c.author)];
+}
+// Maps Open Library subjects onto a genre he already uses, so the genre part of
+// the taste model applies. Only ever one of his own genres, never a new one.
+function _catGenre(subjects){
+  var have={}; allGenres().forEach(function(g){ have[_libNorm(g)]=g; });
+  for(var i=0;i<(subjects||[]).length;i++){ var g=have[_libNorm(subjects[i])]; if(g) return g; }
+  return '';
+}
+// Builds the searches from what he rates above the crowd: his best genres and
+// authors. A typed search replaces them.
+function catFind(){
+  if(_catBusy) return;
+  if(_onCellular() && !confirm('You are on mobile data. Search Open Library now?')) return;
+  var T=tasteModel(), qs=[];
+  var typed=((document.getElementById('cat-q')||{}).value||'').trim();
+  if(typed) qs.push({q:typed, why:'your search'});
+  else {
+    Object.keys(T.genre).map(function(k){ return T.genre[k]; }).filter(function(m){ return m.n>=2 && m.v>0; })
+      .sort(function(a,b){ return b.v-a.v; }).slice(0,3)
+      .forEach(function(m){ qs.push({q:'subject:'+JSON.stringify(m.name.toLowerCase()), why:m.name}); });
+    Object.keys(T.author).map(function(k){ return T.author[k]; }).filter(function(m){ return m.n>=1 && m.v>0.1; })
+      .sort(function(a,b){ return b.v-a.v; }).slice(0,3)
+      .forEach(function(m){ qs.push({q:'author:'+JSON.stringify(m.name), why:m.name}); });
+    if(!qs.length){ _catStatus='Rate a few books first, or type what you are after.'; renderDiscover(); return; }
+  }
+  _catBusy=true; _catStatus='Searching Open Library…'; renderDiscover();
+  var got=[], errs=0;
+  Promise.all(qs.map(function(x){
+    return _olFetch('https://openlibrary.org/search.json?limit=40&sort=rating&fields='+OL_FIELDS+'&q='+encodeURIComponent(x.q))
+      .then(function(d){ ((d&&d.docs)||[]).forEach(function(w){ var o=_olWork(w); o.via=x.why; o.at=Date.now(); o.genre=_catGenre(o.subjects); got.push(o); }); })
+      .catch(function(){ errs++; });
+  })).then(function(){
+    var keep={}; (_catCache||[]).forEach(function(c){ if(c.hidden) keep[c.key]=1; });
+    var fresh=got.filter(function(w){ return w.key && w.title && w.author && !keep[w.key]; });
+    return catalogStore.putMany(fresh).then(function(){ return fresh.length; });
+  }).then(function(n){
+    return catLoad().then(function(){
+      _catBusy=false;
+      _catStatus=(errs===qs.length) ? 'Open Library could not be reached — check the connection and try again.'
+        : n+' books found'+(errs?' ('+errs+' of '+qs.length+' searches failed)':'')+'.';
+      renderDiscover();
+    });
+  }).catch(function(e){
+    _catBusy=false; _catStatus='Saving the results failed ('+((e&&e.name)||'error')+').'; renderDiscover();
+  });
+}
+// Optional filters on the saved catalog: shorter than, written before, rated at least.
+var _catF={maxp:'', before:'', minr:''};
+function catSetF(k,v){ _catF[k]=v; renderDiscover(); }
+function catHide(key){
+  var c=(_catCache||[]).filter(function(x){ return x.key===key; })[0]; if(!c) return;
+  c.hidden=1;
+  catalogStore.put(c).then(function(){ renderDiscover(); }).catch(function(){ showToast('Could not save that — try again'); });
+}
+function catAdd(key){
+  var c=(_catCache||[]).filter(function(x){ return x.key===key; })[0]; if(!c) return;
+  if(!confirmDuplicate(c.title,c.author,-1)) return;
+  var g=c.genre || (c.subjects&&c.subjects[0] ? String(c.subjects[0]).replace(/\b\w/g,function(m){ return m.toUpperCase(); }) : 'Unsorted');
+  var nb={bookId:resolveBookId(c.title,c.author), title:c.title, author:c.author, pages:c.pages||0, genre:g,
+    summary:'', optional:false, myRating:0, seriesOrder:'', seriesName:'', isFav:false, isReading:false,
+    sessions:[], timerSessions:[], subjects:(c.subjects||[]).slice(0,12)};
+  if(c.rating) nb.rating=c.rating;
+  normalizeBook(nb);
+  books.push(nb);
+  saveCurrentList();
+  updateStats(); renderFilterPills(); renderGenreDropdown(); renderGenrePickPills();
+  currentTab==="list" ? renderTable() : renderGenreTab();
+  showToast('Added "'+c.title+'" to '+(activeList().name||'this list'));
+  renderDiscover();
+}
+function renderDiscover(){
+  var host=document.getElementById('disc-body'); if(!host) return;
+  if(_catCache===null){ host.innerHTML='<div class="lookup-note">Loading…</div>'; catLoad().then(renderDiscover); return; }
+  var T=tasteModel();
+  var list=_catCache.filter(function(c){
+    if(c.hidden || _catOwned(c)) return false;
+    if(_catF.maxp && c.pages && c.pages>+_catF.maxp) return false;
+    if(_catF.maxp && !c.pages) return false;
+    if(_catF.before && (!c.year || c.year>=+_catF.before)) return false;
+    if(_catF.minr && (!c.rating || c.rating<+_catF.minr)) return false;
+    return true;
+  }).map(function(c){ return {c:c, sc:tasteScore(T,{title:c.title,author:c.author,genre:c.genre,rating:(c.rc>=10?c.rating:0),subjects:c.subjects})}; })
+    .sort(function(x,y){ return y.sc.s-x.sc.s; });
+  var h='<div class="disc-ctl"><input type="search" id="cat-q" placeholder="Subject or author (blank: from your taste)" value="'+esc(((document.getElementById('cat-q')||{}).value)||'')+'"/>'
+    +'<button class="tmr-primary disc-go" onclick="catFind()"'+(_catBusy?' disabled':'')+'>'+(_catBusy?'Searching…':'Find books')+'</button></div>'
+    +'<div class="disc-f">'
+      +'<label>Under <select onchange="catSetF(\'maxp\',this.value)"><option value="">any</option>'+[200,300,400,600].map(function(n){ return '<option'+(String(n)===_catF.maxp?' selected':'')+' value="'+n+'">'+n+'p</option>'; }).join('')+'</select></label>'
+      +'<label>Before <select onchange="catSetF(\'before\',this.value)"><option value="">any</option>'+[1900,1950,1980,2000].map(function(n){ return '<option'+(String(n)===_catF.before?' selected':'')+' value="'+n+'">'+n+'</option>'; }).join('')+'</select></label>'
+      +'<label>Rated <select onchange="catSetF(\'minr\',this.value)"><option value="">any</option>'+['3.5','4','4.3'].map(function(n){ return '<option'+(n===_catF.minr?' selected':'')+' value="'+n+'">'+n+'+</option>'; }).join('')+'</select></label>'
+    +'</div>'
+    +(_catStatus?'<div class="lookup-note">'+esc(_catStatus)+'</div>':'');
+  if(!list.length){
+    host.innerHTML=h+'<div class="lookup-note">'+(_catCache.length?'Nothing saved matches those filters.':'Nothing saved yet. Find books searches Open Library for the genres and authors you rate above the crowd.')+'</div>';
+    return;
+  }
+  host.innerHTML=h+'<div class="rd-list">'+list.slice(0,25).map(function(o){
+    var c=o.c;
+    return '<div class="disc-card"><div class="disc-t">'+esc(c.title)+'</div>'
+      +'<div class="disc-m">'+esc([c.author,c.year,c.pages?c.pages+'p':'',c.rating?c.rating.toFixed(1)+'★ ('+c.rc+')':''].filter(Boolean).join(' · '))+'</div>'
+      +'<div class="disc-fit">'+_fitHTML(o.sc,2)+'</div>'
+      +'<div class="disc-b"><button class="bp-secact" onclick="catAdd(\''+esc(c.key)+'\')">Add to '+esc(activeList().name||'list')+'</button>'
+      +'<button class="bp-secact muted" onclick="catHide(\''+esc(c.key)+'\')">Not for me</button></div></div>';
+  }).join('')+'</div>';
+}
+// Up next, on the Reading screen: unread books from his own lists, best fit
+// first, with the reasons; and the ones his ratings say to be wary of.
+function upNextHTML(){
+  var T=tasteModel();
+  var picks=tastePicks(T);
+  if(!picks.length) return '';
+  var h='<div class="rd-cal-title">Up next</div>';
+  if(T.n<3) return h+'<div class="rd-empty">Rate three books and this will rank your unread ones.</div>';
+  var good=picks.filter(function(p){ return p.sc.s>TASTE_WARN; }).slice(0,5);
+  var warn=picks.filter(function(p){ return p.sc.s<=TASTE_WARN; }).slice(-3).reverse();
+  function card(p){
+    var b=p.e.b;
+    return '<div class="rd-card" onclick="libOpen(\''+esc(p.e.listId)+'\',\''+esc(b.bookId||'')+'\')"><div class="rd-info"><div class="rd-title">'+esc(b.title)+'</div>'
+      +'<div class="rd-by">'+esc([b.author,seriesText(b)].filter(Boolean).join(' · '))+'</div>'
+      +'<div class="rd-fit">'+_fitHTML(p.sc,2)+'</div></div></div>';
+  }
+  h+='<div class="rd-list">'+good.map(card).join('')+'</div>';
+  if(warn.length) h+='<div class="rd-cal-title">Heads-up</div><div class="rd-list">'+warn.map(card).join('')+'</div>';
+  return h;
+}
+
+
 storage.init().then(function(){
   loadP();
   loadAll();
@@ -9009,7 +10259,11 @@ storage.init().then(function(){
   // the real pause would then be ignored — turning a correct 1h into a wrong 8h.
   Promise.resolve(tmrBridgeSync()).then(tmrCheckRunaway).catch(tmrCheckRunaway);
   try{ babelRemoveAI(); }catch(e){}
-  switchScreen("library");
+  // The saved catalog loads in the background; Discover and "Something like
+  // this" read it once it is there.
+  try{ catLoad(); }catch(e){}
+  switchScreen(deepLinkTab()||"library");
+  setTimeout(function(){ try{ cuMaybeStart(); }catch(e){ console.error('[Babel] catch-up failed', e); } },700);
   if(window.BabelCloud){ try{ BabelCloud.init(); }catch(e){} }
 });
 </script>
