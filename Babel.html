@@ -26,9 +26,6 @@
   --surface:#fff;--surface-glass:rgba(255,255,255,0.13);
   --accent:#2db88a;--accent-shadow:rgba(45,184,138,0.2);
   --text:#1a1a1a;--text-muted:rgba(26,26,26,0.52);--border:#ebe8e2;--star:#d4960a;
-  /* Frost is the one colour NOT derived from the theme. A freeze has to read as
-     cold on every palette, including the green and purple ones, so it is fixed. */
-  --frost:#7fb2cc;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{background:var(--bg1)}
@@ -676,7 +673,7 @@ body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padd
 
 .stats-hero{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin-bottom:16px}
 .sh-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:17px 8px;text-align:center}
-/* Streak is deliberately not tappable — there is no list behind it. */
+/* Days read is deliberately not tappable — there is no list behind it. */
 .sh-card.tappable{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s,border-color .12s}
 .sh-card.tappable:active{transform:scale(.97);border-color:var(--accent)}
 .stat-back{background:none;border:none;padding:2px 0 10px;font-family:var(--ui);font-size:12.5px;color:var(--accent);cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -744,17 +741,7 @@ body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padd
 .storage-detail svg{width:11px;height:11px;vertical-align:-1px}
 .mini-star{width:9px;height:9px;margin-left:2px;vertical-align:-1px}
 .h-row-e svg{width:13px;height:13px;vertical-align:-2px}
-.h-note svg{width:15px;height:15px;flex:none}
 .ds-rl svg{width:9px;height:9px;margin-left:2px;vertical-align:-1px}
-.rd-freeze{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius,14px);padding:12px 14px;margin-bottom:14px}
-.rd-fz-l{flex:1;min-width:0;display:flex;align-items:baseline;gap:7px}
-.rd-fz-n{font-family:var(--display);font-size:20px;font-weight:600;color:var(--accent);font-variation-settings:"opsz" 36,"wght" 600}
-.rd-fz-t{font-family:var(--ui);font-size:12px;color:var(--text-muted)}
-.rd-fz-b{flex:none;display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--accent);border-radius:999px;background:transparent;color:var(--accent);font-family:var(--ui);font-size:12.5px;cursor:pointer}
-.rd-fz-b svg{width:14px;height:14px}
-.rd-fz-b:disabled{opacity:.38;cursor:default;border-color:var(--border);color:var(--text-muted)}
-.cal-day.frozen .cal-num{color:var(--accent)}
-.cal-fz{margin-left:8px;padding:3px 10px;border:1px solid var(--accent);border-radius:999px;background:transparent;color:var(--accent);font-family:var(--ui);font-size:11px;cursor:pointer}
 #fab-dice{transform:translateY(-60px)}
 .dice-modes{display:flex;gap:7px;margin-bottom:14px}
 .dice-m{flex:1;padding:9px 0;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-muted);font-family:var(--ui);font-size:12.5px;cursor:pointer}
@@ -767,21 +754,9 @@ body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padd
 .dice-empty{font-family:var(--ui);font-size:12.5px;color:var(--text-muted)}
 
 /* ── Hearth ─────────────────────────────────────────────────────────────────── */
-.h-top{display:flex;align-items:center;gap:10px;margin:2px 0 14px}
-.h-subtabs{display:flex;gap:6px;flex:1;min-width:0}
-.h-st{flex:none;padding:8px 14px;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-muted);font-family:var(--ui);font-size:12.5px;cursor:pointer}
-.h-st.active{background:var(--surface);color:var(--text);border-color:var(--accent)}
-.h-shop{flex:none;width:42px;height:42px;border-radius:50%;border:none;background:var(--accent);color:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 10px var(--accent-shadow)}
-.h-shop svg{width:20px;height:20px}
-.h-bal{display:flex;align-items:baseline;gap:7px;margin-bottom:12px}
-.h-emb{font-family:var(--display);font-size:26px;font-weight:600;color:var(--star);text-shadow:0 0 9px var(--accent-shadow);font-variation-settings:"opsz" 72,"wght" 600}
-.h-embl{font-family:var(--ui);font-size:12px;color:var(--text-muted)}
-.h-frz{margin-left:auto;font-family:var(--ui);font-size:12px;color:var(--text-muted)}
-.h-note{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius,14px);padding:10px 12px;margin-bottom:12px;font-family:var(--ui);font-size:12.5px;color:var(--text)}
-.h-note-x{margin-left:auto;background:none;border:none;color:var(--text-muted);font-size:17px;cursor:pointer;line-height:1}
 .h-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius,14px);padding:12px 13px;margin-bottom:9px}
 .h-row.ready{border-color:var(--accent)}
-.h-row.claimed{opacity:.62}
+.h-row.done{opacity:.62}
 .h-row-t{display:flex;align-items:center;gap:9px;cursor:pointer}
 .h-row.ach .h-row-t{cursor:pointer}
 .h-row-n{flex:1;min-width:0;font-family:var(--ui);font-size:13.5px;color:var(--text)}
@@ -789,20 +764,13 @@ body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padd
 .h-bar{height:6px;border-radius:4px;background:color-mix(in srgb,var(--text) 9%,transparent);overflow:hidden;margin:9px 0 7px}
 .h-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .6s ease}
 .h-prog,.h-done{font-family:var(--ui);font-size:11.5px;color:var(--text-muted)}
-.h-claim{padding:7px 16px;border:none;border-radius:999px;background:var(--accent);color:var(--surface);font-family:var(--ui);font-size:12.5px;font-weight:700;cursor:pointer}
 .h-ladder{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
 .h-tier{font-family:var(--ui);font-size:10.5px;padding:3px 7px;border-radius:999px;border:1px solid var(--border);color:var(--text-muted)}
 .h-tier.got{border-color:var(--accent);color:var(--accent);background:var(--accent-shadow)}
+.h-card-of{font-size:.55em;color:var(--text-muted);font-weight:500;margin-left:1px}
 .shop-head{display:flex;align-items:baseline;margin-bottom:14px}
 .shop-t{font-family:var(--display);font-size:19px;font-weight:600;color:var(--text);font-variation-settings:"opsz" 36,"wght" 600}
 .shop-bal{margin-left:auto;font-family:var(--ui);font-size:13px;color:var(--star);font-weight:700}
-.shop-item{display:flex;align-items:center;gap:12px;background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius,14px);padding:13px}
-.shop-i-l{flex:1;min-width:0}
-.shop-i-n{font-family:var(--ui);font-size:14px;color:var(--text);font-weight:600}
-.shop-i-d{font-family:var(--ui);font-size:11.5px;color:var(--text-muted);margin-top:3px}
-.shop-buy{flex:none;padding:9px 18px;border:none;border-radius:999px;background:var(--accent);color:var(--surface);font-family:var(--ui);font-size:13px;font-weight:700;cursor:pointer}
-.shop-buy.off{opacity:.4;cursor:default}
-.shop-note{font-family:var(--ui);font-size:11.5px;color:var(--text-muted);margin-top:9px;text-align:center}
 
 /* ── Book page (read-throughs) ──────────────────────────────────────────────── */
 .bk-id{cursor:pointer}
@@ -1233,15 +1201,13 @@ body.card-lifted .bk-card.is-reading{box-shadow:inset 2px 0 0 var(--accent);padd
 @keyframes calPop{from{opacity:0;transform:translateY(7px)}}
 /* Fixed 30px, uniform glow. Dot size and glow must NEVER scale with minutes:
    with both the calendar and the strip encoding magnitude, neither was
-   readable. Four states only — met, frozen, partial, missed. */
+   readable. Three states only — met, partial, missed. */
 .cal-dot{position:relative;z-index:2;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .14s}
 .cal-day:active .cal-dot{transform:scale(.85)}
 .cal-day svg{position:absolute;inset:0;width:100%;height:100%}
 .cal-num{position:relative;font-family:var(--ui);font-size:12px;color:var(--text);z-index:1}
 .cal-dot.met{background:var(--accent);box-shadow:0 0 10px var(--accent-shadow)}
 .cal-dot.met .cal-num{color:var(--surface);font-weight:700}
-.cal-dot.frozen{border:1.5px dashed var(--frost)}
-.cal-dot.frozen .cal-num{color:var(--frost)}
 .cal-dot.part{border:1.5px solid var(--border)}
 .cal-dot.part .cal-num{color:var(--text-muted)}
 .cal-day.zero .cal-num{color:var(--text-muted)}
@@ -1528,7 +1494,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div class="sh-card tappable" onclick="openStatSheet('read')"><div class="sh-n" id="stat-read">0</div><div class="sh-l">read</div></div>
     <div class="sh-card tappable" onclick="openStatSheet('pages')"><div class="sh-n" id="stat-pages-read">0</div><div class="sh-l">pages read</div></div>
     <div class="sh-card tappable" onclick="openStatSheet('listened')"><div class="sh-n" id="stat-listened">0</div><div class="sh-l">listened</div></div>
-    <div class="sh-card"><div class="sh-n" id="stat-streak">0</div><div class="sh-l">streak</div></div>
+    <div class="sh-card"><div class="sh-n" id="stat-streak">0</div><div class="sh-l">days read</div></div>
   </div>
   <div class="progress-wrap">
     <div class="progress-header"><span>Library progress</span><span id="pct-label">0%</span></div>
@@ -1557,13 +1523,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <div id="reading-body"></div>
     </section>
     <section class="screen hidden" id="screen-hearth" data-screen-label="Hearth">
-      <div class="h-top">
-        <div class="h-subtabs">
-          <button class="h-st active" id="h-st-daily" onclick="hearthSub('daily')">Daily</button>
-          <button class="h-st" id="h-st-ach" onclick="hearthSub('ach')">Achievements</button>
-        </div>
-        <button class="h-shop" onclick="openShop()" title="Shop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16l-1.3 11.2A2 2 0 0 1 16.7 20H7.3a2 2 0 0 1-2-1.8L4 7Z"/><path d="M8.5 7V5.5a3.5 3.5 0 0 1 7 0V7"/></svg></button>
-      </div>
+      <div class="appbar"><div class="appbar-title">Hearth</div></div>
       <div id="h-body"></div>
     </section>
     <section class="screen hidden" id="screen-settings" data-screen-label="Settings">
@@ -1594,7 +1554,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
             <input type="number" id="goal-input" min="1" max="1440" value="10" onchange="setGoalFromInput()"/>
             <span class="goal-unit">minutes / day</span>
           </div>
-          <div class="set-note" style="margin-top:10px">Read this many minutes in a day and it counts toward your streak.</div>
+          <div class="set-note" style="margin-top:10px">Read this many minutes in a day and it counts as a day read. Days you don't read just don't add to the count — nothing resets.</div>
         </div>
         <div class="set-group">
           <div class="set-group-h">Yearly book goal</div>
@@ -1626,23 +1586,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <button class="tab" data-screen="reading" onclick="switchScreen('reading')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Reading</span></button>
     <button class="tab" data-screen="hearth" onclick="switchScreen('hearth')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M12 2c.6 4.2-2.2 6-4 8.2C6.4 12.2 5.5 14 5.5 16c0 3.6 2.9 6 6.5 6s6.5-2.4 6.5-6c0-2.6-1.4-4.6-3-6.2-.4 1.3-1.3 2.2-2.4 2.5C14.4 8.6 15.5 4.6 12 2Z"/></svg><span>Hearth</span></button>
   </nav>
-</div>
-<div class="sheet-overlay hidden" id="shop-sheet" onclick="if(event.target===this)closeShop()">
-  <div class="sheet">
-    <div class="shop-head"><span class="shop-t">Shop</span><span class="shop-bal" id="shop-bal"></span></div>
-    <div class="shop-item">
-      <div class="shop-i-l"><div class="shop-i-n">Streak freeze</div><div class="shop-i-d" id="shop-frz"></div>
-        <div class="shop-i-d">Covers a day you miss, automatically.</div></div>
-      <button class="shop-buy" id="shop-buy" onclick="buyFreeze()">50</button>
-    </div>
-    <div class="shop-item">
-      <div class="shop-i-l"><div class="shop-i-n">Five freezes</div>
-        <div class="shop-i-d">Saves 50 embers.</div></div>
-      <button class="shop-buy" id="shop-buy5" onclick="buyFreeze(5)">200</button>
-    </div>
-    <div class="shop-note" id="shop-note"></div>
-    <div class="modal-btns" style="margin-top:12px"><button class="modal-cancel" onclick="closeShop()">Done</button></div>
-  </div>
 </div>
 <div class="sheet-overlay hidden" id="eta-sheet" onclick="if(event.target===this)closeEta()">
   <div class="sheet">
@@ -2199,14 +2142,12 @@ function seedFromLists(){
   activeId=lists[0].id;
   saveMeta();
 }
-// ── Babel: reading streak (a day counts at 15+ min of timed reading) ─────────
-var STREAK_MIN_SEC=15*60;
+// ── Babel: days read (a day counts once it reaches the daily goal) ──────────
 var babelGoalMin=10;
 function _dayKey(d){return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
 // A session that runs past midnight belongs to BOTH days. Crediting all of it
 // to the day it started left the new day reading zero minutes - so a night of
-// reading did not count toward the day it mostly happened in, and the midnight
-// pass could spend a freeze on a day that was about to be met.
+// reading did not count toward the day it mostly happened in.
 function _addSpanByDay(map, startMs, durSec){
   var remain=Math.max(0, Math.round(durSec||0));
   if(!startMs){ return; }
@@ -2235,10 +2176,9 @@ function _gatherSecByDay(){
     try{var raw=storage.getItem(listKey(l.id));if(!raw)return;JSON.parse(raw).forEach(function(b){addTS(b.timerSessions);});}catch(e){}
   });
   // A timer still running has not been saved yet, so its minutes were invisible
-  // to the streak and to today's total: reading through midnight showed zero for
-  // the new day until you pressed stop, and the midnight pass could spend a
-  // freeze on a day you were in the middle of earning. Count the live session
-  // over the same span the saved one will use, so nothing shifts on save.
+  // to today's total: reading through midnight showed zero for the new day until
+  // you pressed stop. Count the live session over the same span the saved one
+  // will use, so nothing shifts on save.
   try{
     if(typeof activeTimer!=='undefined' && activeTimer && activeTimer.startTime){
       var _liveStart=activeTimer.startTime-(activeTimer.accumulatedSec||0)*1000;
@@ -2251,32 +2191,35 @@ function _gatherSecByDay(){
   }catch(e){}
   return map;
 }
-function computeStreak(){
-  var map=_gatherSecByDay();
-  var met={};
-  Object.keys(map).forEach(function(k){if(map[k]>=babelGoalMin*60)met[k]=true;});
-  try{ Object.keys(babelHearth.frozen).forEach(function(k){ met[k]=true; }); }catch(e){}
-  // A day that has ever counted as met stays met permanently. Corrections to
-  // how minutes are recorded, goal changes, and sync overwrites must never
-  // retroactively take a day off the streak — only today has to be earned.
-  try{
-    var _t=_dayKey(new Date()), _new=false;
-    babelHearth.metEver=babelHearth.metEver||{};
-    Object.keys(met).forEach(function(k){
-      if(k!==_t && !babelHearth.metEver[k]){ babelHearth.metEver[k]=1; _new=true; }
-    });
-    Object.keys(babelHearth.metEver).forEach(function(k){ met[k]=true; });
-    if(_new) saveHearth();
-  }catch(e){}
-  var today=new Date();today.setHours(0,0,0,0);
-  var cur=0,d=new Date(today);
-  if(!met[_dayKey(today)])d.setDate(d.getDate()-1);
-  while(met[_dayKey(d)]){cur++;d.setDate(d.getDate()-1);}
-  var times=Object.keys(met).map(function(k){var p=k.split("-");return new Date(+p[0],+p[1]-1,+p[2]).getTime();}).sort(function(a,b){return a-b;});
-  var best=0,run=0,prev=null;
-  times.forEach(function(t){if(prev!==null&&Math.round((t-prev)/86400000)===1)run++;else run=1;best=Math.max(best,run);prev=t;});
-  return {current:cur,best:best,todayMet:!!met[_dayKey(today)],todaySec:map[_dayKey(today)]||0};
+/* Days read — a running total, not a streak. Nothing ever resets it: a day
+   that reaches the goal adds one, a day without reading adds nothing.
+   babelHearth.readDays is the ledger. A past day enters it the first time it is
+   seen meeting the goal and never leaves, so a later goal change, a corrected
+   session or a sync cannot take a day back off the count. Today is not written
+   to the ledger until it is over (a live timer counts toward it, and a session
+   discarded at the save prompt must not leave a day behind) — it is counted
+   live instead. */
+function computeDaysRead(){
+  var map=_gatherSecByDay(), goal=babelGoalMin*60, tk=_dayKey(new Date()), added=false;
+  var led;
+  try{ babelHearth.readDays=babelHearth.readDays||{}; led=babelHearth.readDays; }catch(e){ led={}; }
+  Object.keys(map).forEach(function(k){
+    if(k!==tk && map[k]>=goal && !led[k]){ led[k]=1; added=true; }
+  });
+  if(added) saveHearth();
+  var todaySec=map[tk]||0, todayMet=(todaySec>=goal) || !!led[tk];
+  var d=new Date(), mPre=d.getFullYear()+'-'+(d.getMonth()+1)+'-';
+  var total=0, month=0;
+  Object.keys(led).forEach(function(k){
+    if(k===tk || !led[k]) return;
+    total++; if(k.indexOf(mPre)===0) month++;
+  });
+  if(todayMet){ total++; month++; }
+  return {total:total,month:month,todayMet:todayMet,todaySec:todaySec};
 }
+// Whether a past day is on the ledger — for the calendar and the strip, which
+// must draw a counted day as counted even if its minutes have since dropped.
+function isReadDay(key){ return !!(babelHearth && babelHearth.readDays && babelHearth.readDays[key]); }
 
 
 // ── Genre config ─────────────────────────────────────────────────────────────
@@ -2319,7 +2262,6 @@ var ICONS = {
   heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M12 20.3s-7.2-4.7-7.2-9.7a3.9 3.9 0 0 1 7.2-2.1 3.9 3.9 0 0 1 7.2 2.1c0 5-7.2 9.7-7.2 9.7Z"/></svg>',
   dots:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg>',
   check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg>',
-  snow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 2.5v19M3.8 7.2l16.4 9.6M20.2 7.2 3.8 16.8"/><path d="M9.4 4.6 12 6.9l2.6-2.3M9.4 19.4 12 17.1l2.6 2.3"/><path d="M5.2 10.6 4.4 7.2l3.4-.6M18.8 13.4l.8 3.4-3.4.6M18.8 10.6l.8-3.4-3.4-.6M5.2 13.4l-.8 3.4 3.4.6"/></svg>',
   dice:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/></svg>',
   star:'<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="8,1.5 10,6 15,6.5 11.2,10 12.5,15 8,12.2 3.5,15 4.8,10 1,6.5 6,6"/></svg>',
 
@@ -6948,7 +6890,7 @@ function pushWidgetSnapshot(){
   clearTimeout(_wbT);
   _wbT=setTimeout(function(){
     try{
-      var s=computeStreak();
+      var s=computeDaysRead();
       var l=activeList(), t=(l&&l.theme)||{};
       // Currently-reading books across ALL lists — the widget shouldn't
       // change contents just because a different list is open in the app.
@@ -6977,7 +6919,10 @@ function pushWidgetSnapshot(){
       var wSec=0,wPages=0;
       for(var wd=0;wd<7;wd++){ var wSt=dmap[_dayKey(new Date(mid.getTime()-wd*86400000))]; if(wSt){wSec+=wSt.sec;wPages+=wSt.pages;} }
       P.set({key:'babelWidget',value:JSON.stringify({
-        streak:{current:s.current||0,best:s.best||0,todayMet:!!s.todayMet},
+        // The native widget still reads streak.current, so it carries the
+        // days-read total until the widget's own label is updated.
+        streak:{current:s.total||0,best:s.total||0,todayMet:!!s.todayMet},
+        daysRead:{total:s.total||0,month:s.month||0,todayMet:!!s.todayMet},
         theme:{accent:t.accent,bg1:t.bg1,bg2:t.bg2,surface:t.surface,text:t.text,star:t.star,radius:(typeof t.radius==='number'?t.radius:14)},
         reading:reading, goalMin:babelGoalMin,
         today:{sec:tSt.sec,pages:tSt.pages,met:tSt.sec>=babelGoalMin*60},
@@ -7108,16 +7053,12 @@ function rdOpenElsewhere(listId, bookId){
 function renderReadingScreen(){
   var body=document.getElementById('reading-body'); if(!body) return;
   var reading=_readingEverywhere();
-  var s=computeStreak();
-  var sub=s.todayMet?'Goal reached today \u2014 nice':(Math.floor(s.todaySec/60))+' / '+babelGoalMin+' min today';
-  var head='<div class="rd-streakcard"><div class="rd-streak-num">'+s.current+'</div>'
-    +'<div class="rd-streak-lbl">day streak'+(s.best?' &middot; best '+s.best:'')+'</div>'
+  var s=computeDaysRead();
+  var sub=(s.todayMet?'Goal reached today \u2014 nice':(Math.floor(s.todaySec/60))+' / '+babelGoalMin+' min today')
+    +' &middot; '+s.month+' this month';
+  var head='<div class="rd-streakcard"><div class="rd-streak-num">'+s.total+'</div>'
+    +'<div class="rd-streak-lbl">day'+(s.total!==1?'s':'')+' read</div>'
     +'<div class="rd-streak-sub">'+sub+'</div></div>';
-  var _fz=babelHearth.freezes||0, _fzToday=!!babelHearth.frozen[_dayKey(new Date())];
-  head+='<div class="rd-freeze"><div class="rd-fz-l"><span class="rd-fz-n">'+_fz+'</span>'
-    +'<span class="rd-fz-t">freeze'+(_fz!==1?'s':'')+' banked</span></div>'
-    +'<button class="rd-fz-b" onclick="freezeToday()"'+((!_fz||_fzToday||s.todayMet)?' disabled':'')+'>'
-    +ICONS.snow+(_fzToday?'Today frozen':'Freeze today')+'</button></div>';
   head+=renderStrip();
   head+='<div class="rd-cal-title">Reading activity</div>'+renderCalendar();
   // Was the goal just cleared? Compared against the last render, so the
@@ -7150,246 +7091,43 @@ function renderStatusPills(){ var sp=document.getElementById('status-pills'); if
 
 /* ---- stats: genre chart ---- */
 
-// ── Hearth: embers, daily claims, freezes, achievements ──────────────────────
-var babelHearth={embers:0,freezes:0,frozen:{},claims:{},unlocked:{},logins:{},lastFreezeWeek:'',freezeNote:0};
-var _hSub='daily', _hOpen={};
+// ── Hearth: days read and achievement points ─────────────────────────────────
+// Points are not a currency any more. There is nothing to buy, so nothing is
+// claimed or spent: every achievement tier is worth a fixed number of points
+// the moment it is earned, and the total is worked out from `unlocked` each
+// time. A derived figure has no balance to lose in a sync merge.
+var babelHearth={unlocked:{},readDays:{}};
+var _hOpen={};
 function _hDay(d){ d=d||new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function _hWeek(d){
-  var t=d?new Date(d):new Date(); t.setHours(0,0,0,0);
-  t.setDate(t.getDate()+4-(t.getDay()||7));
-  var y0=new Date(t.getFullYear(),0,1);
-  return t.getFullYear()+'-W'+String(Math.ceil(((t-y0)/86400000+1)/7)).padStart(2,'0');
-}
 function loadHearth(){
-  // Whether this hearth already existed and had been through the earlier freeze
-  // grants. That is the evidence it is an established profile which could have
-  // suffered the sync wipe — a fresh install never had 9 freezes to lose, and
-  // must not be handed a repair for a loss that never happened.
-  // "Established" used to mean "has already had freezeGrant2", which was fine
-  // while only freezeRestore1 asked. Gating grant 2 itself on it would make
-  // that grant unreachable — the outer check is !freezeGrant2 and the inner
-  // would be !!freezeGrant2. So the test is now the thing it was always
-  // standing in for: does this device have a hearth at all. A fresh install
-  // has no rl_hearth key; any profile that has ever run Babel does.
-  var _established=false;
   try{
     var r=storage.getItem('rl_hearth');
-    _established = (r!==null && r!==undefined && String(r).length>0);
     if(r){ var o=JSON.parse(r); for(var k in o) babelHearth[k]=o[k]; }
   }catch(e){}
   babelHearthLoaded=true;   // from here on, saving is safe
-  ['frozen','claims','unlocked','logins','claimedAch','metEver'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
-  // One-time: tiers unlocked before achievements became claimable were paid
-  // on unlock, so mark them claimed rather than paying the embers twice.
-  if(!babelHearth.achMigrated){
-    for(var _k in babelHearth.unlocked) babelHearth.claimedAch[_k]=1;
-    babelHearth.achMigrated=1;
-  }
-  // One-time: 1 August 2026 was frozen, and the mark was lost when a stale
-  // cloud copy replaced the hearth wholesale. The ledger still held the day so
-  // the streak never broke, but the calendar drew it blank. Put the real entry
-  // back. Idempotent, so it is harmless if the flag is ever lost to a sync.
-  // Only where the ledger still remembers the day — that is the evidence it was
-  // protected before the mark was lost. A hearth without it never had the
-  // freeze, so this must not invent one.
-  if(!babelHearth.aug1FreezeRestore){
-    // Either the ledger still remembers the day, or the reading either side of
-    // it does: a met 31 July and a met 2 August leave Aug 1 as a hole that was
-    // demonstrably covered. A hearth matching neither never had the freeze.
-    var _a1m=_gatherSecByDay(), _a1g=babelGoalMin*60;
-    if(babelHearth.metEver['2026-8-1'] ||
-       ((_a1m['2026-7-31']||0)>=_a1g && (_a1m['2026-8-2']||0)>=_a1g))
-      babelHearth.frozen['2026-8-1']=1;
-    babelHearth.aug1FreezeRestore=1;
-  }
-  // Adopt whatever balance this device is holding into the ledger.
-  if(typeof babelHearth.emEarned!=='number' || typeof babelHearth.emSpent!=='number'){
-    babelHearth.emSpent=babelHearth.emSpent||0;
-    babelHearth.emEarned=babelHearth.emSpent+Math.max(0,babelHearth.embers||0);
-  }
-  // Make-good for the embers the counter bug destroyed: a week of daily and
-  // achievement claims that were recorded but reverted on the next pull. Tops
-  // the balance up to the agreed figure without ever reducing it.
-  var _hMig=false;
-  // Every grant below repairs damage done to an EXISTING profile by a past
-  // sync bug. Run on a fresh install they are not repairs, they are 120 embers
-  // and 26 freezes handed to someone who has read nothing — so each one is
-  // gated on this device having a history, the way freezeRestore1 already was.
-  // The flags are still set either way: a new profile is marked as having had
-  // them so it can never be paid later, once it does have a history.
-  if(!babelHearth.emberMakeGood){
-    if(_established){
-      var _owed=120-emBal();
-      if(_owed>0){ emGain(_owed); _hMig=true; }
-    }
-    babelHearth.emberMakeGood=1;
-  }
-  emBal();
-  // Make-good for a freeze lost to the sync bug above, plus the three spent
-  // defending a streak that the de-duplication fix then erased.
-  if(!babelHearth.freezeGrant2){
-    if(_established){
-      babelHearth.freezes=(babelHearth.freezes||0)+(babelHearth.freezeGrant1?3:4);
-      _hMig=true;
-    }
-    babelHearth.freezeGrant1=1;
-    babelHearth.freezeGrant2=1;
-  }
-  // One-time: 22 freezes added at Patrick's request. Additive and flagged, so
-  // a spend afterwards is not undone and it cannot pay out twice. The flag
-  // rides the sync merge below like the other grants — if an incoming copy
-  // predating it were allowed to clear it, the next boot would pay 22 again.
-  if(!babelHearth.freezeGrant3){
-    if(_established){
-      babelHearth.freezes=(babelHearth.freezes||0)+22;
-      _hMig=true;
-    }
-    babelHearth.freezeGrant3=1;
-  }
-  // One-time: 9 banked freezes went to 0 overnight, with no days newly frozen
-  // and no spend notice. They were not spent — the sync merge let an incoming
-  // copy holding 0 overwrite the local count outright. That line now takes the
-  // higher of the two, like embers, so a pull can raise the count but never
-  // lower it. This puts back what that bug took.
-  // Additive, so a spend between the loss and this running is not undone, and
-  // flagged so it cannot pay out twice. The flag rides the sync merge below
-  // for the same reason the other make-goods do.
-  // One-time: a 40-day streak broke with six freezes banked, because the pass
-  // that spends them only ever ran at cold start and the day rolled over while
-  // the app sat in the background. The cause is fixed properly by
-  // hearthDayCheck below; this repairs the day that was already lost.
-  //
-  // Deliberately narrow. It covers YESTERDAY only, only if yesterday is
-  // genuinely uncovered, and only if the day before it counted — that is, only
-  // where a real streak was broken by exactly this bug. It cannot walk
-  // backwards into an old absence and drain the balance, which is the risk in
-  // simply lifting the freezeFrom guard. It spends one of his own banked
-  // freezes; it does not hand out a free day.
-  if(!babelHearth.streakRescue1){
-    babelHearth.streakRescue1=1;
-    _hMig=true;
+  ['unlocked','readDays'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
+  // One-time, when streaks became a count of days read. The old met-day ledger
+  // (metEver) also held days that were only ever covered by a freeze, so it is
+  // not copied wholesale: a day carries over if it has reading recorded on it.
+  // That keeps every day that once met the goal and has since had its minutes
+  // lowered by a fix, and leaves out freeze-only days with no reading at all.
+  // metEver and frozen are left in storage untouched, so nothing is destroyed.
+  if(!babelHearth.readDaysInit){
     try{
-      var _y=new Date(); _y.setHours(0,0,0,0); _y.setDate(_y.getDate()-1);
-      var _p=new Date(_y); _p.setDate(_p.getDate()-1);
-      var _yk=_dayKey(_y), _pk=_dayKey(_p), _m=_gatherSecByDay(), _need=babelGoalMin*60;
-      var _metY=((_m[_yk]||0)>=_need) || !!(babelHearth.metEver&&babelHearth.metEver[_yk]);
-      var _metP=((_m[_pk]||0)>=_need) || !!(babelHearth.metEver&&babelHearth.metEver[_pk])
-                || !!babelHearth.frozen[_pk];
-      if(!_metY && !babelHearth.frozen[_yk] && _metP && babelHearth.freezes>0){
-        babelHearth.frozen[_yk]=1;
-        babelHearth.freezes--;
-        babelHearth.freezeNote=(babelHearth.freezeNote||0)+1;
-      }
-    }catch(e){}
-  }
-  if(!babelHearth.freezeRestore1){
-    if(_established) babelHearth.freezes=(babelHearth.freezes||0)+9;
-    // Flagged either way. A fresh profile is marked as already settled so this
-    // can never pay out to it once it becomes established.
-    babelHearth.freezeRestore1=1;
-    _hMig=true;
-  }
-  // De-duplicating shared books halved the recorded minutes on days where a
-  // book sat in two lists, so days that legitimately met the goal under the
-  // old accounting suddenly failed it and the streak collapsed. Re-grade
-  // history once under the old rules and protect those days, free of charge.
-  if(!babelHearth.streakRepair){
-    try{
-      var oldMap={};
-      function _tally(arr){
-        (arr||[]).forEach(function(b){
-          (b.timerSessions||[]).forEach(function(x){
-            if(!x||!x.startTime) return;
-            var k=_dayKey(new Date(x.startTime));
-            oldMap[k]=(oldMap[k]||0)+(x.durationSec||0);   // no de-duplication
-          });
-        });
-      }
-      lists.forEach(function(l){
-        try{ var raw=storage.getItem(listKey(l.id)); if(raw) _tally(JSON.parse(raw)); }catch(e){}
-      });
-      var newMap=_gatherSecByDay(), goal=babelGoalMin*60, today=_dayKey(new Date());
-      Object.keys(oldMap).forEach(function(k){
-        if(k===today) return;                              // today must be earned
-        if(oldMap[k]>=goal && (newMap[k]||0)<goal) babelHearth.frozen[k]=1;
+      var _rm=_gatherSecByDay(), _rt=_dayKey(new Date());
+      Object.keys(babelHearth.metEver||{}).forEach(function(k){
+        if(k!==_rt && (_rm[k]||0)>0) babelHearth.readDays[k]=1;
       });
     }catch(e){}
-    babelHearth.streakRepair=1;
-    _hMig=true;
-  }
-  // The frozen days that were carrying the streak were wiped by the sync bug,
-  // and a frozen day leaves no session data to recover it from. Rebuild by
-  // protecting every recent day on which any reading happened, back to the
-  // last completely inactive day. This errs toward keeping the streak, which
-  // is the correct bias: a streak must never be lost to a defect.
-  if(babelHearth.streakRebuild!==2){
-    try{
-      var m2=_gatherSecByDay(), goal2=babelGoalMin*60;
-      var d2=new Date(); d2.setHours(0,0,0,0);
-      d2.setDate(d2.getDate()-1);                 // today must still be earned
-      // Zero-minute days inside the run were covered by freezes whose marks
-      // the sync bug destroyed, leaving them indistinguishable from days that
-      // were simply skipped. Allow a limited number of them to be bridged so
-      // the run isn't truncated at the exact point the evidence was lost.
-      // Walk back collecting candidate days, allowing a few zero-minute days
-      // to be bridged (their freeze marks were destroyed). Afterwards trim any
-      // bridged days that trail past the last day with real activity, so the
-      // run ends where the evidence ends rather than drifting into the past.
-      var scan=[], bridge=3;
-      for(var i2=0;i2<21;i2++){
-        var k2=_dayKey(d2);
-        var active=(m2[k2]>0)||!!babelHearth.frozen[k2];
-        if(!active){
-          if(bridge<=0) break;
-          bridge--;
-        }
-        scan.push({k:k2,active:active});
-        d2.setDate(d2.getDate()-1);
-      }
-      var lastActive=-1;
-      for(var j2=0;j2<scan.length;j2++) if(scan[j2].active) lastActive=j2;
-      babelHearth.metEver=babelHearth.metEver||{};
-      for(var j3=0;j3<=lastActive;j3++){
-        var kk=scan[j3].k;
-        if((m2[kk]||0)<goal2) babelHearth.frozen[kk]=1;
-        babelHearth.metEver[kk]=1;
-      }
-    }catch(e){}
-    babelHearth.streakRebuild=2;
-    _hMig=true;
-  }
-  // Persist immediately: a one-time grant that isn't written is a grant that
-  // silently disappears on the next load.
-  if(_hMig){ try{ saveHearth(); }catch(e){} }
-  // Legacy string anchors -> timestamp.
-  if(typeof babelHearth.freezeFrom==='string' && babelHearth.freezeFrom){
-    var q=babelHearth.freezeFrom.split('-'), qd=new Date(+q[0],+q[1]-1,+q[2]);
-    qd.setHours(0,0,0,0); babelHearth.freezeFrom=qd.getTime();
+    babelHearth.readDaysInit=1;
+    // Persist immediately: a migration that isn't written silently reruns.
+    try{ saveHearth(); }catch(e){}
   }
 }
-// Embers are a LEDGER, not a number. A plain balance syncs as a counter, so it
-// follows whichever copy has the newer timestamp — while the claims that earned
-// it are unioned and never shrink. That let a claim be un-paid and then never
-// re-claimed, which is how a week of claiming settled back to 6. Lifetime earned
-// and lifetime spent only ever grow, merge with max, and the balance is derived:
-// no copy of the hearth, however stale, can pull it down.
-function emBal(){
-  // A hearth that has not been through loadHearth — or one that arrived from a
-  // copy predating the ledger — carries only the old balance. Adopt it instead
-  // of reading the missing ledger as zero and wiping the embers.
-  if(typeof babelHearth.emEarned!=='number' || typeof babelHearth.emSpent!=='number'){
-    babelHearth.emSpent=babelHearth.emSpent||0;
-    babelHearth.emEarned=babelHearth.emSpent+Math.max(0,babelHearth.embers||0);
-  }
-  babelHearth.embers=Math.max(0,babelHearth.emEarned-babelHearth.emSpent);
-  return babelHearth.embers;
-}
-function emGain(n){ emBal(); babelHearth.emEarned+=Math.max(0,Math.round(n||0)); return emBal(); }
-function emSpend(n){ emBal(); babelHearth.emSpent +=Math.max(0,Math.round(n||0)); return emBal(); }
 // The build the PAGE is running, compared against the build the SERVICE WORKER
 // is serving. When they disagree the phone is running a file nobody intended,
 // which is invisible without this and impossible to debug.
-var BABEL_VERSION='babel-v61';
+var BABEL_VERSION='babel-v62';
 // A save that does not reach the disk is the one failure that looks exactly
 // like success until the next reload, so it gets said out loud immediately.
 window.babelStorageFailed=function(msg){
@@ -7409,16 +7147,14 @@ function babelShowStorage(verbose){
   storage.readDisk('rl_hearth').then(function(onDisk){
     var inMem=storage.getItem('rl_hearth');
     var match=(String(onDisk)===String(inMem));
-    var em='?';
-    try{ em=JSON.parse(inMem||'{}').embers; }catch(e){}
-    var dm='?';
-    try{ dm=JSON.parse(onDisk||'{}').embers; }catch(e){}
-    el.textContent = match ? ('on disk \u00b7 '+em+' embers')
+    function _days(raw){ try{ return Object.keys(JSON.parse(raw||'{}').readDays||{}).length; }catch(e){ return '?'; } }
+    var em=_days(inMem), dm=_days(onDisk);
+    el.textContent = match ? ('on disk \u00b7 '+em+' days read')
                            : ('MISMATCH app '+em+' / disk '+dm);
     if(!match && verbose){
       var b=document.getElementById('storage-alarm');
       if(b){ b.style.display='block';
-        b.textContent='The app shows '+em+' embers but the disk holds '+dm+'. Saves are not landing'+
+        b.textContent='The app shows '+em+' days read but the disk holds '+dm+'. Saves are not landing'+
           (mirr?(' (mirror: '+mirr+')'):'')+'.'; }
     }
   });
@@ -7465,9 +7201,8 @@ function babelShowVersion(){
 var babelHearthLoaded=false;
 function saveHearth(){
   // Boot deferred hearthInit with setTimeout while updateStats ran synchronously
-  // first, so computeStreak's metEver write called saveHearth on the module
-  // DEFAULT hearth and overwrote the stored one. loadHearth then read that empty
-  // hearth and re-applied the make-good, landing on exactly 120 every time.
+  // first, so the day ledger's write called saveHearth on the module DEFAULT
+  // hearth and overwrote the stored one with an empty copy.
   // Refusing to write before the load makes the ordering impossible to get wrong.
   if(!babelHearthLoaded){
     try{ console.warn('[Babel] blocked a hearth save before load'); }catch(e){}
@@ -7498,7 +7233,7 @@ var HEARTH_TRACKS=[
   {k:'rev',   name:'Reviews written', suf:'',  tiers:mkTiers(1,500,20)},
   {k:'listen',name:'Time spent listening', suf:'h', tiers:mkTiers(1,3000,30)},
   {k:'abook', name:'Audiobook progress',    suf:'h', tiers:mkTiers(1,3000,30)},
-  {k:'streak',name:'Day streak',      suf:'d', tiers:[3,5,7,10,14,21,30,45,60,90,120,160,210,270,340,420,510,610,730,900,1100,1400,1800,2400,3650]},
+  {k:'streak',name:'Days read',       suf:'d', tiers:[3,5,7,10,14,21,30,45,60,90,120,160,210,270,340,420,510,610,730,900,1100,1400,1800,2400,3650]},
   {k:'long',  name:'Longest session', suf:'m', tiers:[30,45,60,90,120,180,240,300]}
 ];
 // One entry per REAL book (deduped by bookId), merging the fullest copy —
@@ -7542,7 +7277,7 @@ function hearthStats(){
       // Audio positions are minutes, not pages — they must never inflate a
       // page count. They feed the listening ladder instead.
       // A session whose read he deleted keeps its time — it really happened, and
-      // the streak must never be rewritten — but stops counting as pages read.
+      // the days-read count must never be rewritten — but stops counting as pages.
       if(x.audio){ lis+=(x.durationSec||0); }
       else if(!x.detached) pages+=Math.max(0,(x.endPage||0)-(x.startPage||0));
       if((x.durationSec||0)>longest) longest=x.durationSec||0;
@@ -7560,19 +7295,19 @@ function hearthStats(){
     rate += Math.max(b.rt.filter(function(x){return x.rating>0;}).length, b.myRating>0?1:0);
     rev  += b.rt.filter(function(x){return (x.note||'').trim();}).length;
   });
-  var st=computeStreak();
+  // Track key stays 'streak' so every tier already earned stays earned.
+  var st=computeDaysRead();
   return {time:sec/3600,listen:lis/3600,abook:abk/60,pages:pages,sess:sess,fin:fin,add:bs.length,rate:rate,rev:rev,
-          streak:Math.max(st.best||0,st.current||0),long:longest/60,owl:owl,bird:bird};
+          streak:st.total,long:longest/60,owl:owl,bird:bird};
 }
-// Unlock every tier the numbers have passed, paying 3 embers each. On first
-// run this naturally recognises everything already earned.
+// Unlock every tier the numbers have passed. On first run this naturally
+// recognises everything already earned. Unlocking is permanent.
 function hearthCheckUnlocks(){
   var v=hearthStats(), gained=0;
   HEARTH_TRACKS.forEach(function(t){
     t.tiers.forEach(function(val,i){
       var key=t.k+':'+i;
       if(babelHearth.unlocked[key]) return;
-      // Unlocking no longer pays out — the embers wait to be claimed.
       if((v[t.k]||0)>=val){ babelHearth.unlocked[key]=1; gained++; }
     });
   });
@@ -7582,72 +7317,40 @@ function hearthCheckUnlocks(){
   if(gained) saveHearth();
   return gained;
 }
-// A missed day is covered automatically if a freeze is banked.
-function applyStreakFreezes(){
-  if(babelHearth.freezes<=0) return;
-  var map=_gatherSecByDay(), met={};
-  Object.keys(map).forEach(function(k){ if(map[k]>=babelGoalMin*60) met[k]=true; });
-  // A day banked in the ledger is met, full stop — the streak already counts it.
-  // Without this, raising the goal made yesterday look missed and burnt a
-  // 50-ember freeze covering a day that never needed covering.
-  try{ Object.keys(babelHearth.metEver||{}).forEach(function(k){ met[k]=true; }); }catch(e){}
-  var today=new Date(); today.setHours(0,0,0,0);
-  var d=new Date(today); d.setDate(d.getDate()-1);
-  // The earliest day that ever counted. The gap has to sit directly after a met
-  // day to be worth covering, so there is nothing to find behind this point —
-  // it is what stops the walk when there is no streak to protect at all.
-  var floorT=Infinity;
-  Object.keys(met).forEach(function(k){
-    var p=k.split('-'), t=new Date(+p[0],+p[1]-1,+p[2]).getTime();
-    if(t<floorT) floorT=t;
-  });
-  // No ceiling on how long an absence can be: a fortnight away with a fortnight
-  // of freezes banked should cost the freezes, not the streak. The guard is a
-  // decade, purely so a corrupt ledger cannot spin forever.
-  var gap=[], guard=0;
-  while(guard++<3700){
-    var k=_dayKey(d);
-    if(met[k]||babelHearth.frozen[k]) break;
-    // Days before the freeze was acquired are not coverable. Compared as
-    // timestamps: day-key strings are unpadded and sort incorrectly.
-    if(babelHearth.freezeFrom && d.getTime()<babelHearth.freezeFrom) break;
-    if(d.getTime()<floorT) break;
-    gap.push(k); d.setDate(d.getDate()-1);
-  }
-  // Only spend if a streak actually existed before the gap.
-  if(!gap.length) return;
-  var before=_dayKey(d);
-  if(!met[before] && !babelHearth.frozen[before]) return;
-  var used=0;
-  while(gap.length && babelHearth.freezes>0){ babelHearth.frozen[gap.pop()]=1; babelHearth.freezes--; used++; }
-  if(babelHearth.freezes<=0) babelHearth.freezeFrom=0;
-  if(used){ babelHearth.freezeNote=used; saveHearth(); }
+// What each achievement is worth. A higher rung on a ladder is worth more than
+// the one below it — the 30th tier of reading time should not pay the same as
+// the first hour. One-off badges are a flat 10.
+var ACH_ONEOFF_PTS=10;
+function achPoints(key){
+  var i=String(key).indexOf(':');
+  return i<0 ? ACH_ONEOFF_PTS : 5*((parseInt(key.slice(i+1),10)||0)+1);
 }
-/* The freeze pass used to run in exactly one place — hearthInit, at cold start.
-   On a phone the app is almost always RESUMED rather than launched, so if the
-   day rolled over while Babel sat in the background, nothing ever ran to cover
-   the missed day. A 40-day streak was lost with six freezes banked, and the
-   only way to trigger the rescue was to force-stop the app and reopen it.
-
-   This runs it again whenever Babel comes back to the foreground, and once a
-   minute so midnight is caught even with the app open and on screen.
-
-   Safe to call as often as we like: the pass walks back from yesterday and
-   stops at the first day that is already met or already frozen, so once a day
-   is covered it spends nothing further. That is verified, not assumed. */
+function hearthPoints(){
+  var n=0;
+  for(var k in (babelHearth.unlocked||{})) if(babelHearth.unlocked[k]) n+=achPoints(k);
+  return n;
+}
+function hearthAchCount(){
+  var got=0, all=2;   // the two one-off badges
+  HEARTH_TRACKS.forEach(function(t){
+    all+=t.tiers.length;
+    t.tiers.forEach(function(x,i){ if(babelHearth.unlocked[t.k+':'+i]) got++; });
+  });
+  ['owl','bird'].forEach(function(k){ if(babelHearth.unlocked[k]) got++; });
+  return {got:got,all:all};
+}
+/* Everything date-dependent is stale the moment the day changes. On a phone
+   the app is almost always RESUMED rather than launched, so redraw whenever
+   Babel comes back to the foreground and once a minute so midnight is caught
+   with the app open. Midnight is also when yesterday enters the ledger. */
 var _hLastDay='';
 function hearthDayCheck(){
   if(typeof babelHearthLoaded!=='undefined' && !babelHearthLoaded) return;
   var k=_hDay();
   var rolled = (_hLastDay && k!==_hLastDay);
   _hLastDay = k;
-  var freezesBefore = babelHearth.freezes;
-  try{ babelHearth.logins[k]=1; }catch(e){}
-  try{ applyStreakFreezes(); }catch(e){}
-  var spent = babelHearth.freezes !== freezesBefore;
-  if(!rolled && !spent) return;                 // nothing to redraw
-  try{ saveHearth(); }catch(e){}
-  // Everything below is date-dependent and stale the moment the day changes.
+  if(!rolled) return;                           // nothing to redraw
+  try{ computeDaysRead(); }catch(e){}           // files yesterday in the ledger
   try{ renderStreak(); }catch(e){}
   try{ renderReadingScreen(); }catch(e){}
   try{ renderHearth(); }catch(e){}
@@ -7659,102 +7362,21 @@ setInterval(hearthDayCheck, 60000);
 function hearthInit(){
   loadHearth();
   _hLastDay=_hDay();
-  babelHearth.logins[_hDay()]=1;
-  applyStreakFreezes();
+  try{ computeDaysRead(); }catch(e){}
   hearthCheckUnlocks();
-  // One-time: the sync bug wiped claimedAch while `unlocked` rebuilt itself
-  // from the stats, so every badge already earned went back to being payable.
-  // Mark what is currently unlocked as claimed, without paying out — he had
-  // these already. Runs after the unlock pass so nothing is missed, and the
-  // flag rides the sync merge so a pull cannot make it fire twice and swallow
-  // badges he has genuinely not claimed yet.
-  if(!babelHearth.achReclaim){
-    for(var _rk in babelHearth.unlocked) babelHearth.claimedAch[_rk]=1;
-    babelHearth.achReclaim=1;
-  }
   saveHearth();
-}
-// Today's / this week's claimable rewards.
-function hearthDaily(){
-  var dmap=_gatherDayStats(), today=_dayKey(new Date());
-  var mins=((dmap[today]||{sec:0}).sec)/60;
-  // Weekly progress runs Monday 00:00 → now, matching when the claim resets.
-  var mid=new Date(); mid.setHours(0,0,0,0);
-  var back=(mid.getDay()+6)%7;             // 0 = Monday
-  var wSec=0, logins=0;
-  for(var i=0;i<=back;i++){
-    var day=new Date(mid.getTime()-i*86400000);
-    var st=dmap[_dayKey(day)]; if(st) wSec+=st.sec;
-    if(babelHearth.logins[_hDay(day)]) logins++;
-  }
-  var weekDays=back+1;
-  var D=_hDay(), W=_hWeek();
-  function mk(k,label,em,done,prog,per){
-    return {k:k,label:label,em:em,done:done,prog:Math.max(0,Math.min(prog,1)),per:per,
-            claimed:babelHearth.claims[k]===(per==='week'?W:D)};
-  }
-  return [
-    mk('login','Open Babel today',1,true,1,'day'),
-    mk('r5','Read 5 minutes today',1,mins>=5,mins/5,'day'),
-    mk('r10','Read 10 minutes today',1,mins>=10,mins/10,'day'),
-    mk('r15','Read 15 minutes today',1,mins>=15,mins/15,'day'),
-    mk('r30','Read 30 minutes today',2,mins>=30,mins/30,'day'),
-    mk('w7','Open Babel every day this week',3,logins>=weekDays,logins/weekDays,'week'),
-    mk('w2h','Read 2 hours this week',5,wSec>=7200,wSec/7200,'week')
-  ];
-}
-// Achievements are claimed, not auto-paid. Anything unlocked before this
-// change was already paid then, so it is marked claimed on migration.
-function achClaimed(key){ return !!(babelHearth.claimedAch&&babelHearth.claimedAch[key]); }
-function pendingAch(){ var n=0; for(var k in babelHearth.unlocked) if(!achClaimed(k)) n++; return n; }
-function claimAch(key){
-  if(!babelHearth.unlocked[key] || achClaimed(key)) return;
-  babelHearth.claimedAch=babelHearth.claimedAch||{};
-  babelHearth.claimedAch[key]=1;
-  emGain(3);
-  saveHearth(); renderHearth();
-}
-function claimTrack(k){
-  babelHearth.claimedAch=babelHearth.claimedAch||{};
-  var n=0;
-  for(var key in babelHearth.unlocked){
-    if(key.indexOf(k+':')!==0) continue;
-    if(!achClaimed(key)){ babelHearth.claimedAch[key]=1; n++; }
-  }
-  if(n){ emGain(n*3); saveHearth(); renderHearth(); }
-}
-function claimAllAch(){
-  babelHearth.claimedAch=babelHearth.claimedAch||{};
-  var n=0;
-  for(var k in babelHearth.unlocked) if(!achClaimed(k)){ babelHearth.claimedAch[k]=1; n++; }
-  if(n){ emGain(n*3); saveHearth(); renderHearth(); }
-}
-function claimHearth(k){
-  var it=null;
-  hearthDaily().forEach(function(x){ if(x.k===k) it=x; });
-  if(!it||!it.done||it.claimed) return;
-  emGain(it.em);
-  babelHearth.claims[k]= it.per==='week'?_hWeek():_hDay();
-  saveHearth(); renderHearth();
-}
-function hearthSub(w){ _hSub=w;
-  document.getElementById('h-st-daily').classList.toggle('active',w==='daily');
-  document.getElementById('h-st-ach').classList.toggle('active',w==='ach');
-  renderHearth();
 }
 function hToggle(k){ _hOpen[k]=!_hOpen[k]; renderHearth(); }
 function _hNum(n){ return n>=1000?Math.round(n).toLocaleString():(Math.round(n*10)/10); }
-// Names for the streak, shown as the Hearth's title. These sit ON TOP of the
-// badge ladder, they do not replace it — the streak track keeps all 25 of its
-// numeric tiers and every badge already earned. Each threshold is a real rung
-// of that track, so a name arrives on the same day a badge does.
-var STREAK_NAMES=[[3,'Cinderling'],[7,'Emberfall'],[30,'Hearthkeeper'],[90,'Promethean'],
-                  [120,'Hestian'],[160,'Beacon'],[210,'Radiant Vigil'],[340,'Pyre Eternal']];
-function streakName(days){
+// Reader titles, shown as the Hearth's heading. Each threshold is a rung of
+// the days-read track, so a title arrives on the same day a badge does.
+var RANK_NAMES=[[3,'Cinderling'],[7,'Emberfall'],[30,'Hearthkeeper'],[90,'Promethean'],
+                [120,'Hestian'],[160,'Beacon'],[210,'Radiant Vigil'],[340,'Pyre Eternal']];
+function rankName(days){
   var cur=null,next=null;
-  for(var i=0;i<STREAK_NAMES.length;i++){
-    if(days>=STREAK_NAMES[i][0]) cur=STREAK_NAMES[i];
-    else { next=STREAK_NAMES[i]; break; }
+  for(var i=0;i<RANK_NAMES.length;i++){
+    if(days>=RANK_NAMES[i][0]) cur=RANK_NAMES[i];
+    else { next=RANK_NAMES[i]; break; }
   }
   return {name:cur?cur[1]:'', next:next?next[1]:'', at:next?next[0]:0};
 }
@@ -7763,125 +7385,59 @@ function renderHearth(){
   // Recompute here so the panel can never show a stale "next tier" below the
   // current value — sessions from the Timer tab never hit the old check.
   try{ hearthCheckUnlocks(); }catch(e){}
-  try{
-    var _pa=pendingAch(), _st=document.getElementById('h-st-ach');
-    if(_st) _st.textContent='Achievements'+(_pa?' \u00b7 '+_pa:'');
-  }catch(e){}
-  var _sd=0; try{ _sd=computeStreak().current||0; }catch(e){}
-  var _sn=streakName(_sd);
+  var _sd=0; try{ _sd=computeDaysRead().total||0; }catch(e){}
+  var _sn=rankName(_sd), _ac=hearthAchCount();
   var h='';
-  if(_sn.name){
-    h+='<div class="h-rank"><div class="h-rank-n">'+esc(_sn.name)+'</div>'
-      +'<div class="h-rank-s">'+_sd+'-day streak'
-      +(_sn.next?' \u00b7 '+esc(_sn.next)+' at '+_sn.at:'')+'</div></div>';
-  }
+  h+='<div class="h-rank"><div class="h-rank-n">'+esc(_sn.name||'Reader')+'</div>'
+    +'<div class="h-rank-s">'+_sd+' day'+(_sd!==1?'s':'')+' read'
+    +(_sn.next?' \u00b7 '+esc(_sn.next)+' at '+_sn.at:'')+'</div></div>';
   h+='<div class="h-cards">'
-      +'<div class="h-card"><div class="h-card-n">'+babelHearth.embers+'</div>'
-        +'<div class="h-card-l">Embers</div></div>'
-      +'<div class="h-card"><div class="h-card-n">'+babelHearth.freezes+'</div>'
-        +'<div class="h-card-l">Freeze'+(babelHearth.freezes!==1?'s':'')+'</div></div></div>';
-  if(babelHearth.freezeNote){
-    h+='<div class="h-note">'+ICONS.snow+' Freeze used \u2014 your streak was saved.'
-      +'<button class="h-note-x" onclick="babelHearth.freezeNote=0;saveHearth();renderHearth();">\u00d7</button></div>';
-  }
-  if(_hSub==='daily'){
-    var items=hearthDaily();
-    // Claimable first, then closest to done.
-    items.sort(function(a,b){
-      var ac=(a.done&&!a.claimed)?1:0, bc=(b.done&&!b.claimed)?1:0;
-      if(ac!==bc) return bc-ac;
-      if(a.claimed!==b.claimed) return a.claimed?1:-1;
-      return b.prog-a.prog;
-    });
-    h+=items.map(function(x){
-      var state=x.claimed?'claimed':(x.done?'ready':'');
-      return '<div class="h-row '+state+'">'
-        +'<div class="h-row-t"><span class="h-row-n">'+x.label+'</span><span class="h-row-e">+'+x.em+'</span></div>'
-        +'<div class="h-bar"><div class="h-fill" style="width:'+Math.round(x.prog*100)+'%"></div></div>'
-        +(x.claimed?'<div class="h-done">Claimed</div>'
-          : x.done?'<button class="h-claim" onclick="claimHearth(\''+x.k+'\')">Claim</button>'
-          : '<div class="h-prog">'+Math.round(x.prog*100)+'%</div>')
-      +'</div>';
-    }).join('');
-  } else {
-    var v=hearthStats();
-    var rows=HEARTH_TRACKS.map(function(t){
-      var val=v[t.k]||0, nextI=-1;
-      for(var i=0;i<t.tiers.length;i++){ if(!babelHearth.unlocked[t.k+':'+i]){ nextI=i; break; } }
-      var earned=t.tiers.filter(function(x,i){return babelHearth.unlocked[t.k+':'+i];}).length;
-      var ready=t.tiers.filter(function(x,i){return babelHearth.unlocked[t.k+':'+i] && !achClaimed(t.k+':'+i);}).length;
-      var prev = nextI>0 ? t.tiers[nextI-1] : 0;
-      var goal = nextI<0 ? t.tiers[t.tiers.length-1] : t.tiers[nextI];
-      var prog = nextI<0 ? 1 : Math.max(0,Math.min((val-prev)/((goal-prev)||1),1));
-      return {t:t,val:val,earned:earned,ready:ready,goal:goal,prog:prog,done:nextI<0};
-    });
-    // Anything claimable rides to the top, then closest-to-next.
-    rows.sort(function(a,b){
-      if((a.ready>0)!==(b.ready>0)) return b.ready-a.ready;
-      if(a.done!==b.done) return a.done?1:-1;
-      return b.prog-a.prog;
-    });
-    h+=rows.map(function(r){
-      var t=r.t, open=_hOpen[t.k];
-      var ladder = open ? '<div class="h-ladder">'+t.tiers.map(function(x,i){
-          var key=t.k+':'+i, got=babelHearth.unlocked[key], cl=achClaimed(key);
-          var cls=got?(cl?' got':' ready'):'';
-          return '<span class="h-tier'+cls+'"'+(got&&!cl?' onclick="claimAch(\''+key+'\')"':'')+'>'+_hNum(x)+t.suf+'</span>';
-        }).join('')+'</div>' : '';
-      return '<div class="h-row ach'+(r.ready?' ready':'')+(r.done&&!r.ready?' claimed':'')+'">'
-        +'<div class="h-row-t" onclick="hToggle(\''+t.k+'\')">'
-          +'<span class="h-row-n">'+t.name+'</span>'
-          +'<span class="h-row-e">'+r.earned+'/'+t.tiers.length+'</span></div>'
-        +'<div class="h-bar"><div class="h-fill" style="width:'+Math.round(r.prog*100)+'%"></div></div>'
-        +'<div class="h-prog">'+(r.done?'All earned':_hNum(r.val)+t.suf+' \u2192 '+_hNum(r.goal)+t.suf)+'</div>'
-        +(r.ready?'<button class="h-claim" onclick="claimTrack(\''+t.k+'\')">Claim '+r.ready+' \u00d7 +3</button>':'')
-        +ladder
-      +'</div>';
-    }).join('');
-    var one=[['owl','Night owl','A session after midnight'],['bird','Early bird','A session before 6am']];
-    h+=one.map(function(o){
-      var got=babelHearth.unlocked[o[0]], cl=achClaimed(o[0]);
-      return '<div class="h-row'+(got&&!cl?' ready':(cl?' claimed':''))+'"><div class="h-row-t"><span class="h-row-n">'+o[1]+'</span>'
-        +'<span class="h-row-e">'+(cl?ICONS.check:'+3')+'</span></div><div class="h-prog">'+o[2]+'</div>'
-        +(got&&!cl?'<button class="h-claim" onclick="claimAch(\''+o[0]+'\')">Claim +3</button>':'')+'</div>';
-    }).join('');
-  }
+      +'<div class="h-card"><div class="h-card-n">'+hearthPoints().toLocaleString()+'</div>'
+        +'<div class="h-card-l">Points</div></div>'
+      +'<div class="h-card"><div class="h-card-n">'+_ac.got+'<span class="h-card-of">/'+_ac.all+'</span></div>'
+        +'<div class="h-card-l">Achievements</div></div></div>';
+  var v=hearthStats();
+  var rows=HEARTH_TRACKS.map(function(t){
+    var val=v[t.k]||0, nextI=-1;
+    for(var i=0;i<t.tiers.length;i++){ if(!babelHearth.unlocked[t.k+':'+i]){ nextI=i; break; } }
+    var earned=t.tiers.filter(function(x,i){return babelHearth.unlocked[t.k+':'+i];}).length;
+    var prev = nextI>0 ? t.tiers[nextI-1] : 0;
+    var goal = nextI<0 ? t.tiers[t.tiers.length-1] : t.tiers[nextI];
+    var prog = nextI<0 ? 1 : Math.max(0,Math.min((val-prev)/((goal-prev)||1),1));
+    return {t:t,val:val,earned:earned,goal:goal,prog:prog,done:nextI<0,
+            next:nextI<0?0:achPoints(t.k+':'+nextI)};
+  });
+  // Closest to the next tier first; finished ladders sink to the bottom.
+  rows.sort(function(a,b){
+    if(a.done!==b.done) return a.done?1:-1;
+    return b.prog-a.prog;
+  });
+  h+=rows.map(function(r){
+    var t=r.t, open=_hOpen[t.k];
+    var ladder = open ? '<div class="h-ladder">'+t.tiers.map(function(x,i){
+        var got=babelHearth.unlocked[t.k+':'+i];
+        return '<span class="h-tier'+(got?' got':'')+'">'+_hNum(x)+t.suf+'</span>';
+      }).join('')+'</div>' : '';
+    return '<div class="h-row ach'+(r.done?' done':'')+'">'
+      +'<div class="h-row-t" onclick="hToggle(\''+t.k+'\')">'
+        +'<span class="h-row-n">'+t.name+'</span>'
+        +'<span class="h-row-e">'+r.earned+'/'+t.tiers.length+'</span></div>'
+      +'<div class="h-bar"><div class="h-fill" style="width:'+Math.round(r.prog*100)+'%"></div></div>'
+      +'<div class="h-prog">'+(r.done?'All earned'
+          :_hNum(r.val)+t.suf+' \u2192 '+_hNum(r.goal)+t.suf+' \u00b7 +'+r.next+' pts')+'</div>'
+      +ladder
+    +'</div>';
+  }).join('');
+  var one=[['owl','Night owl','A session after 10pm'],['bird','Early bird','A session before 9am']];
+  h+=one.map(function(o){
+    var got=babelHearth.unlocked[o[0]];
+    return '<div class="h-row'+(got?' claimed':'')+'"><div class="h-row-t"><span class="h-row-n">'+o[1]+'</span>'
+      +'<span class="h-row-e">'+(got?ICONS.check:'+'+ACH_ONEOFF_PTS)+'</span></div><div class="h-prog">'+o[2]+'</div></div>';
+  }).join('');
   el.innerHTML=h;
 }
-function openShop(){ renderShop(); document.getElementById('shop-sheet').classList.remove('hidden'); }
-function closeShop(){ document.getElementById('shop-sheet').classList.add('hidden'); }
-function renderShop(){
-  document.getElementById('shop-bal').textContent=babelHearth.embers+' embers';
-  document.getElementById('shop-frz').textContent=babelHearth.freezes+' banked';
-  var btn=document.getElementById('shop-buy'), note=document.getElementById('shop-note');
-  var why = babelHearth.embers<50 ? ('Need '+(50-babelHearth.embers)+' more embers.') : '';
-  btn.disabled=!!why; btn.classList.toggle('off',!!why);
-  var b5=document.getElementById('shop-buy5');
-  if(b5){ var no5=babelHearth.embers<200; b5.disabled=no5; b5.classList.toggle('off',no5); }
-  note.textContent=why||'Buy as many as you like \u2014 they bank up.';
-}
-var FREEZE_PACKS={1:50,5:200};
-function buyFreeze(n){
-  n=(n===5)?5:1;
-  var cost=FREEZE_PACKS[n];
-  if(emBal()<cost) return;
-  emSpend(cost); babelHearth.freezes+=n;
-  // A freeze covers days from the day you bought it onward — it must never be
-  // eaten retroactively by a gap that already happened.
-  if(!babelHearth.freezeFrom){ var _t=new Date(); _t.setHours(0,0,0,0); babelHearth.freezeFrom=_t.getTime(); }
-  saveHearth(); renderShop(); renderHearth();
-}
 
-
-// ── Manual freezes + random book pick ────────────────────────────────────────
-function freezeDay(key){
-  if(!babelHearth.freezes||babelHearth.frozen[key]) return;
-  babelHearth.frozen[key]=1; babelHearth.freezes--;
-  if(babelHearth.freezes<=0) babelHearth.freezeFrom=0;
-  saveHearth();
-  try{ renderReadingScreen(); renderStreak(); renderHearth(); }catch(e){}
-}
-function freezeToday(){ freezeDay(_dayKey(new Date())); }
+// ── Random book pick ─────────────────────────────────────────────────────────
 var _diceMode='all';
 function openDice(){ document.getElementById('dice-sheet').classList.remove('hidden'); rollDice(); }
 function closeDice(){ document.getElementById('dice-sheet').classList.add('hidden'); }
@@ -8571,11 +8127,10 @@ function renderStrip(){
   for(var i=13;i>=0;i--){
     var d=new Date(today); d.setDate(d.getDate()-i);
     var key=_dayKey(d), sec=(stats[key]||{sec:0}).sec;
-    // A day the ledger protects reads as banked even if it has some minutes on
-    // it — the ledger is what the streak is built from, so the strip must not
-    // contradict it by drawing the day short of the goal.
-    var banked = !!((babelHearth.frozen && babelHearth.frozen[key]) ||
-                    (babelHearth.metEver && babelHearth.metEver[key] && sec<goalSec));
+    // A day on the days-read ledger whose minutes have since dropped below the
+    // goal (a goal raised later, a corrected session) still counted, so it is
+    // drawn as banked rather than short of the goal.
+    var banked = isReadDay(key) && sec<goalSec;
     days.push({key:key,num:d.getDate(),sec:sec,parts:(sess[key]||[]).slice(),
                banked:banked,isToday:d.getTime()===today.getTime()});
     if(!banked && sec>maxSec) maxSec=sec;
@@ -8590,9 +8145,8 @@ function renderStrip(){
   var white=[255,255,255];
   var dim=_rdMix(accent,bg,0.55);          // below-goal fill
   var deep=_rdMix(accent,[0,0,0],0.28);    // foot of a met bar at the goal
-  var frost=_rdVar('--frost',[127,178,204]);
-  var hatch='repeating-linear-gradient(45deg,'+_rdCss(frost,0.55)+','+_rdCss(frost,0.55)+' 3px,'
-    +_rdCss(_rdMix(frost,bg,0.7),0.55)+' 3px,'+_rdCss(_rdMix(frost,bg,0.7),0.55)+' 6px)';
+  var hatch='repeating-linear-gradient(45deg,'+_rdCss(accent,0.55)+','+_rdCss(accent,0.55)+' 3px,'
+    +_rdCss(_rdMix(accent,bg,0.7),0.55)+' 3px,'+_rdCss(_rdMix(accent,bg,0.7),0.55)+' 6px)';
 
   var bars='', bestTaken=false;
   for(var j=0;j<days.length;j++){
@@ -8756,17 +8310,11 @@ function renderCalendar(){
     var pct=goalSec>0?Math.min(st.sec/goalSec,1):0;
     // Four states, nothing scaled by minutes. The calendar answers "did this
     // day count"; the strip above answers "how much".
-    var banked = !!((babelHearth.frozen && babelHearth.frozen[key]) ||
-                    (babelHearth.metEver && babelHearth.metEver[key]));
     var cls, dotCls, svg='', counted=false;
     if(isFuture){ cls='future'; dotCls=''; }
-    else if(pct>=1){ cls='met'; dotCls='met'; metDays++; counted=true; }
-    else if(banked){
-      // Protected by the ledger: a freeze, or a day that met the goal under an
-      // older rule. It outranks the partial arc — drawing it short of the goal
-      // would make the calendar contradict the streak it is built from.
-      cls='frozen'; dotCls='frozen'; counted=true;
-    }
+    // A day on the ledger counted, even if its minutes have since dropped below
+    // the goal — the calendar must agree with the days-read total.
+    else if(pct>=1 || isReadDay(key)){ cls='met'; dotCls='met'; metDays++; counted=true; }
     else if(st.sec>0){
       cls='part'; dotCls='part';
       svg='<circle cx="15" cy="15" r="13.5" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="'+(pct*C).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 15 15)"/>';
@@ -8886,10 +8434,7 @@ function calDayTap(key){
   var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var label=MON[+p[1]-1]+' '+p[2];
   if(!st || !st.sec){
-    var froz=babelHearth.frozen&&babelHearth.frozen[key];
-    var past=key!==_dayKey(new Date());
-    el.innerHTML=label+(froz?' \u00b7 frozen'
-      : ' \u00b7 no reading'+((past&&babelHearth.freezes>0)?'<button class="cal-fz" onclick="freezeDay(\''+key+'\')">Freeze</button>':''));
+    el.innerHTML=label+(isReadDay(key)?' \u00b7 counted':' \u00b7 no reading');
     return;
   }
   var mins=Math.max(1,Math.round(st.sec/60));
@@ -8925,7 +8470,7 @@ function setGoalFromInput(){
 }
 function renderGoalBar(){
   var wrap=document.getElementById('goal-wrap'); if(!wrap) return;
-  var s=computeStreak(), goalSec=babelGoalMin*60, mins=Math.floor(s.todaySec/60);
+  var s=computeDaysRead(), goalSec=babelGoalMin*60, mins=Math.floor(s.todaySec/60);
   var pct=goalSec>0?Math.min(100, Math.round(s.todaySec/goalSec*100)):0;
   var f=document.getElementById('goal-fill'); if(f) f.style.width=pct+'%';
   var p=document.getElementById('goal-pct'); if(p) p.textContent=pct+'%';
@@ -8952,23 +8497,22 @@ function patchRowRating(idx){
   var s=c.querySelector('.my-stars'); if(s) s.outerHTML=myStarsHTML(idx, books[idx].myRating||0);
 }
 
-/* full streak renderer (fills hero chip + Stats card) */
+/* days-read renderer (fills hero chip + Stats card) */
 function renderStreak(){
-  var s=computeStreak();
-  var st=document.getElementById('stat-streak'); if(st) st.textContent=s.current;
+  var s=computeDaysRead();
+  var st=document.getElementById('stat-streak'); if(st) st.textContent=s.total;
   var el=document.getElementById('babel-streak'); if(!el) return;
-  // Streak tiers — animation escalates as the streak grows: 3+ soft glow,
-  // 7+ pulsing number + flickering flame, 30+ accent flame + faster pulse,
-  // 100+ gold blaze.
-  var tier=s.current>=100?4:s.current>=30?3:s.current>=7?2:s.current>=3?1:0;
+  // Animation escalates as the total grows: 3+ soft glow, 7+ pulsing number
+  // and flickering flame, 30+ accent flame, 100+ gold blaze.
+  var tier=s.total>=100?4:s.total>=30?3:s.total>=7?2:s.total>=3?1:0;
   ['streak-t1','streak-t2','streak-t3','streak-t4'].forEach(function(c){el.classList.remove(c);});
   if(tier) el.classList.add('streak-t'+tier);
   var flame='<svg class="bs-flame" viewBox="0 0 16 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 0c.4 3.2-1.6 4.6-3 6.2C3.4 8 2 9.6 2 12.4 2 16.6 5 19.6 8 19.6s6-3 6-7.2c0-2.4-1.1-4.2-2.4-5.6-.3 1-1 1.7-1.8 1.9C10.6 5.4 11 2.7 8 0Z"/></svg>';
-  if(s.current===0&&s.best===0){ el.innerHTML=flame+'<span class="bs-lbl">Read 15 min to start a streak</span>'; return; }
+  if(s.total===0){ el.innerHTML=flame+'<span class="bs-lbl">Read '+babelGoalMin+' min to count your first day</span>'; return; }
   var mins=Math.floor(s.todaySec/60);
   var today=s.todayMet?'<span class="bs-today met">Today '+ICONS.check+'</span>':'<span class="bs-today">'+mins+'/'+babelGoalMin+' min today</span>';
-  el.innerHTML=flame+'<span class="bs-num">'+s.current+'</span><span class="bs-lbl">day streak</span>'
-    +(s.best?'<span class="bs-sep"></span><span class="bs-best">Best '+s.best+'</span>':'')
+  el.innerHTML=flame+'<span class="bs-num">'+s.total+'</span><span class="bs-lbl">day'+(s.total!==1?'s':'')+' read</span>'
+    +'<span class="bs-sep"></span><span class="bs-best">'+s.month+' this month</span>'
     +'<span class="bs-sep"></span>'+today;
 }
 
@@ -8986,7 +8530,7 @@ storage.init().then(function(){
   window.babelSettingsAreDefaults = (_sg===null);
   babelGoalMin = parseInt(_sg,10) || 10;
   babelYearlyGoal = parseInt(storage.getItem('rl_yearlyGoal'),10) || 12;
-  // Synchronous and BEFORE updateStats: computeStreak saves the hearth, so the
+  // Synchronous and BEFORE updateStats: computeDaysRead saves the hearth, so the
   // hearth must be read from disk first or that save writes over it.
   try{ hearthInit(); }catch(e){}
   try{ document.getElementById('fab-dice').innerHTML=ICONS.dice; }catch(e){}
@@ -9227,110 +8771,22 @@ window.BabelCloud = (function(){
           var _yi=document.getElementById('ygoal-input'); if(_yi) _yi.value=babelYearlyGoal;
         }
         if(row.theme.hearth && typeof row.theme.hearth==='object'){
-          // freezeNote is a local "we used a freeze" notice. A pull landing
-          // right after startup replaced the whole object and wiped it before
-          // it was ever shown, so carry it across.
-          var _keepNote=babelHearth&&babelHearth.freezeNote;
-          // One-time make-goods are local decisions. If an incoming copy
-          // predates them it must not undo them, or the grant is silently
-          // wiped by the next pull — which is how the first one was lost.
-          var _keepGrants={g1:babelHearth&&babelHearth.freezeGrant1,
-                           g2:babelHearth&&babelHearth.freezeGrant2,
-                           g3:babelHearth&&babelHearth.freezeGrant3,
-                           sr:babelHearth&&babelHearth.streakRepair,
-                           fr1:babelHearth&&babelHearth.freezeRestore1,
-                           sr1:babelHearth&&babelHearth.streakRescue1,
-                           frozen:(babelHearth&&babelHearth.frozen)||{},
-                           metEver:(babelHearth&&babelHearth.metEver)||{},
-                           freezes:(babelHearth&&babelHearth.freezes)||0};
           // The whole local hearth, kept so nothing is lost to the swap below.
-          // Replacing it wholesale is what wiped frozen days, claimed badges and
-          // embers on every pull from a device holding an older copy. Worse,
-          // `unlocked` rebuilds itself from the stats while `claimedAch` cannot,
-          // so any loss turned into every badge becoming claimable again.
+          // Replacing it wholesale is what used to wipe progress on every pull
+          // from a device holding an older copy.
           var _localH=babelHearth||{};
           babelHearth=row.theme.hearth;
-          // These maps only ever grow in meaning: a day that was frozen stays
-          // frozen, a badge once claimed is never payable again. Union them.
-          ['frozen','unlocked','claimedAch','claims','logins','metEver'].forEach(function(_k){
+          // These maps only ever grow: a day once read stays read, a badge once
+          // earned stays earned. Union them so no copy can shrink them. metEver
+          // and frozen are the pre-v62 ledgers, kept only so nothing is lost.
+          ['unlocked','readDays','metEver','frozen'].forEach(function(_k){
             babelHearth[_k]=babelHearth[_k]||{};
             var _src=_localH[_k]||{};
             for(var _kk in _src) if(!babelHearth[_k][_kk]) babelHearth[_k][_kk]=_src[_kk];
           });
-          // claims is the one map above whose VALUE carries the meaning: the day
-          // or week a task was last claimed. Filling only absent keys kept the
-          // OLDER date whenever both copies had the key, so a task claimed today
-          // came back claimable — and with embers now surviving the merge, that
-          // paid out again on every reload. A claim made in the current period
-          // wins; neither copy can un-claim it.
-          try{
-            var _cD=_hDay(), _cW=_hWeek();
-            for(var _ck in (_localH.claims||{})){
-              var _cv=_localH.claims[_ck];
-              if(_cv===_cD||_cv===_cW) babelHearth.claims[_ck]=_cv;
-            }
-          }catch(e){}
-          // Counters follow the most recent device, by Patrick's call: a pull only
-          // lands when the cloud row is newer, so its numbers win. The trade-off
-          // is that embers earned here but not yet pushed can be lost — the sets
-          // above are unioned precisely so nothing else goes with them.
-          // ...but a copy that carries no counter at all is not "the newest value
-          // is zero", it is a copy with nothing to say. Fall back rather than
-          // leaving embers undefined, which renders as "undefined" on the Hearth.
-          if(_localH.achReclaim) babelHearth.achReclaim=1;
-          if(_localH.emberMakeGood) babelHearth.emberMakeGood=1;
-          // Lifetime totals only ever grow, so max is the whole merge — order
-          // and clock skew stop mattering. Only if NEITHER copy carries the
-          // ledger does the old counter rule still apply.
-          if(typeof babelHearth.emEarned==='number' || typeof _localH.emEarned==='number'){
-            babelHearth.emEarned=Math.max(babelHearth.emEarned||0,_localH.emEarned||0);
-            babelHearth.emSpent =Math.max(babelHearth.emSpent ||0,_localH.emSpent ||0);
-            babelHearth.embers  =Math.max(0,babelHearth.emEarned-babelHearth.emSpent);
-          }
-          else if(typeof babelHearth.embers !=='number') babelHearth.embers =_localH.embers ||0;
-          // Freezes were the one balance a pull could lower. Every other field
-          // here is protected: embers take the max of the lifetime ledgers,
-          // metEver is merged additively, frozen days are carried across. This
-          // line said "if the incoming copy has a number, use it" — so a stale
-          // copy holding 0 replaced a real 9 instantly, with nothing marked and
-          // no notice. Spending is the only thing allowed to reduce freezes,
-          // and spending happens locally, so an incoming copy may raise the
-          // count but never lower it.
-          babelHearth.freezes = Math.max(
-            typeof babelHearth.freezes==='number' ? babelHearth.freezes : 0,
-            _localH.freezes || 0
-          );
-          if(_localH.freezeFrom && !babelHearth.freezeFrom) babelHearth.freezeFrom=_localH.freezeFrom;
-          if(_keepNote && !babelHearth.freezeNote) babelHearth.freezeNote=_keepNote;
-          if(_keepGrants.g2 && !babelHearth.freezeGrant2){
-            babelHearth.freezeGrant1=1; babelHearth.freezeGrant2=1;
-            babelHearth.freezes=Math.max(babelHearth.freezes||0,_keepGrants.freezes);
-          }
-          // Same reasoning as the grants above: if this device has already been
-          // repaid the 9, an incoming copy that predates the repair must not
-          // clear the flag, or the next boot pays it out a second time.
-          if(_keepGrants.g3 && !babelHearth.freezeGrant3){
-            babelHearth.freezeGrant3=1;
-            babelHearth.freezes=Math.max(babelHearth.freezes||0,_keepGrants.freezes);
-          }
-          if(_keepGrants.fr1) babelHearth.freezeRestore1=1;
-          if(_keepGrants.sr1) babelHearth.streakRescue1=1;
-          // The met-day ledger is additive and must never shrink on sync.
-          babelHearth.metEver=babelHearth.metEver||{};
-          for(var _mk in (_keepGrants.metEver||{})) babelHearth.metEver[_mk]=1;
-          if(_keepGrants.sr && !babelHearth.streakRepair){
-            babelHearth.streakRepair=1;
-            babelHearth.frozen=babelHearth.frozen||{};
-            for(var _fk in _keepGrants.frozen) babelHearth.frozen[_fk]=1;
-          }
-          ['frozen','claims','unlocked','logins','claimedAch','metEver'].forEach(function(k){ if(!babelHearth[k]) babelHearth[k]={}; });
-          // A hearth synced from a device that predates claimable achievements
-          // has unlocked tiers that were already paid on unlock. Without this
-          // they would all become claimable again and pay out a second time.
-          if(!babelHearth.achMigrated){
-            for(var _ck in babelHearth.unlocked) babelHearth.claimedAch[_ck]=1;
-            babelHearth.achMigrated=1;
-          }
+          // A copy from before the switch must not make the import run again
+          // (it would only add, but it would also re-save for nothing).
+          if(_localH.readDaysInit) babelHearth.readDaysInit=1;
           try{ storage.setItem('rl_hearth',JSON.stringify(babelHearth)); }catch(e){}
           try{ renderHearth(); }catch(e){}
         }
